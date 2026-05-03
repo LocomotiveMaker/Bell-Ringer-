@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c9233700b94a45e2b47759b6ddb9fdf9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - texturePlayer: {instanceID: 0}
+  - listenerTransform: {instanceID: 0}
+  - bellTransform: {instanceID: 0}
+  - bellClip: {fileID: 8300000, guid: 9292bbbff6009b844b2c6368d0e4bbdd, type: 3}
+  - bellAudioSource: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

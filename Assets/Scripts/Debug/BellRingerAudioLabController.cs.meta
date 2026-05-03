@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6b8ff41706ef422aadd1daa7ee852953
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - bellClip: {fileID: 8300000, guid: 9292bbbff6009b844b2c6368d0e4bbdd, type: 3}
+  - bell3dPreset: {fileID: 11400000, guid: c9c3b674d7304ccba5fc22289b5c39a5, type: 2}
+  - muffledPreset: {fileID: 11400000, guid: 9715fca3e6784d019d3b8c6eabf082ca, type: 2}
+  - tonePreset: {fileID: 11400000, guid: eea8e4b9923a451db770e3a81186528f, type: 2}
+  - flat2dPreset: {fileID: 11400000, guid: 67cf8cfbfe6d4266aa9d927e966222ef, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

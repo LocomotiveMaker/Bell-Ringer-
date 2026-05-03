@@ -48,5 +48,14 @@ namespace BellRinger.Tests.EditMode
             HardwareStatusSnapshot snapshot = _bridge.GetStatusSnapshot();
             Assert.That(snapshot.lastCommand, Is.EqualTo("LED fill b=255"));
         }
+
+        [Test]
+        public void SendLedRippleFormatsRippleCommand()
+        {
+            _bridge.SendLedRipple(7.5f, 3.5f, 2f, 1.3f, new Color(0.125f, 1f, 0.375f), 0.16f);
+
+            HardwareStatusSnapshot snapshot = _bridge.GetStatusSnapshot();
+            Assert.That(snapshot.lastCommand, Is.EqualTo("LED ripple cx=7.50 cy=3.50 radius=2.00 width=1.30 red=32 green=255 blue=96 level=0.16"));
+        }
     }
 }

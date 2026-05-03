@@ -64,7 +64,7 @@ namespace BellRinger.Debug
                 _builder.Append("Last command: ").AppendLine(snapshot.lastCommand);
             }
 
-            GUI.Box(new Rect(16f, 16f, 420f, 220f), _builder.ToString());
+            GUI.Box(new Rect(16f, 16f, 520f, 360f), _builder.ToString());
         }
 
         private static bool OverlayDisabledByEnvironment()

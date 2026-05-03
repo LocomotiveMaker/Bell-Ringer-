@@ -21,5 +21,6 @@ Recognized Unity debug commands:
 PING
 OUT vib=0.50 lr=255 lg=180 lb=64 pulse=0.75
 LED fill b=31
+LED ripple cx=7.50 cy=3.50 radius=2.00 width=1.30 red=32 green=255 blue=96 level=0.16
 LED clear
 ```

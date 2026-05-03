@@ -67,6 +67,8 @@ void handleCommand(const String& command) {
     clearMatrices();
     showMatrices();
     Serial.println("ACK led_clear");
+  } else if (command.startsWith("LED ripple")) {
+    handleLedRippleCommand(command);
   } else if (command.startsWith("LED fill")) {
     handleLedFillCommand(command);
   } else if (command.startsWith("LED ")) {
@@ -156,6 +158,57 @@ void handleLedFillCommand(const String& command) {
   Serial.println("ACK led_fill");
 }
 
+void handleLedRippleCommand(const String& command) {
+  float centerX = 7.5f;
+  float centerY = 3.5f;
+  float radius = 0.0f;
+  float width = 1.0f;
+  float level = 0.0f;
+  int red = 0;
+  int green = 255;
+  int blue = 64;
+
+  if (!tryParseFloat(command, "cx=", centerX) ||
+      !tryParseFloat(command, "cy=", centerY) ||
+      !tryParseFloat(command, "radius=", radius) ||
+      !tryParseFloat(command, "width=", width) ||
+      !tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  centerX = constrain(centerX, 0.0f, 15.0f);
+  centerY = constrain(centerY, 0.0f, 7.0f);
+  radius = max(0.0f, radius);
+  width = max(0.1f, width);
+  level = constrain(level, 0.0f, 1.0f);
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+
+  float halfWidth = max(0.05f, width * 0.5f);
+
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 16; x++) {
+      float dx = static_cast<float>(x) - centerX;
+      float dy = static_cast<float>(y) - centerY;
+      float distance = sqrt((dx * dx) + (dy * dy));
+      float alpha = 1.0f - (abs(distance - radius) / halfWidth);
+      alpha = constrain(alpha, 0.0f, 1.0f);
+      int scaledRed = constrain(static_cast<int>(red * level * alpha), 0, 255);
+      int scaledGreen = constrain(static_cast<int>(green * level * alpha), 0, 255);
+      int scaledBlue = constrain(static_cast<int>(blue * level * alpha), 0, 255);
+      setMappedPixelColor(x, y, leftMatrix.Color(scaledRed, scaledGreen, scaledBlue));
+    }
+  }
+
+  showMatrices();
+  Serial.println("ACK led_ripple");
+}
+
 bool tryParseInt(const String& source, const char* token, int& value) {
   int startIndex = source.indexOf(token);
   if (startIndex < 0) {
@@ -175,9 +228,31 @@ bool tryParseInt(const String& source, const char* token, int& value) {
   return true;
 }
 
+bool tryParseFloat(const String& source, const char* token, float& value) {
+  int startIndex = source.indexOf(token);
+  if (startIndex < 0) {
+    return false;
+  }
+
+  startIndex += static_cast<int>(strlen(token));
+  int endIndex = source.indexOf(' ', startIndex);
+  String rawValue = endIndex < 0 ? source.substring(startIndex) : source.substring(startIndex, endIndex);
+  rawValue.trim();
+
+  if (rawValue.length() == 0) {
+    return false;
+  }
+
+  value = rawValue.toFloat();
+  return true;
+}
+
 void drawWhiteDot(int globalX, int globalY, int brightness) {
   uint32_t color = leftMatrix.Color(brightness, brightness, brightness);
+  setMappedPixelColor(globalX, globalY, color);
+}
 
+void setMappedPixelColor(int globalX, int globalY, uint32_t color) {
   if (globalX < 8) {
     int pixelIndex = mapLeftMatrixIndex(globalX, globalY);
     leftMatrix.setPixelColor(pixelIndex, color);

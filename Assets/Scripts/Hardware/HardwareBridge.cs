@@ -116,6 +116,27 @@ namespace BellRinger.Hardware
             SendCommand(command);
         }
 
+        public void SendLedRipple(float centerX, float centerY, float radiusPixels, float widthPixels, Color color, float brightnessNormalized)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED ripple cx={0:0.00} cy={1:0.00} radius={2:0.00} width={3:0.00} red={4} green={5} blue={6} level={7:0.00}",
+                Mathf.Clamp(centerX, 0f, 15f),
+                Mathf.Clamp(centerY, 0f, 7f),
+                Mathf.Max(0f, radiusPixels),
+                Mathf.Max(0.1f, widthPixels),
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized));
+
+            SendCommand(command);
+        }
+
         public void ClearLedDisplay()
         {
             SendCommand("LED clear");
@@ -152,7 +173,7 @@ namespace BellRinger.Hardware
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
 
