@@ -137,6 +137,59 @@ namespace BellRinger.Hardware
             SendCommand(command);
         }
 
+        public void SendLedWallNoise(float centerX, float centerY, float widthPixels, float heightPixels, Color color, float brightnessNormalized, int seed)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED wall cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8}",
+                Mathf.Clamp(centerX, 0f, 15f),
+                Mathf.Clamp(centerY, 0f, 7f),
+                Mathf.Clamp(widthPixels, 0.1f, 16f),
+                Mathf.Clamp(heightPixels, 0.1f, 8f),
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized),
+                seed);
+
+            SendCommand(command);
+        }
+
+        public void SendLedRain(
+            Color color,
+            float brightnessNormalized,
+            int seed,
+            float centerX = 7.5f,
+            float centerY = 1.5f,
+            float widthPixels = 16f,
+            float heightPixels = 3f,
+            float phase = 0f)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED rain cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8} phase={9:0.00}",
+                Mathf.Clamp(centerX, 0f, 15f),
+                Mathf.Clamp(centerY, 0f, 7f),
+                Mathf.Clamp(widthPixels, 0.1f, 16f),
+                Mathf.Clamp(heightPixels, 0.1f, 8f),
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized),
+                seed,
+                Mathf.Max(0f, phase));
+
+            SendCommand(command);
+        }
+
         public void ClearLedDisplay()
         {
             SendCommand("LED clear");

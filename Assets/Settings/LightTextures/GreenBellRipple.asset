@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: Green Bell Ripple
   color: {r: 0.125, g: 1, b: 0.375, a: 1}
-  maximumBrightness: 0.16
+  maximumBrightness: 0.096
   fadeInSeconds: 0.05
   fadeOutSeconds: 0.2
   rippleSpeedPixelsPerSecond: 5

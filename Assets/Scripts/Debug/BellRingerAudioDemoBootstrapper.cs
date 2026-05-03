@@ -32,6 +32,11 @@ namespace BellRinger.Debug
                 return;
             }
 
+            if (Object.FindFirstObjectByType<BellRingerSpatialLightTextureSampleController>() != null)
+            {
+                return;
+            }
+
             if (GameObject.Find(DemoRootName) != null)
             {
                 return;

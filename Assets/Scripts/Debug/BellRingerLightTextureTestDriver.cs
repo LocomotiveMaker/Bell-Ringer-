@@ -38,6 +38,11 @@ namespace BellRinger.Debug
 
         private void Update()
         {
+            if (Object.FindFirstObjectByType<BellRingerSpatialLightTextureSampleController>() != null)
+            {
+                return;
+            }
+
             ResolveReferences();
             UpdateStartupHardwarePulse();
 

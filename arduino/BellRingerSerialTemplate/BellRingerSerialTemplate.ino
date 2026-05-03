@@ -69,6 +69,10 @@ void handleCommand(const String& command) {
     Serial.println("ACK led_clear");
   } else if (command.startsWith("LED ripple")) {
     handleLedRippleCommand(command);
+  } else if (command.startsWith("LED wall")) {
+    handleLedWallCommand(command);
+  } else if (command.startsWith("LED rain")) {
+    handleLedRainCommand(command);
   } else if (command.startsWith("LED fill")) {
     handleLedFillCommand(command);
   } else if (command.startsWith("LED ")) {
@@ -209,6 +213,138 @@ void handleLedRippleCommand(const String& command) {
   Serial.println("ACK led_ripple");
 }
 
+void handleLedWallCommand(const String& command) {
+  float centerX = 7.5f;
+  float centerY = 3.5f;
+  float width = 8.0f;
+  float height = 4.0f;
+  float level = 0.0f;
+  int red = 160;
+  int green = 160;
+  int blue = 160;
+  int seed = 0;
+
+  if (!tryParseFloat(command, "cx=", centerX) ||
+      !tryParseFloat(command, "cy=", centerY) ||
+      !tryParseFloat(command, "w=", width) ||
+      !tryParseFloat(command, "h=", height) ||
+      !tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level) ||
+      !tryParseInt(command, "seed=", seed)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  centerX = constrain(centerX, 0.0f, 15.0f);
+  centerY = constrain(centerY, 0.0f, 7.0f);
+  width = constrain(width, 0.1f, 16.0f);
+  height = constrain(height, 0.1f, 8.0f);
+  level = constrain(level, 0.0f, 1.0f);
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+
+  float halfWidth = width * 0.5f;
+  float halfHeight = height * 0.5f;
+
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 16; x++) {
+      float dx = abs(static_cast<float>(x) - centerX);
+      float dy = abs(static_cast<float>(y) - centerY);
+      float inside = (dx <= halfWidth && dy <= halfHeight) ? 1.0f : 0.0f;
+      float edgeX = halfWidth <= 0.0f ? 0.0f : constrain((halfWidth - dx) / 1.5f, 0.0f, 1.0f);
+      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain((halfHeight - dy) / 1.5f, 0.0f, 1.0f);
+      float glitch = static_cast<float>(hashByte(seed, x, y, 17)) / 255.0f;
+      float alpha = inside * edgeX * edgeY * glitch * level;
+      int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
+      int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
+      int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
+      setMappedPixelColor(x, y, leftMatrix.Color(scaledRed, scaledGreen, scaledBlue));
+    }
+  }
+
+  showMatrices();
+  Serial.println("ACK led_wall");
+}
+
+void handleLedRainCommand(const String& command) {
+  float centerX = 7.5f;
+  float centerY = 1.5f;
+  float width = 16.0f;
+  float height = 3.0f;
+  float level = 0.0f;
+  int red = 120;
+  int green = 170;
+  int blue = 255;
+  int seed = 0;
+  float phase = 0.0f;
+
+  if (!tryParseFloat(command, "cx=", centerX) ||
+      !tryParseFloat(command, "cy=", centerY) ||
+      !tryParseFloat(command, "w=", width) ||
+      !tryParseFloat(command, "h=", height) ||
+      !tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level) ||
+      !tryParseInt(command, "seed=", seed) ||
+      !tryParseFloat(command, "phase=", phase)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  centerX = constrain(centerX, 0.0f, 15.0f);
+  centerY = constrain(centerY, 0.0f, 7.0f);
+  width = constrain(width, 0.1f, 16.0f);
+  height = constrain(height, 0.1f, 8.0f);
+  level = constrain(level, 0.0f, 1.0f);
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+
+  float halfWidth = width * 0.5f;
+  float halfHeight = height * 0.5f;
+
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 16; x++) {
+      float areaDx = abs(static_cast<float>(x) - centerX);
+      float areaDy = abs(static_cast<float>(y) - centerY);
+      float inside = (areaDx <= halfWidth && areaDy <= halfHeight) ? 1.0f : 0.0f;
+      if (inside <= 0.0f) {
+        setMappedPixelColor(x, y, leftMatrix.Color(0, 0, 0));
+        continue;
+      }
+
+      float alpha = 0.0f;
+
+      for (int drop = 0; drop < 7; drop++) {
+        float dropX = (centerX - halfWidth) + (static_cast<float>(hashByte(seed, drop, 3, 11)) / 255.0f) * width;
+        float dropY = (centerY - halfHeight) + (static_cast<float>(hashByte(seed, drop, 7, 19)) / 255.0f) * height;
+        float offset = static_cast<float>(hashByte(seed, drop, 13, 23)) / 255.0f;
+        float radius = fmod((phase * 1.15f) + (offset * 2.8f), 2.8f);
+        float dx = static_cast<float>(x) - dropX;
+        float dy = static_cast<float>(y) - dropY;
+        float distance = sqrt((dx * dx) + (dy * dy));
+        float ring = 1.0f - (abs(distance - radius) / 1.15f);
+        alpha = max(alpha, constrain(ring, 0.0f, 1.0f));
+      }
+
+      float edgeX = halfWidth <= 0.0f ? 0.0f : constrain((halfWidth - areaDx) / 1.5f, 0.0f, 1.0f);
+      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain((halfHeight - areaDy) / 1.25f, 0.0f, 1.0f);
+      alpha *= edgeX * edgeY * level;
+      int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
+      int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
+      int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
+      setMappedPixelColor(x, y, leftMatrix.Color(scaledRed, scaledGreen, scaledBlue));
+    }
+  }
+
+  showMatrices();
+  Serial.println("ACK led_rain");
+}
+
 bool tryParseInt(const String& source, const char* token, int& value) {
   int startIndex = source.indexOf(token);
   if (startIndex < 0) {
@@ -286,6 +422,17 @@ void fillMatricesWhite(int brightness) {
     leftMatrix.setPixelColor(i, color);
     rightMatrix.setPixelColor(i, color);
   }
+}
+
+byte hashByte(int seed, int x, int y, int salt) {
+  unsigned long value = static_cast<unsigned long>(seed);
+  value ^= static_cast<unsigned long>(x + 37) * 1103515245UL;
+  value ^= static_cast<unsigned long>(y + 101) * 12345UL;
+  value ^= static_cast<unsigned long>(salt + 17) * 2654435761UL;
+  value ^= value >> 16;
+  value *= 2246822519UL;
+  value ^= value >> 13;
+  return static_cast<byte>(value & 0xFF);
 }
 
 void showMatrices() {

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: Soft Wide Ripple
   color: {r: 0.2, g: 0.95, b: 0.55, a: 1}
-  maximumBrightness: 0.12
+  maximumBrightness: 0.072
   fadeInSeconds: 0.12
   fadeOutSeconds: 0.32
   rippleSpeedPixelsPerSecond: 3.5

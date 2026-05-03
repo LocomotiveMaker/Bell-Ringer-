@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 100001}
   - component: {fileID: 100003}
   - component: {fileID: 100004}
+  - component: {fileID: 100005}
   m_Layer: 0
   m_Name: BellRingerLightTextureTest
   m_TagString: Untagged
@@ -206,6 +207,36 @@ MonoBehaviour:
   startupPulseBrightness: 0.35
   startupPulseDurationSeconds: 0.35
   startupPulseTimeoutSeconds: 5
+--- !u!114 &100005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7549f3caaa1c47e191fa2e50735675b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  presets:
+  - {fileID: 11400000, guid: f7c0e7c9a3bb4d1f9f215d0ebdfef3f0, type: 2}
+  - {fileID: 11400000, guid: f4820792b7bb421786827b52693531dc, type: 2}
+  - {fileID: 11400000, guid: fcead83365f5461a9e488766e4a6eaf0, type: 2}
+  bellClip: {fileID: 8300000, guid: 9292bbbff6009b844b2c6368d0e4bbdd, type: 3}
+  rainClip: {fileID: 8300000, guid: 93e24adaa52de134b84b911ada7a2178, type: 3}
+  selectedPresetIndex: 0
+  mode: 0
+  outputToHardware: 1
+  showRuntimeControls: 1
+  serialRefreshRate: 18
+  maxDistance: 12
+  wallNoiseColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
+  wallNoiseBrightness: 0.084
+  rainColor: {r: 0.47, g: 0.67, b: 1, a: 1}
+  rainBrightness: 0.078
+  rainPatchRadiusMeters: 3.2
+  rainProjectionSamplesPerAxis: 11
 --- !u!1 &200000
 GameObject:
   m_ObjectHideFlags: 0

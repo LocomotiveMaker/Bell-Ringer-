@@ -11,6 +11,7 @@ namespace BellRinger.Debug.Editor
         private const string PresetFolderPath = "Assets/Settings/LightTextures";
         private const string ScenePath = "Assets/Scenes/LightTextureTest.unity";
         private const string BellClipPath = "Assets/Audios/freesound_community-bicycle-bell-66855.mp3";
+        private const string RainClipPath = "Assets/Audios/rain/boons_freak-rain-sound-188158.mp3";
 
         [MenuItem("Bell Ringer/Create Light Texture Test Scene")]
         public static void CreateLightTextureTestScene()
@@ -19,9 +20,9 @@ namespace BellRinger.Debug.Editor
 
             BellRingerLightTexturePreset[] presets =
             {
-                CreatePreset("GreenBellRipple", "Green Bell Ripple", new Color(0.125f, 1f, 0.375f, 1f), 0.16f, 0.05f, 0.2f, 5.0f, 1.35f),
-                CreatePreset("SoftWideRipple", "Soft Wide Ripple", new Color(0.2f, 0.95f, 0.55f, 1f), 0.12f, 0.12f, 0.32f, 3.5f, 2.2f),
-                CreatePreset("ThinFastRipple", "Thin Fast Ripple", new Color(0.05f, 1f, 0.25f, 1f), 0.18f, 0.03f, 0.12f, 7.25f, 0.95f),
+                CreatePreset("GreenBellRipple", "Green Bell Ripple", new Color(0.125f, 1f, 0.375f, 1f), 0.096f, 0.05f, 0.2f, 5.0f, 1.35f),
+                CreatePreset("SoftWideRipple", "Soft Wide Ripple", new Color(0.2f, 0.95f, 0.55f, 1f), 0.072f, 0.12f, 0.32f, 3.5f, 2.2f),
+                CreatePreset("ThinFastRipple", "Thin Fast Ripple", new Color(0.05f, 1f, 0.25f, 1f), 0.108f, 0.03f, 0.12f, 7.25f, 0.95f),
             };
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -38,6 +39,7 @@ namespace BellRinger.Debug.Editor
 
             BellRingerLightTextureTestDriver testDriver = root.AddComponent<BellRingerLightTextureTestDriver>();
             ConfigureTestDriver(testDriver, texturePlayer, camera.transform, bell.transform, bell.GetComponent<AudioSource>());
+            ConfigureSpatialSampleController(root.AddComponent<BellRingerSpatialLightTextureSampleController>(), presets);
 
             Selection.activeObject = root;
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -189,6 +191,24 @@ namespace BellRinger.Debug.Editor
             serializedObject.FindProperty("bellTransform").objectReferenceValue = bellTransform;
             serializedObject.FindProperty("bellClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BellClipPath);
             serializedObject.FindProperty("bellAudioSource").objectReferenceValue = bellAudioSource;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureSpatialSampleController(BellRingerSpatialLightTextureSampleController controller, BellRingerLightTexturePreset[] presets)
+        {
+            SerializedObject serializedObject = new SerializedObject(controller);
+            SerializedProperty presetsProperty = serializedObject.FindProperty("presets");
+            presetsProperty.arraySize = presets.Length;
+
+            for (int i = 0; i < presets.Length; i++)
+            {
+                presetsProperty.GetArrayElementAtIndex(i).objectReferenceValue = presets[i];
+            }
+
+            serializedObject.FindProperty("bellClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BellClipPath);
+            serializedObject.FindProperty("rainClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(RainClipPath);
+            serializedObject.FindProperty("wallNoiseBrightness").floatValue = 0.084f;
+            serializedObject.FindProperty("rainBrightness").floatValue = 0.078f;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
     }
