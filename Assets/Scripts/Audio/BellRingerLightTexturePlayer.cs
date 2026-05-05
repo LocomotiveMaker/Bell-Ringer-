@@ -16,6 +16,13 @@ namespace BellRinger.Audio
         [SerializeField] private float maxBrightnessChangePerSecond = 3.5f;
         [SerializeField] private float horizontalAngleLimitDegrees = 110f;
         [SerializeField] private float verticalAngleLimitDegrees = 55f;
+        [SerializeField] private Color bellColor = BellRingerLightStyle.BellGreen;
+        [SerializeField] [Range(0.2f, 1f)] private float averageLightScale = 0.58f;
+        [SerializeField] [Range(1f, 3f)] private float peakContrast = 1.85f;
+        [SerializeField] [Range(0.25f, 1f)] private float litPixelScale = 0.55f;
+        [SerializeField] [Range(1f, 2f)] private float peakIntensityScale = 1.25f;
+        [SerializeField] [Range(2f, 4f)] private float bellMaxRadiusPixels = 3.4f;
+        [SerializeField] [Range(0.2f, 1.4f)] private float bellCoreSizePixels = 0.58f;
 
         private Vector2 _rippleCenter = new Vector2(7.5f, 3.5f);
         private float _rippleAgeSeconds;
@@ -170,6 +177,10 @@ namespace BellRinger.Audio
             GUILayout.EndHorizontal();
             outputToHardware = GUILayout.Toggle(outputToHardware, "Hardware");
             showRuntimeControls = GUILayout.Toggle(showRuntimeControls, "Controls");
+            averageLightScale = Slider("Average", averageLightScale, 0.2f, 1f);
+            peakIntensityScale = Slider("Peak", peakIntensityScale, 1f, 2f);
+            peakContrast = Slider("Contrast", peakContrast, 1f, 3f);
+            litPixelScale = Slider("Lit Pixels", litPixelScale, 0.25f, 1f);
             GUILayout.EndArea();
 
             DrawPreview(new Rect(16f, 436f, 256f, 128f), preset);
@@ -191,7 +202,7 @@ namespace BellRinger.Audio
                     for (int x = 0; x < BellRingerAudioLedMapper.DisplayWidth; x++)
                     {
                         float alpha = EvaluatePixelAlpha(preset, x, y);
-                        GUI.color = preset.Color * Mathf.Clamp01(alpha * _currentBrightness / Mathf.Max(0.01f, preset.MaximumBrightness));
+                        GUI.color = bellColor * Mathf.Clamp01(alpha * _currentBrightness / Mathf.Max(0.01f, preset.MaximumBrightness));
                         GUI.DrawTexture(new Rect(rect.x + x * cellWidth + 1f, rect.y + y * cellHeight + 1f, cellWidth - 2f, cellHeight - 2f), Texture2D.whiteTexture);
                     }
                 }
@@ -237,13 +248,15 @@ namespace BellRinger.Audio
                 return;
             }
 
-            HardwareBridge.Instance.SendLedRipple(
+            HardwareBridge.Instance.SendLedPulseCore(
                 _rippleCenter.x,
                 _rippleCenter.y,
-                CurrentRadius(preset),
-                preset.RippleWidthPixels,
-                preset.Color,
-                _currentBrightness);
+                Mathf.Min(CurrentRadius(preset), bellMaxRadiusPixels),
+                bellCoreSizePixels * Mathf.Lerp(0.75f, 1.25f, litPixelScale),
+                Mathf.Max(0.45f, preset.RippleWidthPixels * litPixelScale),
+                bellColor,
+                _currentBrightness,
+                peakContrast);
         }
 
         private float EvaluateTargetBrightness(BellRingerLightTexturePreset preset)
@@ -256,9 +269,9 @@ namespace BellRinger.Audio
             float maximumBrightness = Mathf.Min(globalMaximumBrightness, preset.MaximumBrightness);
             float fadeIn = preset.FadeInSeconds <= 0f ? 1f : Mathf.Clamp01(_rippleAgeSeconds / preset.FadeInSeconds);
             float fadeOutDistance = Mathf.Max(0.01f, preset.RippleSpeedPixelsPerSecond * Mathf.Max(0.01f, preset.FadeOutSeconds));
-            float remainingDistance = (preset.MaxRadiusPixels + preset.RippleWidthPixels) - CurrentRadius(preset);
+            float remainingDistance = (bellMaxRadiusPixels + preset.RippleWidthPixels) - CurrentRadius(preset);
             float fadeOut = Mathf.Clamp01(remainingDistance / fadeOutDistance);
-            return maximumBrightness * _triggerIntensity * Mathf.Min(fadeIn, fadeOut);
+            return BellRingerLightStyle.ScaleLevel(maximumBrightness * _triggerIntensity * Mathf.Min(fadeIn, fadeOut), averageLightScale, peakIntensityScale);
         }
 
         private float EvaluatePixelAlpha(BellRingerLightTexturePreset preset, int x, int y)
@@ -269,13 +282,26 @@ namespace BellRinger.Audio
             }
 
             float distance = Vector2.Distance(new Vector2(x, y), _rippleCenter);
-            float halfWidth = preset.RippleWidthPixels * 0.5f;
-            return Mathf.Clamp01(1f - Mathf.Abs(distance - CurrentRadius(preset)) / Mathf.Max(0.05f, halfWidth));
+            float radius = Mathf.Min(CurrentRadius(preset), bellMaxRadiusPixels);
+            float coreSize = bellCoreSizePixels * Mathf.Lerp(0.75f, 1.25f, litPixelScale);
+            float halfWidth = Mathf.Max(0.05f, preset.RippleWidthPixels * litPixelScale * 0.5f);
+            float core = Mathf.Exp(-(distance * distance) / (2f * coreSize * coreSize));
+            float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth) * 0.75f;
+            return BellRingerLightStyle.ContrastAlpha(Mathf.Max(core, ring), peakContrast);
         }
 
         private float CurrentRadius(BellRingerLightTexturePreset preset)
         {
             return preset.StartRadiusPixels + _rippleAgeSeconds * preset.RippleSpeedPixelsPerSecond;
+        }
+
+        private static float Slider(string label, float value, float min, float max)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{label}: {value:0.00}", GUILayout.Width(90f));
+            float nextValue = GUILayout.HorizontalSlider(value, min, max, GUILayout.Width(150f));
+            GUILayout.EndHorizontal();
+            return nextValue;
         }
     }
 }

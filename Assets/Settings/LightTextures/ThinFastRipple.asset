@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ThinFastRipple
   m_EditorClassIdentifier: 
   displayName: Thin Fast Ripple
-  color: {r: 0.05, g: 1, b: 0.25, a: 1}
+  color: {r: 0.02, g: 1, b: 0.12, a: 1}
   maximumBrightness: 0.108
   fadeInSeconds: 0.03
   fadeOutSeconds: 0.12

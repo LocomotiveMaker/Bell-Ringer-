@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="148mm" viewBox="0 0 210 148">
+  <rect x="0" y="0" width="210" height="148" fill="white"/>
+  <text x="15" y="14" font-family="Arial, sans-serif" font-size="7" font-weight="bold">Bell Ringer Pad ArUco V-Board Assembly Schematic</text>
+  <text x="15" y="20" font-family="Arial, sans-serif" font-size="4.2">Use this only as a build guide. The print sheet controls true marker size.</text>
+
+  <text x="15" y="33" font-family="Arial, sans-serif" font-size="5" font-weight="bold">Top View</text>
+  <line x1="105" y1="88" x2="70" y2="53" stroke="black" stroke-width="1.2"/>
+  <line x1="105" y1="88" x2="140" y2="53" stroke="black" stroke-width="1.2"/>
+  <text x="58" y="50" font-family="Arial, sans-serif" font-size="4">LEFT FACE</text>
+  <text x="142" y="50" font-family="Arial, sans-serif" font-size="4">RIGHT FACE</text>
+  <text x="93" y="96" font-family="Arial, sans-serif" font-size="4">join edge</text>
+  <path d="M92 86 A18 18 0 0 1 118 86" fill="none" stroke="black" stroke-width="0.4"/>
+  <text x="105" y="77" text-anchor="middle" font-family="Arial, sans-serif" font-size="4">90 deg target</text>
+  <text x="15" y="108" font-family="Arial, sans-serif" font-size="4">Important: the V must open toward the camera, not toward the user.</text>
+
+  <text x="15" y="122" font-family="Arial, sans-serif" font-size="5" font-weight="bold">Mounting position</text>
+  <rect x="125" y="96" width="55" height="28" rx="3" ry="3" fill="none" stroke="black" stroke-width="0.8"/>
+  <rect x="146" y="90" width="13" height="8" rx="1.5" ry="1.5" fill="none" stroke="black" stroke-width="0.8"/>
+  <line x1="152.5" y1="90" x2="152.5" y2="66" stroke="black" stroke-width="0.8"/>
+  <line x1="152.5" y1="66" x2="132" y2="46" stroke="black" stroke-width="1"/>
+  <line x1="152.5" y1="66" x2="173" y2="46" stroke="black" stroke-width="1"/>
+  <text x="125" y="134" font-family="Arial, sans-serif" font-size="4">Attach the V-board centered on the front / charging edge of the pad.</text>
+</svg>

@@ -20,9 +20,9 @@ namespace BellRinger.Debug.Editor
 
             BellRingerLightTexturePreset[] presets =
             {
-                CreatePreset("GreenBellRipple", "Green Bell Ripple", new Color(0.125f, 1f, 0.375f, 1f), 0.096f, 0.05f, 0.2f, 5.0f, 1.35f),
-                CreatePreset("SoftWideRipple", "Soft Wide Ripple", new Color(0.2f, 0.95f, 0.55f, 1f), 0.072f, 0.12f, 0.32f, 3.5f, 2.2f),
-                CreatePreset("ThinFastRipple", "Thin Fast Ripple", new Color(0.05f, 1f, 0.25f, 1f), 0.108f, 0.03f, 0.12f, 7.25f, 0.95f),
+                CreatePreset("GreenBellRipple", "Green Bell Ripple", BellRingerLightStyle.BellGreen, 0.096f, 0.05f, 0.2f, 5.0f, 1.35f),
+                CreatePreset("SoftWideRipple", "Soft Wide Ripple", BellRingerLightStyle.BellGreen, 0.072f, 0.12f, 0.32f, 3.5f, 2.2f),
+                CreatePreset("ThinFastRipple", "Thin Fast Ripple", BellRingerLightStyle.BellGreen, 0.108f, 0.03f, 0.12f, 7.25f, 0.95f),
             };
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -174,7 +174,7 @@ namespace BellRinger.Debug.Editor
 
             serializedObject.FindProperty("selectedPresetIndex").intValue = 0;
             serializedObject.FindProperty("outputToHardware").boolValue = true;
-            serializedObject.FindProperty("showRuntimeControls").boolValue = true;
+            serializedObject.FindProperty("showRuntimeControls").boolValue = false;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -207,8 +207,21 @@ namespace BellRinger.Debug.Editor
 
             serializedObject.FindProperty("bellClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(BellClipPath);
             serializedObject.FindProperty("rainClip").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AudioClip>(RainClipPath);
-            serializedObject.FindProperty("wallNoiseBrightness").floatValue = 0.084f;
-            serializedObject.FindProperty("rainBrightness").floatValue = 0.078f;
+            serializedObject.FindProperty("showBoardPreview").boolValue = true;
+            serializedObject.FindProperty("bellColor").colorValue = BellRingerLightStyle.BellGreen;
+            serializedObject.FindProperty("wallNoiseColor").colorValue = BellRingerLightStyle.WallCyan;
+            serializedObject.FindProperty("wallNoiseBrightness").floatValue = 0.075f;
+            serializedObject.FindProperty("rainColor").colorValue = BellRingerLightStyle.RainDeepBlue;
+            serializedObject.FindProperty("rainBrightness").floatValue = 0.07f;
+            serializedObject.FindProperty("rainNeutralRows").floatValue = 2f;
+            serializedObject.FindProperty("rainLookDownRows").floatValue = 5f;
+            serializedObject.FindProperty("averageLightScale").floatValue = 0.58f;
+            serializedObject.FindProperty("peakContrast").floatValue = 1.85f;
+            serializedObject.FindProperty("litPixelScale").floatValue = 0.55f;
+            serializedObject.FindProperty("peakIntensityScale").floatValue = 1.25f;
+            serializedObject.FindProperty("bellMaxRadiusPixels").floatValue = 3.4f;
+            serializedObject.FindProperty("bellCoreSizePixels").floatValue = 0.58f;
+            serializedObject.FindProperty("previewBrightnessBoost").floatValue = 5f;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
     }

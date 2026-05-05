@@ -116,6 +116,23 @@ namespace BellRinger.Hardware
             SendCommand(command);
         }
 
+        public void SendLedField(Color color, float brightnessNormalized)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED field red={0} green={1} blue={2} level={3:0.00}",
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized));
+
+            SendCommand(command);
+        }
+
         public void SendLedRipple(float centerX, float centerY, float radiusPixels, float widthPixels, Color color, float brightnessNormalized)
         {
             int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
@@ -137,7 +154,7 @@ namespace BellRinger.Hardware
             SendCommand(command);
         }
 
-        public void SendLedWallNoise(float centerX, float centerY, float widthPixels, float heightPixels, Color color, float brightnessNormalized, int seed)
+        public void SendLedPulseCore(float centerX, float centerY, float radiusPixels, float coreSizePixels, float widthPixels, Color color, float brightnessNormalized, float contrast)
         {
             int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
             int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
@@ -145,7 +162,30 @@ namespace BellRinger.Hardware
 
             string command = string.Format(
                 CultureInfo.InvariantCulture,
-                "LED wall cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8}",
+                "LED pulse cx={0:0.00} cy={1:0.00} radius={2:0.00} core={3:0.00} width={4:0.00} red={5} green={6} blue={7} level={8:0.00} contrast={9:0.00}",
+                Mathf.Clamp(centerX, 0f, 15f),
+                Mathf.Clamp(centerY, 0f, 7f),
+                Mathf.Clamp(radiusPixels, 0f, 8f),
+                Mathf.Clamp(coreSizePixels, 0.1f, 4f),
+                Mathf.Clamp(widthPixels, 0.1f, 4f),
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized),
+                Mathf.Clamp(contrast, 0.1f, 5f));
+
+            SendCommand(command);
+        }
+
+        public void SendLedWallNoise(float centerX, float centerY, float widthPixels, float heightPixels, Color color, float brightnessNormalized, int seed, float density = 1f, float contrast = 1f)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED wall cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8} density={9:0.00} contrast={10:0.00}",
                 Mathf.Clamp(centerX, 0f, 15f),
                 Mathf.Clamp(centerY, 0f, 7f),
                 Mathf.Clamp(widthPixels, 0.1f, 16f),
@@ -154,7 +194,9 @@ namespace BellRinger.Hardware
                 green,
                 blue,
                 Mathf.Clamp01(brightnessNormalized),
-                seed);
+                seed,
+                Mathf.Clamp01(density),
+                Mathf.Clamp(contrast, 0.1f, 5f));
 
             SendCommand(command);
         }
@@ -167,7 +209,9 @@ namespace BellRinger.Hardware
             float centerY = 1.5f,
             float widthPixels = 16f,
             float heightPixels = 3f,
-            float phase = 0f)
+            float phase = 0f,
+            float density = 1f,
+            float contrast = 1f)
         {
             int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
             int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
@@ -175,7 +219,7 @@ namespace BellRinger.Hardware
 
             string command = string.Format(
                 CultureInfo.InvariantCulture,
-                "LED rain cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8} phase={9:0.00}",
+                "LED rain cx={0:0.00} cy={1:0.00} w={2:0.00} h={3:0.00} red={4} green={5} blue={6} level={7:0.00} seed={8} phase={9:0.00} density={10:0.00} contrast={11:0.00}",
                 Mathf.Clamp(centerX, 0f, 15f),
                 Mathf.Clamp(centerY, 0f, 7f),
                 Mathf.Clamp(widthPixels, 0.1f, 16f),
@@ -185,7 +229,48 @@ namespace BellRinger.Hardware
                 blue,
                 Mathf.Clamp01(brightnessNormalized),
                 seed,
-                Mathf.Max(0f, phase));
+                Mathf.Max(0f, phase),
+                Mathf.Clamp01(density),
+                Mathf.Clamp(contrast, 0.1f, 5f));
+
+            SendCommand(command);
+        }
+
+        public void SendLedTinnitus(
+            float centerX,
+            float centerY,
+            float coreSize,
+            float tearAmount,
+            float axisX,
+            float axisY,
+            Color color,
+            float brightnessNormalized,
+            int seed,
+            float instability,
+            float smearDecay,
+            float contrast = 1f)
+        {
+            int red = Mathf.Clamp(Mathf.RoundToInt(color.r * 255f), 0, 255);
+            int green = Mathf.Clamp(Mathf.RoundToInt(color.g * 255f), 0, 255);
+            int blue = Mathf.Clamp(Mathf.RoundToInt(color.b * 255f), 0, 255);
+
+            string command = string.Format(
+                CultureInfo.InvariantCulture,
+                "LED tinnitus cx={0:0.00} cy={1:0.00} core={2:0.00} tear={3:0.00} axisX={4:0.00} axisY={5:0.00} red={6} green={7} blue={8} level={9:0.00} seed={10} instability={11:0.00} smear={12:0.00} contrast={13:0.00}",
+                Mathf.Clamp(centerX, 0f, 15f),
+                Mathf.Clamp(centerY, 0f, 7f),
+                Mathf.Clamp(coreSize, 0.1f, 4f),
+                Mathf.Clamp(tearAmount, 0f, 8f),
+                Mathf.Clamp(axisX, -1f, 1f),
+                Mathf.Clamp(axisY, -1f, 1f),
+                red,
+                green,
+                blue,
+                Mathf.Clamp01(brightnessNormalized),
+                seed,
+                Mathf.Clamp01(instability),
+                Mathf.Clamp(smearDecay, 0.1f, 8f),
+                Mathf.Clamp(contrast, 0.1f, 5f));
 
             SendCommand(command);
         }

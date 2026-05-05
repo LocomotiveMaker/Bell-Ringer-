@@ -1,0 +1,23 @@
+{
+  "volume": 0.052,
+  "baseFrequency": 6627.497,
+  "beatFrequencyOffset": 10.013,
+  "pitchWobble": 0.016,
+  "glitchDensity": 0.455,
+  "roughness": 0.528,
+  "burstIntensity": 0.353,
+  "cleanseStability": 0.0,
+  "coreIntensity": 0.25,
+  "coreSize": 1.12,
+  "tearAmount": 5.0,
+  "jitter": 0.0,
+  "smearDecay": 1.92,
+  "pulseRate": 0.947,
+  "instability": 0.425,
+  "averageLightScale": 0.898,
+  "peakIntensityScale": 1.638,
+  "peakContrast": 1.309,
+  "litPixelScale": 0.25,
+  "tearAxisX": 1.0,
+  "tearAxisY": 0.0
+}

@@ -15,6 +15,12 @@ namespace BellRinger.Audio
         [SerializeField] private float brightnessFallPerSecond = 6f;
         [SerializeField] private float positionFollowPixelsPerSecond = 24f;
         [SerializeField] private float serialRefreshRate = 30f;
+        [SerializeField] private Color ledColor = BellRingerLightStyle.PadOrange;
+        [SerializeField] [Range(0.2f, 1f)] private float averageLightScale = 0.58f;
+        [SerializeField] [Range(1f, 3f)] private float peakContrast = 1.85f;
+        [SerializeField] [Range(0.25f, 1f)] private float litPixelScale = 0.55f;
+        [SerializeField] [Range(1f, 2f)] private float peakIntensityScale = 1.25f;
+        [SerializeField] [Range(0.2f, 1.4f)] private float coreSizePixels = 0.55f;
 
         private Vector2 _currentPixel = new Vector2(8f, 4f);
         private float _currentBrightness;
@@ -136,7 +142,8 @@ namespace BellRinger.Audio
                 return;
             }
 
-            int targetBrightness = Mathf.Clamp(Mathf.RoundToInt(_currentBrightness * 255f), 0, 255);
+            float styledBrightness = BellRingerLightStyle.ScaleLevel(_currentBrightness, averageLightScale, peakIntensityScale);
+            int targetBrightness = Mathf.Clamp(Mathf.RoundToInt(styledBrightness * 255f), 0, 255);
 
             if (targetBrightness <= 0)
             {
@@ -159,7 +166,9 @@ namespace BellRinger.Audio
                 return;
             }
 
-            hardwareBridge.SendLedDot(targetX, targetY, targetBrightness / 255f);
+            float coreSize = coreSizePixels * Mathf.Lerp(0.75f, 1.2f, litPixelScale);
+            float width = Mathf.Lerp(0.45f, 0.9f, litPixelScale);
+            hardwareBridge.SendLedPulseCore(targetX, targetY, 0f, coreSize, width, ledColor, targetBrightness / 255f, peakContrast);
             _lastSentX = targetX;
             _lastSentY = targetY;
             _lastSentBrightness = targetBrightness;

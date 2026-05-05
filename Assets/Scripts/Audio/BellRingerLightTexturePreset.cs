@@ -6,7 +6,7 @@ namespace BellRinger.Audio
     public sealed class BellRingerLightTexturePreset : ScriptableObject
     {
         [SerializeField] private string displayName = "Green Bell Ripple";
-        [SerializeField] private Color color = new Color(0.15f, 1f, 0.35f, 1f);
+        [SerializeField] private Color color = BellRingerLightStyle.BellGreen;
         [SerializeField] [Range(0f, 0.35f)] private float maximumBrightness = 0.16f;
         [SerializeField] private float fadeInSeconds = 0.05f;
         [SerializeField] private float fadeOutSeconds = 0.2f;

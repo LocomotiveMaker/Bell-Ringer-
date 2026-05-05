@@ -459,11 +459,20 @@ MonoBehaviour:
   mode: 0
   outputToHardware: 1
   showRuntimeControls: 1
-  serialRefreshRate: 18
-  maxDistance: 12
-  wallNoiseColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
-  wallNoiseBrightness: 0.084
-  rainColor: {r: 0.47, g: 0.67, b: 1, a: 1}
-  rainBrightness: 0.078
-  rainPatchRadiusMeters: 3.2
-  rainProjectionSamplesPerAxis: 11
+    showBoardPreview: 1
+    serialRefreshRate: 18
+    maxDistance: 12
+    bellColor: {r: 0.02, g: 1, b: 0.12, a: 1}
+    wallNoiseColor: {r: 0.02, g: 0.85, b: 1, a: 1}
+    wallNoiseBrightness: 0.075
+    rainColor: {r: 0.02, g: 0.08, b: 1, a: 1}
+    rainBrightness: 0.07
+    rainNeutralRows: 2
+    rainLookDownRows: 5
+    averageLightScale: 0.58
+    peakContrast: 1.85
+    litPixelScale: 0.55
+    peakIntensityScale: 1.25
+    bellMaxRadiusPixels: 3.4
+    bellCoreSizePixels: 0.58
+    previewBrightnessBoost: 5

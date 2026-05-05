@@ -747,3 +747,296 @@ The most important thing about `Bell Ringer` is not how many systems it contains
 It is whether the player feels that an invisible world became understandable through sound, light, and touch.
 
 When in doubt, cut complexity and strengthen the clarity of that one feeling.
+
+## 30. Current Implementation Snapshot
+
+Last updated: `2026-05-05`
+
+This section records the actual project structure implemented so far. It is descriptive, not aspirational. Earlier sections define the product direction; this section is the current engineering map.
+
+### 30.1 Top-Level Runtime Structure
+
+```text
+Assets/
+  Audios/
+    freesound_community-bicycle-bell-66855.mp3
+    rain/boons_freak-rain-sound-188158.mp3
+  Scenes/
+    SampleScene.unity
+    LightTextureTest.unity
+    AudioLabTest.unity
+  Scripts/
+    Audio/
+    Core/
+    Debug/
+    Gameplay/
+    Hardware/
+  Settings/
+    Audio/
+    LightTextures/
+arduino/
+  BellRingerSerialTemplate/BellRingerSerialTemplate.ino
+  README.md
+tools/
+  Build-ArduinoSketch.ps1
+  Build-DotNetProject.ps1
+  Create-LightTextureTestScene.ps1
+  Get-UnityRuntimeStatus.ps1
+  Install-ValidationTools.ps1
+  Invoke-UnityValidation.ps1
+  Launch-UnityProject.ps1
+  Resolve-UnityEditor.ps1
+  Show-ValidationTools.ps1
+  Test-ArduinoLedOutput.ps1
+  Use-ValidationTools.ps1
+```
+
+Generated folders such as `tools/.runtime/`, `Library/`, `Temp/`, `obj/`, and `Logs/` are not part of the authored structure.
+
+### 30.2 Runtime Bootstrap
+
+`Assets/Scripts/Core/BellRingerRuntimeBootstrap.cs` creates a persistent `BellRingerRuntime` GameObject before scene load.
+
+It attaches:
+
+- `HardwareBridge`: serial connection, simulation fallback, LED command output, telemetry parsing.
+- `BellRingerRuntimeStatusWriter`: writes runtime state to `Logs/runtime-status.json`.
+- `BellRingerDebugOverlay`: on-screen connection/status overlay, toggled by `F1`.
+- `BellRingerAudioDemoBootstrapper`: legacy sample audio bootstrap, skipped when the newer spatial light texture sample controller is present.
+
+Design consequence:
+
+- scenes do not need to manually contain a `HardwareBridge`
+- duplicate bridge components should not own or destroy scene roots
+- serial connection state is globally available through `HardwareBridge.Instance`
+
+### 30.3 Hardware Bridge
+
+Primary Unity class:
+
+- `Assets/Scripts/Hardware/HardwareBridge.cs`
+
+Current defaults:
+
+- serial port: `COM9`
+- baud rate: `115200`
+- environment override: `BELL_RINGER_SERIAL_PORT`
+- baud override: `BELL_RINGER_SERIAL_BAUD`
+- forced simulation override: `BELL_RINGER_SIMULATE_HARDWARE`
+
+Supported outbound commands:
+
+- `PING`
+- `LED clear`
+- `LED fill b=<0-255>`
+- `LED x=<0-15> y=<0-7> b=<0-255>`
+- `LED ripple cx=<x> cy=<y> radius=<r> width=<w> red=<r> green=<g> blue=<b> level=<0-1>`
+- `LED wall cx=<x> cy=<y> w=<w> h=<h> red=<r> green=<g> blue=<b> level=<0-1> seed=<n>`
+- `LED rain cx=<x> cy=<y> w=<w> h=<h> red=<r> green=<g> blue=<b> level=<0-1> seed=<n> phase=<seconds>`
+- `OUT vib=<0-1> lr=<r> lg=<g> lb=<b> pulse=<0-1>`
+
+Current status APIs:
+
+- `GetStatusSnapshot()` exposes connection mode, active port, available ports, last command, last error, telemetry, and last update time.
+- `BuildEnvironmentSummary()` is used for quick local diagnostics.
+
+### 30.4 Arduino Firmware
+
+Primary sketch:
+
+- `arduino/BellRingerSerialTemplate/BellRingerSerialTemplate.ino`
+
+Current board assumptions:
+
+- Arduino Uno-compatible target
+- baud `115200`
+- left WS2812B 8x8 matrix on `D6`
+- right WS2812B 8x8 matrix on `D7`
+- button on `D2`
+- Adafruit NeoPixel library
+
+Current LED coordinate model:
+
+- Unity sends one logical 16x8 display.
+- `x=0..7` maps to the left matrix.
+- `x=8..15` maps to the right matrix.
+- left matrix index: `(localX * 8) + localY`
+- right matrix index: `(7 - localX) * 8 + (7 - localY)`
+
+Current sketch behavior:
+
+- command parsing is line-based over serial
+- telemetry is currently disabled with `kEnableTelemetry = false`
+- `LED ripple` draws a ring around a logical coordinate
+- `LED wall` draws a rectangular gray glitch texture
+- `LED rain` draws a full-width lower screen rain band with animated blue droplets
+- every sketch change requires re-uploading `BellRingerSerialTemplate.ino`
+
+### 30.5 Light Texture System
+
+Primary classes:
+
+- `Assets/Scripts/Audio/BellRingerLightTexturePreset.cs`
+- `Assets/Scripts/Audio/BellRingerLightTexturePlayer.cs`
+- `Assets/Scripts/Debug/BellRingerLightTextureTestDriver.cs`
+- `Assets/Scripts/Debug/BellRingerSpatialLightTextureSampleController.cs`
+- `Assets/Scripts/Debug/Editor/BellRingerLightTextureSceneBuilder.cs`
+
+Current preset assets:
+
+- `Assets/Settings/LightTextures/GreenBellRipple.asset`
+- `Assets/Settings/LightTextures/SoftWideRipple.asset`
+- `Assets/Settings/LightTextures/ThinFastRipple.asset`
+
+Implemented light texture modes:
+
+- `Bell Point`: a moving point sound source that emits green ripple light from the source direction.
+- `Wall Noise`: a gray rectangular glitch area projected from a wall object into the 16x8 board.
+- `Rain Floor`: a full-width lower screen blue rain band; looking upward suppresses it, looking downward increases its height up to about five rows.
+
+Current tuning:
+
+- bell, wall, and rain brightness have been reduced from earlier test values to keep headset output conservative
+- rain color is tuned toward deeper blue
+- the Unity board preview applies a visual boost so low hardware brightness remains visible on monitor
+
+Important design rule:
+
+- the Unity preview is not a separate effect; it should represent the intended 16x8 board output as closely as possible while using a display-only brightness multiplier.
+
+### 30.6 Audio System
+
+Primary classes:
+
+- `Assets/Scripts/Audio/BellRingerAudioBus.cs`
+- `Assets/Scripts/Audio/BellRingerAudioSourcePreset.cs`
+- `Assets/Scripts/Audio/BellRingerAudioPresetApplier.cs`
+- `Assets/Scripts/Audio/BellRingerProceduralToneSource.cs`
+- `Assets/Scripts/Audio/BellRingerSpatialAudioLedController.cs`
+- `Assets/Scripts/Audio/BellRingerSpatialSoundTarget.cs`
+- `Assets/Scripts/Debug/BellRingerAudioLabController.cs`
+- `Assets/Scripts/Debug/Editor/BellRingerAudioLabSceneBuilder.cs`
+
+Current audio preset assets:
+
+- `Assets/Settings/Audio/Bell3D.asset`
+- `Assets/Settings/Audio/MuffledFarBell.asset`
+- `Assets/Settings/Audio/GeneratedTone3D.asset`
+- `Assets/Settings/Audio/Flat2DReference.asset`
+
+Current audio clips in active use:
+
+- bell test: `Assets/Audios/freesound_community-bicycle-bell-66855.mp3`
+- rain test: `Assets/Audios/rain/boons_freak-rain-sound-188158.mp3`
+
+Implemented audio lab features:
+
+- compare 3D bell, muffled far bell, and flat 2D reference
+- adjust master, bell bus, and generated tone gain
+- compare low-pass/distant sound texture
+- generate procedural tones at selected frequencies
+- switch procedural tone waveform between sine, triangle, square, and saw
+- display available Unity spatializer plugins
+
+Current HRTF status:
+
+- no required spatializer plugin is assumed to be installed
+- spatializer toggles are test-facing only until a real plugin is configured
+
+### 30.7 Scenes
+
+`Assets/Scenes/SampleScene.unity`
+
+- current integrated spatial light texture sample scene
+- contains `BellRingerSpatialLightTextureDemo`
+- runtime creates sample bell, wall, and rain floor objects
+- supports WASD movement and right mouse look through `BellRingerSimpleMoveLookController`
+- includes on-screen `Spatial Light Texture` controls
+- includes `LED Board Preview` to show expected 16x8 board output
+
+`Assets/Scenes/LightTextureTest.unity`
+
+- focused light texture testing scene
+- now includes wall/rain/bell mode switching through the spatial light texture sample controller
+- older isolated ripple-only UI is disabled to reduce UI conflict
+- intended for quick light texture tuning without full gameplay
+
+`Assets/Scenes/AudioLabTest.unity`
+
+- focused audio and procedural frequency testing scene
+- independent from hardware LED testing
+- used to compare spatial audio settings, filters, generated tones, and possible spatializer behavior
+
+### 30.8 Debug and Validation Tools
+
+Runtime debug tools:
+
+- `BellRingerDebugOverlay`: connection state, port, last command, telemetry, last error
+- `BellRingerRuntimeStatusWriter`: status JSON for external inspection
+- `BellRingerHardwareConnectionProbe`: hardware connection probing behavior from earlier tests
+- `LED Board Preview`: current intended board output in Unity GUI
+
+Editor/build tooling:
+
+- `tools/Build-DotNetProject.ps1`: builds Unity-generated C# projects with local .NET runtime
+- `tools/Build-ArduinoSketch.ps1`: compiles `BellRingerSerialTemplate.ino`
+- `tools/Create-LightTextureTestScene.ps1`: recreates the light texture test scene through Unity editor automation
+- `tools/Get-UnityRuntimeStatus.ps1`: reads runtime status JSON
+- `tools/Install-ValidationTools.ps1`: installs local validation dependencies
+- `tools/Show-ValidationTools.ps1`: prints configured validation runtime paths
+- `tools/Test-ArduinoLedOutput.ps1`: sends direct LED test commands to the Arduino
+
+Current local validation dependencies:
+
+- .NET SDK installed under `tools/.runtime/dotnet`
+- `arduino-cli` installed under `tools/.runtime/arduino-cli`
+- Arduino AVR core installed locally
+- Adafruit NeoPixel library installed locally
+
+### 30.9 Tests
+
+Current edit-mode test file:
+
+- `Assets/Tests/EditMode/HardwareBridgeCommandTests.cs`
+
+Covered command formatting:
+
+- `LED fill`
+- `LED ripple`
+- `LED wall`
+- `LED rain`
+
+These tests validate command construction, not physical LED output.
+
+### 30.10 Current Development State
+
+Working now:
+
+- Unity can connect to Arduino over `COM9` at `115200`.
+- Unity can send LED fill, dot, ripple, wall, and rain commands.
+- Arduino can render a logical 16x8 display across two 8x8 WS2812B matrices.
+- Bell, wall, and rain light textures can be selected in test scenes.
+- Board preview exists to reduce mismatch between intended output and perceived hardware output.
+- Audio lab exists for spatial audio and procedural tone experiments.
+- Local .NET and Arduino validation scripts are available.
+
+Still provisional:
+
+- MPU9250 head/controller sensor integration is not implemented in the current Unity-Arduino loop.
+- vibration output protocol exists at command level but final motor driving behavior is not yet proven.
+- HRTF spatialization is not active until a Unity spatializer plugin is installed/configured.
+- brightness/color tuning must continue on physical hardware because LED power and diffusion can change perceived color.
+- rain and wall light textures are still experimental and should be treated as tuning targets, not final art.
+
+### 30.11 Recommended Next Implementation Order
+
+Immediate next steps:
+
+1. stabilize physical LED perception with the board preview open
+2. confirm rain/wall/bell patterns on headset hardware after every sketch upload
+3. integrate MPU9250 telemetry into Arduino output
+4. map head orientation to Unity listener orientation
+5. map controller orientation to scan/cleanse input
+6. implement one complete search-to-cleanse interaction loop
+
+Do not expand content until steps 1-6 are stable.

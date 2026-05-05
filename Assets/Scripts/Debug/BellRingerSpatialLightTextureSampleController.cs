@@ -21,14 +21,23 @@ namespace BellRinger.Debug
         [SerializeField] private BellRingerSpatialLightSampleMode mode = BellRingerSpatialLightSampleMode.BellPoint;
         [SerializeField] private bool outputToHardware = true;
         [SerializeField] private bool showRuntimeControls = true;
+        [SerializeField] private bool showBoardPreview = true;
         [SerializeField] private float serialRefreshRate = 18f;
         [SerializeField] private float maxDistance = 12f;
-        [SerializeField] private Color wallNoiseColor = new Color(0.55f, 0.55f, 0.55f, 1f);
-        [SerializeField] [Range(0f, 0.35f)] private float wallNoiseBrightness = 0.084f;
-        [SerializeField] private Color rainColor = new Color(0.47f, 0.67f, 1f, 1f);
-        [SerializeField] [Range(0f, 0.35f)] private float rainBrightness = 0.078f;
-        [SerializeField] private float rainPatchRadiusMeters = 3.2f;
-        [SerializeField] private int rainProjectionSamplesPerAxis = 11;
+        [SerializeField] private Color bellColor = BellRingerLightStyle.BellGreen;
+        [SerializeField] private Color wallNoiseColor = BellRingerLightStyle.WallCyan;
+        [SerializeField] [Range(0f, 0.35f)] private float wallNoiseBrightness = 0.075f;
+        [SerializeField] private Color rainColor = BellRingerLightStyle.RainDeepBlue;
+        [SerializeField] [Range(0f, 0.35f)] private float rainBrightness = 0.07f;
+        [SerializeField] private float rainNeutralRows = 2f;
+        [SerializeField] private float rainLookDownRows = 5f;
+        [SerializeField] [Range(0.2f, 1f)] private float averageLightScale = 0.58f;
+        [SerializeField] [Range(1f, 3f)] private float peakContrast = 1.85f;
+        [SerializeField] [Range(0.25f, 1f)] private float litPixelScale = 0.55f;
+        [SerializeField] [Range(1f, 2f)] private float peakIntensityScale = 1.25f;
+        [SerializeField] [Range(2f, 4f)] private float bellMaxRadiusPixels = 3.4f;
+        [SerializeField] [Range(0.2f, 1.4f)] private float bellCoreSizePixels = 0.58f;
+        [SerializeField] private float previewBrightnessBoost = 5f;
 
         private readonly float[,] _previewAlpha = new float[BellRingerAudioLedMapper.DisplayWidth, BellRingerAudioLedMapper.DisplayHeight];
         private Transform _listenerTransform;
@@ -88,7 +97,7 @@ namespace BellRinger.Debug
                 return;
             }
 
-            GUILayout.BeginArea(new Rect(312f, 252f, 340f, 292f), "Spatial Light Texture", GUI.skin.window);
+            GUILayout.BeginArea(new Rect(312f, 388f, 360f, 372f), "Spatial Light Texture", GUI.skin.window);
             GUILayout.Label($"Mode: {mode}");
             GUILayout.Label($"Preset: {(ActivePreset == null ? "(none)" : ActivePreset.DisplayName)}");
 
@@ -124,9 +133,18 @@ namespace BellRinger.Debug
             GUILayout.EndHorizontal();
 
             outputToHardware = GUILayout.Toggle(outputToHardware, "Hardware Output");
-            GUILayout.Label("WASD move, right mouse drag look. Wall/Rain are area textures, not point textures.");
-            DrawPreview(new Rect(16f, 146f, 256f, 128f));
+            showBoardPreview = GUILayout.Toggle(showBoardPreview, "Board Preview");
+            averageLightScale = Slider("Average", averageLightScale, 0.2f, 1f);
+            peakIntensityScale = Slider("Peak", peakIntensityScale, 1f, 2f);
+            peakContrast = Slider("Contrast", peakContrast, 1f, 3f);
+            litPixelScale = Slider("Lit Pixels", litPixelScale, 0.25f, 1f);
+            GUILayout.Label("WASD move, right mouse drag look. Rain is a full-width lower screen band.");
             GUILayout.EndArea();
+
+            if (showBoardPreview)
+            {
+                DrawBoardPreviewWindow(new Rect(16f, 388f, 292f, 190f));
+            }
         }
 
         private void SelectPreset(int nextIndex)
@@ -188,7 +206,7 @@ namespace BellRinger.Debug
             bell.name = "Sample Light Bell Point";
             bell.transform.position = new Vector3(0f, 1.45f, 4f);
             bell.transform.localScale = Vector3.one * 0.4f;
-            SetMaterialColor(bell, new Color(0.12f, 1f, 0.35f, 1f));
+            SetMaterialColor(bell, bellColor);
 
             _bellTransform = bell.transform;
             _bellSource = bell.AddComponent<AudioSource>();
@@ -206,9 +224,9 @@ namespace BellRinger.Debug
         {
             GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
             wall.name = "Sample Glitch Wall Plane";
-            wall.transform.position = new Vector3(-3.2f, 1.8f, 4.5f);
+            wall.transform.position = new Vector3(-2.5f, 1.7f, 4.2f);
             wall.transform.rotation = Quaternion.Euler(0f, 28f, 0f);
-            wall.transform.localScale = new Vector3(4.5f, 2.6f, 0.08f);
+            wall.transform.localScale = new Vector3(5.8f, 3.4f, 0.08f);
             SetMaterialColor(wall, new Color(0.22f, 0.22f, 0.22f, 1f));
 
             _wallTransform = wall.transform;
@@ -327,12 +345,15 @@ namespace BellRinger.Debug
                 return;
             }
 
-            float radius = preset.StartRadiusPixels + Mathf.Repeat(Time.unscaledTime * preset.RippleSpeedPixelsPerSecond, Mathf.Max(0.1f, preset.MaxRadiusPixels));
-            DrawPreviewRipple(dotFrame.x, dotFrame.y, radius, preset.RippleWidthPixels, dotFrame.brightnessNormalized);
+            float radius = Mathf.Repeat(Time.unscaledTime * preset.RippleSpeedPixelsPerSecond, Mathf.Max(0.1f, bellMaxRadiusPixels));
+            float level = EffectiveLevel(dotFrame.brightnessNormalized);
+            float coreSize = bellCoreSizePixels * Mathf.Lerp(0.75f, 1.25f, litPixelScale);
+            float width = Mathf.Max(0.45f, preset.RippleWidthPixels * litPixelScale);
+            DrawPreviewBellPulse(dotFrame.x, dotFrame.y, radius, coreSize, width, level);
 
             if (outputToHardware && HardwareBridge.Instance != null)
             {
-                HardwareBridge.Instance.SendLedRipple(dotFrame.x, dotFrame.y, radius, preset.RippleWidthPixels, preset.Color, dotFrame.brightnessNormalized);
+                HardwareBridge.Instance.SendLedPulseCore(dotFrame.x, dotFrame.y, radius, coreSize, width, bellColor, level, peakContrast);
             }
         }
 
@@ -345,18 +366,19 @@ namespace BellRinger.Debug
             }
 
             int seed = Mathf.FloorToInt(Time.unscaledTime * 42f);
-            float level = Mathf.Min(wallNoiseBrightness, preset.MaximumBrightness) * Mathf.Clamp01(distanceBrightness);
-            DrawPreviewWall(centerX, centerY, width, height, level, seed);
+            float level = EffectiveLevel(Mathf.Min(wallNoiseBrightness, preset.MaximumBrightness) * Mathf.Clamp01(distanceBrightness));
+            float density = BellRingerLightStyle.DensityFromLitScale(litPixelScale);
+            DrawPreviewWall(centerX, centerY, width, height, level, seed, density);
 
             if (outputToHardware && HardwareBridge.Instance != null)
             {
-                HardwareBridge.Instance.SendLedWallNoise(centerX, centerY, width, height, wallNoiseColor, level, seed);
+                HardwareBridge.Instance.SendLedWallNoise(centerX, centerY, width, height, wallNoiseColor, level, seed, density, peakContrast);
             }
         }
 
         private void SendRainFloor()
         {
-            if (!TryProjectRainPatch(out float centerX, out float centerY, out float width, out float height, out float visibility))
+            if (!TryProjectRainBand(out float centerX, out float centerY, out float width, out float height, out float visibility))
             {
                 ClearHardware();
                 return;
@@ -364,97 +386,42 @@ namespace BellRinger.Debug
 
             int seed = Mathf.FloorToInt(Time.unscaledTime * 0.35f);
             float phase = Time.unscaledTime;
-            float level = rainBrightness * visibility;
-            DrawPreviewRain(centerX, centerY, width, height, level, seed, phase);
+            float level = EffectiveLevel(rainBrightness * visibility);
+            float density = BellRingerLightStyle.DensityFromLitScale(litPixelScale);
+            float minimalHeight = Mathf.Max(0.6f, height * Mathf.Lerp(0.55f, 1f, litPixelScale));
+            centerY = Mathf.Clamp((minimalHeight - 1f) * 0.5f, 0f, 7f);
+            DrawPreviewRain(centerX, centerY, width, minimalHeight, level, seed, phase, density);
 
             if (outputToHardware && HardwareBridge.Instance != null)
             {
-                HardwareBridge.Instance.SendLedRain(rainColor, level, seed, centerX, centerY, width, height, phase);
+                HardwareBridge.Instance.SendLedRain(rainColor, level, seed, centerX, centerY, width, minimalHeight, phase, density, peakContrast);
             }
         }
 
-        private bool TryProjectRainPatch(out float centerX, out float centerY, out float width, out float height, out float visibility)
+        private bool TryProjectRainBand(out float centerX, out float centerY, out float width, out float height, out float visibility)
         {
             centerX = 7.5f;
-            centerY = 1f;
+            centerY = 0.5f;
             width = 16f;
             height = 0f;
             visibility = 0f;
 
-            Camera camera = _listenerTransform == null ? null : _listenerTransform.GetComponent<Camera>();
-            if (camera == null)
-            {
-                camera = Camera.main;
-            }
-
-            if (camera == null)
-            {
-                return false;
-            }
-
             float forwardY = _listenerTransform.forward.y;
-            float skySuppression = Mathf.Clamp01(1f - Mathf.InverseLerp(0.2f, 0.75f, forwardY));
+            float skySuppression = Mathf.Clamp01(1f - Mathf.InverseLerp(0.18f, 0.7f, forwardY));
             if (skySuppression <= 0.01f)
             {
                 return false;
             }
 
             float lookDown = Mathf.Clamp01(-forwardY);
-            float maxRows = Mathf.Lerp(3f, 5f, lookDown) * skySuppression;
-            if (maxRows < 0.5f)
+            height = Mathf.Lerp(Mathf.Max(1f, rainNeutralRows), Mathf.Max(rainNeutralRows, rainLookDownRows), lookDown) * skySuppression;
+            if (height < 0.6f)
             {
                 return false;
             }
 
-            int samplesPerAxis = Mathf.Clamp(rainProjectionSamplesPerAxis, 5, 17);
-            float radius = Mathf.Max(0.5f, rainPatchRadiusMeters);
-            Vector3 center = new Vector3(_listenerTransform.position.x, 0f, _listenerTransform.position.z);
-
-            float minX = 15f;
-            float maxX = 0f;
-            float minY = 7f;
-            float maxY = 0f;
-            int mappedCount = 0;
-
-            for (int z = 0; z < samplesPerAxis; z++)
-            {
-                float normalizedZ = samplesPerAxis == 1 ? 0f : Mathf.Lerp(-1f, 1f, z / (samplesPerAxis - 1f));
-                for (int x = 0; x < samplesPerAxis; x++)
-                {
-                    float normalizedX = samplesPerAxis == 1 ? 0f : Mathf.Lerp(-1f, 1f, x / (samplesPerAxis - 1f));
-                    if ((normalizedX * normalizedX) + (normalizedZ * normalizedZ) > 1f)
-                    {
-                        continue;
-                    }
-
-                    Vector3 worldPoint = center + new Vector3(normalizedX * radius, 0f, normalizedZ * radius);
-                    Vector3 viewportPoint = camera.WorldToViewportPoint(worldPoint);
-                    if (viewportPoint.z <= camera.nearClipPlane || viewportPoint.x < 0f || viewportPoint.x > 1f || viewportPoint.y < 0f || viewportPoint.y > 1f)
-                    {
-                        continue;
-                    }
-
-                    float ledX = viewportPoint.x * (BellRingerAudioLedMapper.DisplayWidth - 1);
-                    float ledY = viewportPoint.y * (BellRingerAudioLedMapper.DisplayHeight - 1);
-                    minX = Mathf.Min(minX, ledX);
-                    maxX = Mathf.Max(maxX, ledX);
-                    minY = Mathf.Min(minY, ledY);
-                    maxY = Mathf.Max(maxY, ledY);
-                    mappedCount++;
-                }
-            }
-
-            if (mappedCount == 0)
-            {
-                return false;
-            }
-
-            centerX = (minX + maxX) * 0.5f;
-            width = Mathf.Clamp(maxX - minX + 1.5f, 2f, 16f);
-
-            float visibleHeight = Mathf.Min(maxY - minY + 1.5f, maxRows);
-            centerY = Mathf.Clamp(minY + visibleHeight * 0.5f, 0f, 7f);
-            height = Mathf.Clamp(visibleHeight, 0.5f, 5f);
+            height = Mathf.Clamp(height, 0.6f, 5f);
+            centerY = Mathf.Clamp((height - 1f) * 0.5f, 0f, 7f);
             visibility = Mathf.Clamp01(skySuppression * Mathf.Lerp(0.72f, 1f, lookDown));
             return visibility > 0.01f && height > 0.25f;
         }
@@ -466,6 +433,17 @@ namespace BellRinger.Debug
             width = 1f;
             height = 1f;
             brightness = 0f;
+
+            Camera camera = _listenerTransform == null ? null : _listenerTransform.GetComponent<Camera>();
+            if (camera == null)
+            {
+                camera = Camera.main;
+            }
+
+            if (camera == null)
+            {
+                return false;
+            }
 
             Vector3 right = _wallTransform.right * (_wallTransform.localScale.x * 0.5f);
             Vector3 up = _wallTransform.up * (_wallTransform.localScale.y * 0.5f);
@@ -487,27 +465,18 @@ namespace BellRinger.Debug
 
             for (int i = 0; i < samples.Length; i++)
             {
-                if (!BellRingerAudioLedMapper.TryMap(
-                    _listenerTransform,
-                    samples[i],
-                    0.3f,
-                    maxDistance,
-                    1f,
-                    1f,
-                    1f,
-                    0.01f,
-                    110f,
-                    55f,
-                    out BellRingerLedDotFrame frame))
+                Vector3 viewportPoint = camera.WorldToViewportPoint(samples[i]);
+                if (viewportPoint.z <= camera.nearClipPlane || viewportPoint.x < -0.2f || viewportPoint.x > 1.2f || viewportPoint.y < -0.2f || viewportPoint.y > 1.2f)
                 {
                     continue;
                 }
 
-                minX = Mathf.Min(minX, frame.x);
-                maxX = Mathf.Max(maxX, frame.x);
-                minY = Mathf.Min(minY, frame.y);
-                maxY = Mathf.Max(maxY, frame.y);
-                brightness = Mathf.Max(brightness, frame.brightnessNormalized);
+                float ledX = Mathf.Clamp01(viewportPoint.x) * (BellRingerAudioLedMapper.DisplayWidth - 1);
+                float ledY = Mathf.Clamp01(viewportPoint.y) * (BellRingerAudioLedMapper.DisplayHeight - 1);
+                minX = Mathf.Min(minX, ledX);
+                maxX = Mathf.Max(maxX, ledX);
+                minY = Mathf.Min(minY, ledY);
+                maxY = Mathf.Max(maxY, ledY);
                 mappedCount++;
             }
 
@@ -517,9 +486,11 @@ namespace BellRinger.Debug
             }
 
             centerX = (minX + maxX) * 0.5f;
-            centerY = (minY + maxY) * 0.5f;
-            width = Mathf.Clamp(maxX - minX + 2f, 1.5f, 16f);
-            height = Mathf.Clamp(maxY - minY + 1.5f, 1.5f, 8f);
+            width = Mathf.Clamp(maxX - minX + 2.5f, 3f, 16f);
+            height = Mathf.Clamp(maxY - minY + 2.5f, 3.5f, 8f);
+            centerY = Mathf.Clamp((height - 1f) * 0.5f, 0f, 7f);
+            float distance = Vector3.Distance(_listenerTransform.position, _wallTransform.position);
+            brightness = 1f - Mathf.InverseLerp(1f, maxDistance, distance);
             return true;
         }
 
@@ -529,6 +500,15 @@ namespace BellRinger.Debug
             {
                 HardwareBridge.Instance.ClearLedDisplay();
             }
+        }
+
+        private void DrawBoardPreviewWindow(Rect rect)
+        {
+            GUILayout.BeginArea(rect, "LED Board Preview", GUI.skin.window);
+            GUI.Label(new Rect(16f, 22f, 260f, 20f), $"{mode} / UI x{Mathf.Max(1f, previewBrightnessBoost):0.0} boost");
+            DrawPreview(new Rect(16f, 44f, 256f, 128f));
+            GUI.Label(new Rect(16f, 170f, 260f, 20f), "Bottom row in preview = bottom row on board.");
+            GUILayout.EndArea();
         }
 
         private void DrawPreview(Rect rect)
@@ -543,13 +523,13 @@ namespace BellRinger.Debug
                 ? wallNoiseColor
                 : mode == BellRingerSpatialLightSampleMode.RainFloor
                     ? rainColor
-                    : ActivePreset == null ? Color.white : ActivePreset.Color;
+                    : bellColor;
 
             for (int y = 0; y < BellRingerAudioLedMapper.DisplayHeight; y++)
             {
                 for (int x = 0; x < BellRingerAudioLedMapper.DisplayWidth; x++)
                 {
-                    GUI.color = color * Mathf.Clamp01(_previewAlpha[x, y]);
+                    GUI.color = color * Mathf.Clamp01(_previewAlpha[x, y] * Mathf.Max(1f, previewBrightnessBoost));
                     GUI.DrawTexture(new Rect(rect.x + x * cellWidth + 1f, rect.y + (7 - y) * cellHeight + 1f, cellWidth - 2f, cellHeight - 2f), Texture2D.whiteTexture);
                 }
             }
@@ -568,7 +548,7 @@ namespace BellRinger.Debug
             }
         }
 
-        private void DrawPreviewRipple(float centerX, float centerY, float radius, float rippleWidth, float level)
+        private void DrawPreviewBellPulse(float centerX, float centerY, float radius, float coreSize, float rippleWidth, float level)
         {
             float halfWidth = Mathf.Max(0.05f, rippleWidth * 0.5f);
             for (int y = 0; y < BellRingerAudioLedMapper.DisplayHeight; y++)
@@ -576,12 +556,14 @@ namespace BellRinger.Debug
                 for (int x = 0; x < BellRingerAudioLedMapper.DisplayWidth; x++)
                 {
                     float distance = Vector2.Distance(new Vector2(x, y), new Vector2(centerX, centerY));
-                    _previewAlpha[x, y] = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth) * level;
+                    float core = Mathf.Exp(-(distance * distance) / (2f * coreSize * coreSize));
+                    float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth) * 0.75f;
+                    _previewAlpha[x, y] = BellRingerLightStyle.ContrastAlpha(Mathf.Max(core, ring), peakContrast) * level;
                 }
             }
         }
 
-        private void DrawPreviewWall(float centerX, float centerY, float width, float height, float level, int seed)
+        private void DrawPreviewWall(float centerX, float centerY, float width, float height, float level, int seed, float density)
         {
             float halfWidth = width * 0.5f;
             float halfHeight = height * 0.5f;
@@ -596,13 +578,21 @@ namespace BellRinger.Debug
                         continue;
                     }
 
-                    float edge = Mathf.Clamp01((halfWidth - dx) / 1.5f) * Mathf.Clamp01((halfHeight - dy) / 1.5f);
-                    _previewAlpha[x, y] = Hash01(seed, x, y) * edge * level;
+                    float edgeX = Mathf.Clamp01((halfWidth - dx) / 1.5f);
+                    float edgeY = Mathf.Clamp01(((centerY + halfHeight) - y) / 1.5f);
+                    float sparse = Hash01(seed + 71, x, y);
+                    if (sparse > density)
+                    {
+                        continue;
+                    }
+
+                    float glitch = 0.25f + Hash01(seed, x, y) * 0.75f;
+                    _previewAlpha[x, y] = BellRingerLightStyle.ContrastAlpha(glitch, peakContrast) * edgeX * edgeY * level;
                 }
             }
         }
 
-        private void DrawPreviewRain(float centerX, float centerY, float width, float height, float level, int seed, float phase)
+        private void DrawPreviewRain(float centerX, float centerY, float width, float height, float level, int seed, float phase, float density)
         {
             float halfWidth = width * 0.5f;
             float halfHeight = height * 0.5f;
@@ -618,7 +608,8 @@ namespace BellRinger.Debug
                     }
 
                     float alpha = 0f;
-                    for (int drop = 0; drop < 7; drop++)
+                    int dropCount = Mathf.Clamp(Mathf.RoundToInt(2f + density * 5f), 2, 7);
+                    for (int drop = 0; drop < dropCount; drop++)
                     {
                         float dropX = Mathf.Lerp(centerX - halfWidth, centerX + halfWidth, Hash01(seed + drop * 19, 3, 11));
                         float dropY = Mathf.Lerp(centerY - halfHeight, centerY + halfHeight, Hash01(seed + drop * 23, 7, 5));
@@ -627,10 +618,16 @@ namespace BellRinger.Debug
                         alpha = Mathf.Max(alpha, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / 1.15f)));
                     }
 
-                    float edge = Mathf.Clamp01((halfWidth - dxArea) / 1.5f) * Mathf.Clamp01((halfHeight - dyArea) / 1.25f);
-                    _previewAlpha[x, y] = alpha * edge * level;
+                    float edgeX = width >= 15.9f ? 1f : Mathf.Clamp01((halfWidth - dxArea) / 1.5f);
+                    float edgeY = Mathf.Clamp01(((centerY + halfHeight) - y) / 1.25f);
+                    _previewAlpha[x, y] = BellRingerLightStyle.ContrastAlpha(alpha, peakContrast) * edgeX * edgeY * level;
                 }
             }
+        }
+
+        private float EffectiveLevel(float baseLevel)
+        {
+            return BellRingerLightStyle.ScaleLevel(baseLevel, averageLightScale, peakIntensityScale);
         }
 
         private void OnWallNoiseRead(float[] data)
@@ -672,6 +669,15 @@ namespace BellRinger.Debug
             {
                 renderer.sharedMaterial = new Material(Shader.Find("Standard")) { color = color };
             }
+        }
+
+        private static float Slider(string label, float value, float min, float max)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{label}: {value:0.00}", GUILayout.Width(110f));
+            float nextValue = GUILayout.HorizontalSlider(value, min, max, GUILayout.Width(200f));
+            GUILayout.EndHorizontal();
+            return nextValue;
         }
     }
 }

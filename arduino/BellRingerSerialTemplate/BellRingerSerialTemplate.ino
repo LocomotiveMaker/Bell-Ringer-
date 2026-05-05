@@ -67,14 +67,20 @@ void handleCommand(const String& command) {
     clearMatrices();
     showMatrices();
     Serial.println("ACK led_clear");
+  } else if (command.startsWith("LED pulse")) {
+    handleLedPulseCommand(command);
   } else if (command.startsWith("LED ripple")) {
     handleLedRippleCommand(command);
   } else if (command.startsWith("LED wall")) {
     handleLedWallCommand(command);
   } else if (command.startsWith("LED rain")) {
     handleLedRainCommand(command);
+  } else if (command.startsWith("LED tinnitus")) {
+    handleLedTinnitusCommand(command);
   } else if (command.startsWith("LED fill")) {
     handleLedFillCommand(command);
+  } else if (command.startsWith("LED field")) {
+    handleLedFieldCommand(command);
   } else if (command.startsWith("LED ")) {
     handleLedCommand(command);
   } else if (command.startsWith("OUT ")) {
@@ -162,6 +168,39 @@ void handleLedFillCommand(const String& command) {
   Serial.println("ACK led_fill");
 }
 
+void handleLedFieldCommand(const String& command) {
+  int red = 255;
+  int green = 255;
+  int blue = 255;
+  float level = 0.0f;
+
+  if (!tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+  level = constrain(level, 0.0f, 1.0f);
+
+  uint32_t color = leftMatrix.Color(
+    constrain(static_cast<int>(red * level), 0, 255),
+    constrain(static_cast<int>(green * level), 0, 255),
+    constrain(static_cast<int>(blue * level), 0, 255));
+
+  for (int i = 0; i < kPixelsPerMatrix; i++) {
+    leftMatrix.setPixelColor(i, color);
+    rightMatrix.setPixelColor(i, color);
+  }
+
+  showMatrices();
+  Serial.println("ACK led_field");
+}
+
 void handleLedRippleCommand(const String& command) {
   float centerX = 7.5f;
   float centerY = 3.5f;
@@ -213,12 +252,74 @@ void handleLedRippleCommand(const String& command) {
   Serial.println("ACK led_ripple");
 }
 
+void handleLedPulseCommand(const String& command) {
+  float centerX = 7.5f;
+  float centerY = 3.5f;
+  float radius = 0.0f;
+  float core = 0.65f;
+  float width = 1.0f;
+  float level = 0.0f;
+  float contrast = 1.0f;
+  int red = 0;
+  int green = 255;
+  int blue = 64;
+
+  if (!tryParseFloat(command, "cx=", centerX) ||
+      !tryParseFloat(command, "cy=", centerY) ||
+      !tryParseFloat(command, "radius=", radius) ||
+      !tryParseFloat(command, "core=", core) ||
+      !tryParseFloat(command, "width=", width) ||
+      !tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  tryParseOptionalFloat(command, "contrast=", contrast);
+
+  centerX = constrain(centerX, 0.0f, 15.0f);
+  centerY = constrain(centerY, 0.0f, 7.0f);
+  radius = constrain(radius, 0.0f, 8.0f);
+  core = constrain(core, 0.1f, 4.0f);
+  width = constrain(width, 0.1f, 4.0f);
+  level = constrain(level, 0.0f, 1.0f);
+  contrast = constrain(contrast, 0.1f, 5.0f);
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+
+  float halfWidth = max(0.05f, width * 0.5f);
+
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 16; x++) {
+      float dx = static_cast<float>(x) - centerX;
+      float dy = static_cast<float>(y) - centerY;
+      float distance = sqrt((dx * dx) + (dy * dy));
+      float coreAlpha = exp(-(distance * distance) / (2.0f * core * core));
+      float ringAlpha = 1.0f - (abs(distance - radius) / halfWidth);
+      ringAlpha = constrain(ringAlpha, 0.0f, 1.0f) * 0.75f;
+      float alpha = pow(constrain(max(coreAlpha, ringAlpha), 0.0f, 1.0f), contrast) * level;
+      int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
+      int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
+      int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
+      setMappedPixelColor(x, y, leftMatrix.Color(scaledRed, scaledGreen, scaledBlue));
+    }
+  }
+
+  showMatrices();
+  Serial.println("ACK led_pulse");
+}
+
 void handleLedWallCommand(const String& command) {
   float centerX = 7.5f;
   float centerY = 3.5f;
   float width = 8.0f;
   float height = 4.0f;
   float level = 0.0f;
+  float density = 1.0f;
+  float contrast = 1.0f;
   int red = 160;
   int green = 160;
   int blue = 160;
@@ -237,11 +338,16 @@ void handleLedWallCommand(const String& command) {
     return;
   }
 
+  tryParseOptionalFloat(command, "density=", density);
+  tryParseOptionalFloat(command, "contrast=", contrast);
+
   centerX = constrain(centerX, 0.0f, 15.0f);
   centerY = constrain(centerY, 0.0f, 7.0f);
   width = constrain(width, 0.1f, 16.0f);
   height = constrain(height, 0.1f, 8.0f);
   level = constrain(level, 0.0f, 1.0f);
+  density = constrain(density, 0.0f, 1.0f);
+  contrast = constrain(contrast, 0.1f, 5.0f);
   red = constrain(red, 0, 255);
   green = constrain(green, 0, 255);
   blue = constrain(blue, 0, 255);
@@ -255,9 +361,11 @@ void handleLedWallCommand(const String& command) {
       float dy = abs(static_cast<float>(y) - centerY);
       float inside = (dx <= halfWidth && dy <= halfHeight) ? 1.0f : 0.0f;
       float edgeX = halfWidth <= 0.0f ? 0.0f : constrain((halfWidth - dx) / 1.5f, 0.0f, 1.0f);
-      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain((halfHeight - dy) / 1.5f, 0.0f, 1.0f);
-      float glitch = static_cast<float>(hashByte(seed, x, y, 17)) / 255.0f;
-      float alpha = inside * edgeX * edgeY * glitch * level;
+      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain(((centerY + halfHeight) - static_cast<float>(y)) / 1.5f, 0.0f, 1.0f);
+      float glitch = 0.25f + (static_cast<float>(hashByte(seed, x, y, 17)) / 255.0f) * 0.75f;
+      float sparse = static_cast<float>(hashByte(seed, x, y, 71)) / 255.0f;
+      float active = sparse <= density ? 1.0f : 0.0f;
+      float alpha = inside * active * edgeX * edgeY * pow(glitch, contrast) * level;
       int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
       int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
       int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
@@ -275,8 +383,10 @@ void handleLedRainCommand(const String& command) {
   float width = 16.0f;
   float height = 3.0f;
   float level = 0.0f;
-  int red = 120;
-  int green = 170;
+  float density = 1.0f;
+  float contrast = 1.0f;
+  int red = 5;
+  int green = 31;
   int blue = 255;
   int seed = 0;
   float phase = 0.0f;
@@ -295,11 +405,16 @@ void handleLedRainCommand(const String& command) {
     return;
   }
 
+  tryParseOptionalFloat(command, "density=", density);
+  tryParseOptionalFloat(command, "contrast=", contrast);
+
   centerX = constrain(centerX, 0.0f, 15.0f);
   centerY = constrain(centerY, 0.0f, 7.0f);
   width = constrain(width, 0.1f, 16.0f);
   height = constrain(height, 0.1f, 8.0f);
   level = constrain(level, 0.0f, 1.0f);
+  density = constrain(density, 0.0f, 1.0f);
+  contrast = constrain(contrast, 0.1f, 5.0f);
   red = constrain(red, 0, 255);
   green = constrain(green, 0, 255);
   blue = constrain(blue, 0, 255);
@@ -319,7 +434,8 @@ void handleLedRainCommand(const String& command) {
 
       float alpha = 0.0f;
 
-      for (int drop = 0; drop < 7; drop++) {
+      int dropCount = constrain(static_cast<int>(2 + density * 5.0f), 2, 7);
+      for (int drop = 0; drop < dropCount; drop++) {
         float dropX = (centerX - halfWidth) + (static_cast<float>(hashByte(seed, drop, 3, 11)) / 255.0f) * width;
         float dropY = (centerY - halfHeight) + (static_cast<float>(hashByte(seed, drop, 7, 19)) / 255.0f) * height;
         float offset = static_cast<float>(hashByte(seed, drop, 13, 23)) / 255.0f;
@@ -331,9 +447,9 @@ void handleLedRainCommand(const String& command) {
         alpha = max(alpha, constrain(ring, 0.0f, 1.0f));
       }
 
-      float edgeX = halfWidth <= 0.0f ? 0.0f : constrain((halfWidth - areaDx) / 1.5f, 0.0f, 1.0f);
-      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain((halfHeight - areaDy) / 1.25f, 0.0f, 1.0f);
-      alpha *= edgeX * edgeY * level;
+      float edgeX = width >= 15.9f ? 1.0f : (halfWidth <= 0.0f ? 0.0f : constrain((halfWidth - areaDx) / 1.5f, 0.0f, 1.0f));
+      float edgeY = halfHeight <= 0.0f ? 0.0f : constrain(((centerY + halfHeight) - static_cast<float>(y)) / 1.25f, 0.0f, 1.0f);
+      alpha = pow(constrain(alpha, 0.0f, 1.0f), contrast) * edgeX * edgeY * level;
       int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
       int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
       int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
@@ -343,6 +459,94 @@ void handleLedRainCommand(const String& command) {
 
   showMatrices();
   Serial.println("ACK led_rain");
+}
+
+void handleLedTinnitusCommand(const String& command) {
+  float centerX = 7.5f;
+  float centerY = 3.5f;
+  float core = 0.65f;
+  float tear = 0.0f;
+  float axisX = 1.0f;
+  float axisY = 0.0f;
+  float level = 0.0f;
+  float contrast = 1.0f;
+  int red = 255;
+  int green = 0;
+  int blue = 0;
+  int seed = 0;
+  float instability = 0.0f;
+  float smear = 1.0f;
+
+  if (!tryParseFloat(command, "cx=", centerX) ||
+      !tryParseFloat(command, "cy=", centerY) ||
+      !tryParseFloat(command, "core=", core) ||
+      !tryParseFloat(command, "tear=", tear) ||
+      !tryParseFloat(command, "axisX=", axisX) ||
+      !tryParseFloat(command, "axisY=", axisY) ||
+      !tryParseInt(command, "red=", red) ||
+      !tryParseInt(command, "green=", green) ||
+      !tryParseInt(command, "blue=", blue) ||
+      !tryParseFloat(command, "level=", level) ||
+      !tryParseInt(command, "seed=", seed) ||
+      !tryParseFloat(command, "instability=", instability) ||
+      !tryParseFloat(command, "smear=", smear)) {
+    Serial.println("ACK led_parse_error");
+    return;
+  }
+
+  tryParseOptionalFloat(command, "contrast=", contrast);
+
+  centerX = constrain(centerX, 0.0f, 15.0f);
+  centerY = constrain(centerY, 0.0f, 7.0f);
+  core = constrain(core, 0.1f, 4.0f);
+  tear = constrain(tear, 0.0f, 8.0f);
+  level = constrain(level, 0.0f, 1.0f);
+  red = constrain(red, 0, 255);
+  green = constrain(green, 0, 255);
+  blue = constrain(blue, 0, 255);
+  instability = constrain(instability, 0.0f, 1.0f);
+  smear = constrain(smear, 0.1f, 8.0f);
+  contrast = constrain(contrast, 0.1f, 5.0f);
+
+  float axisLength = sqrt((axisX * axisX) + (axisY * axisY));
+  if (axisLength <= 0.001f) {
+    axisX = 1.0f;
+    axisY = 0.0f;
+  } else {
+    axisX /= axisLength;
+    axisY /= axisLength;
+  }
+
+  float perpendicularX = -axisY;
+  float perpendicularY = axisX;
+  float coreSigma = max(0.18f, core);
+  float lobeSigma = 0.35f + instability * 0.35f;
+
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 16; x++) {
+      float dx = static_cast<float>(x) - centerX;
+      float dy = static_cast<float>(y) - centerY;
+      float distanceSquared = (dx * dx) + (dy * dy);
+      float coreAlpha = exp(-distanceSquared / (2.0f * coreSigma * coreSigma));
+      float along = (dx * axisX) + (dy * axisY);
+      float across = abs((dx * perpendicularX) + (dy * perpendicularY));
+      float splitDistance = abs(abs(along) - tear);
+      float tearAlpha = exp(-(splitDistance * splitDistance) / (2.0f * lobeSigma * lobeSigma)) *
+                        exp(-(across * across) / (2.0f * 0.32f * 0.32f)) *
+                        instability;
+      float smearAlpha = exp(-abs(along) / max(0.1f, tear + smear)) *
+                         exp(-(across * across) / (2.0f * 0.75f * 0.75f)) *
+                         instability * 0.22f;
+      float alpha = pow(constrain(max(coreAlpha, max(tearAlpha, smearAlpha)), 0.0f, 1.0f), contrast) * level;
+      int scaledRed = constrain(static_cast<int>(red * alpha), 0, 255);
+      int scaledGreen = constrain(static_cast<int>(green * alpha), 0, 255);
+      int scaledBlue = constrain(static_cast<int>(blue * alpha), 0, 255);
+      setMappedPixelColor(x, y, leftMatrix.Color(scaledRed, scaledGreen, scaledBlue));
+    }
+  }
+
+  showMatrices();
+  Serial.println("ACK led_tinnitus");
 }
 
 bool tryParseInt(const String& source, const char* token, int& value) {
@@ -381,6 +585,13 @@ bool tryParseFloat(const String& source, const char* token, float& value) {
 
   value = rawValue.toFloat();
   return true;
+}
+
+void tryParseOptionalFloat(const String& source, const char* token, float& value) {
+  float parsedValue = value;
+  if (tryParseFloat(source, token, parsedValue)) {
+    value = parsedValue;
+  }
 }
 
 void drawWhiteDot(int globalX, int globalY, int brightness) {
