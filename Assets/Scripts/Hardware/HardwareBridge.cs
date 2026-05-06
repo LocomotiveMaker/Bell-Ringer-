@@ -31,6 +31,7 @@ namespace BellRinger.Hardware
         private string _lastCommand = string.Empty;
         private string _lastError = string.Empty;
         private DateTime _lastUpdateUtc = DateTime.MinValue;
+        private float _lastUpdateRealtime;
         private bool _simulateHardware;
         private bool _simulationButtonHeld;
         private bool _initialized;
@@ -43,6 +44,13 @@ namespace BellRinger.Hardware
         public string ActivePortName => IsConnected ? GetStringProperty(_serialPort, "PortName") : preferredPortName;
         public int ActiveBaudRate => baudRate;
         public HardwareTelemetry CurrentTelemetry => _telemetry;
+        public string LastTelemetryRaw => _lastTelemetryRaw;
+        public float LastUpdateAgeSeconds => _lastUpdateRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastUpdateRealtime;
+
+        public bool HasFreshTelemetry(float maxAgeSeconds)
+        {
+            return LastUpdateAgeSeconds <= Mathf.Max(0.01f, maxAgeSeconds);
+        }
 
         public void SetSimulationTelemetry(HardwareTelemetry telemetry)
         {
@@ -51,6 +59,7 @@ namespace BellRinger.Hardware
             _simulateHardware = true;
             _lastTelemetryRaw = telemetry.ToString();
             _lastUpdateUtc = DateTime.UtcNow;
+            _lastUpdateRealtime = Time.realtimeSinceStartup;
         }
 
         public HardwareStatusSnapshot GetStatusSnapshot()
@@ -73,6 +82,11 @@ namespace BellRinger.Hardware
         public void SendPing()
         {
             SendCommand("PING");
+        }
+
+        public void SendPadImuRecenter()
+        {
+            SendCommand("IMU recenter");
         }
 
         public void SendDebugFeedback(float vibrationNormalized, Color lightColor, float pulseNormalized)
@@ -576,6 +590,7 @@ namespace BellRinger.Hardware
                     _telemetry = parsedTelemetry;
                     _lastTelemetryRaw = line;
                     _lastUpdateUtc = DateTime.UtcNow;
+                    _lastUpdateRealtime = Time.realtimeSinceStartup;
                 }
 
                 newlineIndex = bufferedText.IndexOf('\n');
@@ -588,6 +603,7 @@ namespace BellRinger.Hardware
         private bool TryParseTelemetry(string line, out HardwareTelemetry telemetry)
         {
             telemetry = _telemetry;
+            telemetry.handQuaternionValid = false;
             string trimmed = line.Trim();
 
             if (string.IsNullOrEmpty(trimmed))
@@ -663,6 +679,22 @@ namespace BellRinger.Hardware
                 case "wr":
                 case "handroll":
                     return TryParseFloat(rawValue, out telemetry.handRoll);
+                case "wqw":
+                case "handquatw":
+                    telemetry.handQuaternionValid = TryParseFloat(rawValue, out telemetry.handQuatW);
+                    return telemetry.handQuaternionValid;
+                case "wqx":
+                case "handquatx":
+                    telemetry.handQuaternionValid = TryParseFloat(rawValue, out telemetry.handQuatX);
+                    return telemetry.handQuaternionValid;
+                case "wqy":
+                case "handquaty":
+                    telemetry.handQuaternionValid = TryParseFloat(rawValue, out telemetry.handQuatY);
+                    return telemetry.handQuaternionValid;
+                case "wqz":
+                case "handquatz":
+                    telemetry.handQuaternionValid = TryParseFloat(rawValue, out telemetry.handQuatZ);
+                    return telemetry.handQuaternionValid;
                 case "btn":
                 case "button":
                     return TryParseBool(rawValue, out telemetry.buttonPressed);
@@ -705,6 +737,7 @@ namespace BellRinger.Hardware
             _telemetry.buttonPressed = _simulationButtonHeld;
             _lastTelemetryRaw = _telemetry.ToString();
             _lastUpdateUtc = DateTime.UtcNow;
+            _lastUpdateRealtime = Time.realtimeSinceStartup;
         }
 
         private void SendCommand(string command)

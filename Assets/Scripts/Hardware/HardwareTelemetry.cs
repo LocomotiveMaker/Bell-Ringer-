@@ -12,6 +12,11 @@ namespace BellRinger.Hardware
         public float handYaw;
         public float handPitch;
         public float handRoll;
+        public bool handQuaternionValid;
+        public float handQuatW;
+        public float handQuatX;
+        public float handQuatY;
+        public float handQuatZ;
         public bool buttonPressed;
 
         public override string ToString()

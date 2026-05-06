@@ -7,6 +7,10 @@ param(
     [int]$UdpPort = 39051,
     [double]$HorizontalFovDegrees = 68.0,
     [double]$MarkerSizeMm = 50.0,
+    [int]$DetectMaxDim = 720,
+    [int]$PreviewMaxDim = 1280,
+    [ValidateSet('Auto','DSHOW','MSMF','ANY')]
+    [string]$Backend = 'Auto',
     [switch]$NoPreview,
     [switch]$Scan,
     [switch]$Restore,
@@ -53,6 +57,14 @@ if ($Scan) {
     $arguments += $HorizontalFovDegrees
     $arguments += "--marker-size-mm"
     $arguments += $MarkerSizeMm
+    $arguments += "--detect-max-dim"
+    $arguments += $DetectMaxDim
+    $arguments += "--preview-max-dim"
+    $arguments += $PreviewMaxDim
+    if ($Backend -ne 'Auto') {
+        $arguments += "--backend"
+        $arguments += $Backend.ToLowerInvariant()
+    }
 
     if ($NoPreview) {
         $arguments += "--no-preview"

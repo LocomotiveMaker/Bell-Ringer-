@@ -67,13 +67,34 @@ The user should write down the webcam index that corresponds to the phone feed.
 
 ### 2. Start the live tracker
 
-Example:
+Recommended first live command:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60
+powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 720 -PreviewMaxDim 960
 ```
 
 Replace `0` with the camera index found in the scan step.
+
+Meaning of the new optimization flags:
+
+- `-Backend MSMF`
+  - use the Media Foundation backend explicitly
+- `-DetectMaxDim 720`
+  - do ArUco detection on a reduced image for speed
+- `-PreviewMaxDim 960`
+  - show a smaller preview window to reduce drawing cost
+
+If the preview still feels heavy, try:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 640 -PreviewMaxDim 800
+```
+
+If the user wants to measure pure tracking speed without preview cost, try:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 720 -NoPreview
+```
 
 ### 3. Create the Unity scene
 

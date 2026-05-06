@@ -1,18 +1,262 @@
 #include <Adafruit_NeoPixel.h>
+#include <Wire.h>
 
 const unsigned long kBaudRate = 115200;
-const bool kEnableTelemetry = false;
-const unsigned long kTelemetryIntervalMs = 50;
+const bool kEnableTelemetry = true;
+const unsigned long kTelemetryIntervalMs = 10;
 const int kButtonPin = 2;
 const int kLeftMatrixPin = 6;
 const int kRightMatrixPin = 7;
 const int kPixelsPerMatrix = 64;
+const unsigned long kImuSampleIntervalUs = 10000UL;
+const uint16_t kGyroCalibrationSamples = 300;
+const float kAccelScale = 16384.0f;
+const float kGyroScale = 131.0f;
+const float kComplementaryTimeConstantSeconds = 0.35f;
+const uint8_t kMpu9250AddressLow = 0x68;
+const uint8_t kMpu9250AddressHigh = 0x69;
+const uint8_t kRegisterWhoAmI = 0x75;
+const uint8_t kRegisterPowerManagement1 = 0x6B;
+const uint8_t kRegisterPowerManagement2 = 0x6C;
+const uint8_t kRegisterSampleRateDivider = 0x19;
+const uint8_t kRegisterConfig = 0x1A;
+const uint8_t kRegisterGyroConfig = 0x1B;
+const uint8_t kRegisterAccelConfig = 0x1C;
+const uint8_t kRegisterAccelConfig2 = 0x1D;
+const uint8_t kRegisterAccelXoutH = 0x3B;
 
 Adafruit_NeoPixel leftMatrix(kPixelsPerMatrix, kLeftMatrixPin, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel rightMatrix(kPixelsPerMatrix, kRightMatrixPin, NEO_GRB + NEO_KHZ800);
 
 String incomingLine;
 unsigned long lastTelemetryAt = 0;
+unsigned long lastImuSampleAtUs = 0;
+uint8_t gMpuAddress = 0;
+bool gHasPadOrientation = false;
+float gPadYawDegrees = 0.0f;
+float gPadPitchDegrees = 0.0f;
+float gPadRollDegrees = 0.0f;
+float gPadYawZeroDegrees = 0.0f;
+float gPadPitchZeroDegrees = 0.0f;
+float gPadRollZeroDegrees = 0.0f;
+float gGyroBiasXDps = 0.0f;
+float gGyroBiasYDps = 0.0f;
+float gGyroBiasZDps = 0.0f;
+
+struct ImuSample {
+  float accelXG;
+  float accelYG;
+  float accelZG;
+  float gyroXDps;
+  float gyroYDps;
+  float gyroZDps;
+};
+
+bool writeRegister(uint8_t deviceAddress, uint8_t registerAddress, uint8_t value) {
+  Wire.beginTransmission(deviceAddress);
+  Wire.write(registerAddress);
+  Wire.write(value);
+  return Wire.endTransmission() == 0;
+}
+
+bool readRegisters(uint8_t deviceAddress, uint8_t startRegister, uint8_t count, uint8_t* buffer) {
+  Wire.beginTransmission(deviceAddress);
+  Wire.write(startRegister);
+  if (Wire.endTransmission(false) != 0) {
+    return false;
+  }
+
+  uint8_t received = Wire.requestFrom(deviceAddress, count);
+  if (received != count) {
+    return false;
+  }
+
+  for (uint8_t index = 0; index < count; ++index) {
+    buffer[index] = Wire.read();
+  }
+
+  return true;
+}
+
+int16_t combineInt16(uint8_t highByte, uint8_t lowByte) {
+  return static_cast<int16_t>((static_cast<uint16_t>(highByte) << 8) | lowByte);
+}
+
+bool probeMpuDevice(uint8_t address, uint8_t& whoAmI) {
+  return readRegisters(address, kRegisterWhoAmI, 1, &whoAmI);
+}
+
+bool detectPadMpuAddress() {
+  uint8_t whoAmI = 0;
+  if (probeMpuDevice(kMpu9250AddressLow, whoAmI)) {
+    gMpuAddress = kMpu9250AddressLow;
+    Serial.print("ACK imu_found_0x68 who=");
+    Serial.println(whoAmI, HEX);
+    return true;
+  }
+
+  if (probeMpuDevice(kMpu9250AddressHigh, whoAmI)) {
+    gMpuAddress = kMpu9250AddressHigh;
+    Serial.print("ACK imu_found_0x69 who=");
+    Serial.println(whoAmI, HEX);
+    return true;
+  }
+
+  return false;
+}
+
+bool initializePadMpu() {
+  if (gMpuAddress == 0) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterPowerManagement1, 0x00)) {
+    return false;
+  }
+
+  delay(100);
+
+  if (!writeRegister(gMpuAddress, kRegisterPowerManagement1, 0x01)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterPowerManagement2, 0x00)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterConfig, 0x03)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterSampleRateDivider, 0x04)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterGyroConfig, 0x00)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterAccelConfig, 0x00)) {
+    return false;
+  }
+
+  if (!writeRegister(gMpuAddress, kRegisterAccelConfig2, 0x03)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool readPadImuSample(ImuSample& sample) {
+  if (gMpuAddress == 0) {
+    return false;
+  }
+
+  uint8_t raw[14] = {0};
+  if (!readRegisters(gMpuAddress, kRegisterAccelXoutH, sizeof(raw), raw)) {
+    return false;
+  }
+
+  int16_t ax = combineInt16(raw[0], raw[1]);
+  int16_t ay = combineInt16(raw[2], raw[3]);
+  int16_t az = combineInt16(raw[4], raw[5]);
+  int16_t gx = combineInt16(raw[8], raw[9]);
+  int16_t gy = combineInt16(raw[10], raw[11]);
+  int16_t gz = combineInt16(raw[12], raw[13]);
+
+  sample.accelXG = ax / kAccelScale;
+  sample.accelYG = ay / kAccelScale;
+  sample.accelZG = az / kAccelScale;
+  sample.gyroXDps = (gx / kGyroScale) - gGyroBiasXDps;
+  sample.gyroYDps = (gy / kGyroScale) - gGyroBiasYDps;
+  sample.gyroZDps = (gz / kGyroScale) - gGyroBiasZDps;
+  return true;
+}
+
+void recenterPadImu() {
+  gPadYawZeroDegrees = gPadYawDegrees;
+  gPadPitchZeroDegrees = gPadPitchDegrees;
+  gPadRollZeroDegrees = gPadRollDegrees;
+}
+
+void calibratePadGyroBias() {
+  Serial.println("ACK imu_calibrating");
+
+  float sumX = 0.0f;
+  float sumY = 0.0f;
+  float sumZ = 0.0f;
+  uint16_t captured = 0;
+
+  while (captured < kGyroCalibrationSamples) {
+    ImuSample sample = {};
+    if (!readPadImuSample(sample)) {
+      delay(10);
+      continue;
+    }
+
+    sumX += sample.gyroXDps + gGyroBiasXDps;
+    sumY += sample.gyroYDps + gGyroBiasYDps;
+    sumZ += sample.gyroZDps + gGyroBiasZDps;
+    ++captured;
+    delay(5);
+  }
+
+  gGyroBiasXDps = sumX / kGyroCalibrationSamples;
+  gGyroBiasYDps = sumY / kGyroCalibrationSamples;
+  gGyroBiasZDps = sumZ / kGyroCalibrationSamples;
+  Serial.println("ACK imu_ready");
+}
+
+float wrapDegrees(float degrees) {
+  while (degrees > 180.0f) {
+    degrees -= 360.0f;
+  }
+
+  while (degrees < -180.0f) {
+    degrees += 360.0f;
+  }
+
+  return degrees;
+}
+
+void updatePadOrientation(const ImuSample& sample, float deltaSeconds) {
+  const float accelRollDegrees = atan2(sample.accelYG, sample.accelZG) * 180.0f / PI;
+  const float accelPitchDegrees = atan2(-sample.accelXG, sqrt((sample.accelYG * sample.accelYG) + (sample.accelZG * sample.accelZG))) * 180.0f / PI;
+
+  if (!gHasPadOrientation) {
+    gPadRollDegrees = accelRollDegrees;
+    gPadPitchDegrees = accelPitchDegrees;
+    gPadYawDegrees = 0.0f;
+    gHasPadOrientation = true;
+    recenterPadImu();
+    return;
+  }
+
+  const float alpha = kComplementaryTimeConstantSeconds / (kComplementaryTimeConstantSeconds + deltaSeconds);
+  gPadRollDegrees = (alpha * (gPadRollDegrees + (sample.gyroXDps * deltaSeconds))) + ((1.0f - alpha) * accelRollDegrees);
+  gPadPitchDegrees = (alpha * (gPadPitchDegrees + (sample.gyroYDps * deltaSeconds))) + ((1.0f - alpha) * accelPitchDegrees);
+  gPadYawDegrees = wrapDegrees(gPadYawDegrees + (sample.gyroZDps * deltaSeconds));
+}
+
+void servicePadImu() {
+  if (gMpuAddress == 0) {
+    return;
+  }
+
+  unsigned long nowUs = micros();
+  unsigned long elapsedUs = nowUs - lastImuSampleAtUs;
+  if (elapsedUs < kImuSampleIntervalUs) {
+    return;
+  }
+
+  lastImuSampleAtUs = nowUs;
+  ImuSample sample = {};
+  if (!readPadImuSample(sample)) {
+    return;
+  }
+
+  updatePadOrientation(sample, elapsedUs * 0.000001f);
+}
 
 void setup() {
   pinMode(kButtonPin, INPUT_PULLUP);
@@ -28,11 +272,22 @@ void setup() {
   while (!Serial) {
   }
 
+  Wire.begin();
+  Wire.setClock(400000UL);
+
   Serial.println("ACK boot");
+
+  if (detectPadMpuAddress() && initializePadMpu()) {
+    calibratePadGyroBias();
+    lastImuSampleAtUs = micros();
+  } else {
+    Serial.println("ACK imu_missing");
+  }
 }
 
 void loop() {
   readCommands();
+  servicePadImu();
   sendTelemetry();
 }
 
@@ -63,6 +318,9 @@ void handleCommand(const String& command) {
 
   if (command == "PING") {
     Serial.println("ACK ping");
+  } else if (command == "IMU recenter" || command == "r" || command == "recenter") {
+    recenterPadImu();
+    Serial.println("ACK imu_recenter");
   } else if (command == "LED clear") {
     clearMatrices();
     showMatrices();
@@ -106,12 +364,12 @@ void sendTelemetry() {
 
   lastTelemetryAt = now;
 
-  float headYaw = mapFloat(analogRead(A0), 0, 1023, -180.0f, 180.0f);
-  float headPitch = mapFloat(analogRead(A1), 0, 1023, -90.0f, 90.0f);
-  float headRoll = mapFloat(analogRead(A2), 0, 1023, -45.0f, 45.0f);
-  float handYaw = mapFloat(analogRead(A3), 0, 1023, -180.0f, 180.0f);
-  float handPitch = mapFloat(analogRead(A4), 0, 1023, -90.0f, 90.0f);
-  float handRoll = mapFloat(analogRead(A5), 0, 1023, -45.0f, 45.0f);
+  float headYaw = 0.0f;
+  float headPitch = 0.0f;
+  float headRoll = 0.0f;
+  float handYaw = gHasPadOrientation ? wrapDegrees(gPadYawDegrees - gPadYawZeroDegrees) : 0.0f;
+  float handPitch = gHasPadOrientation ? wrapDegrees(gPadPitchDegrees - gPadPitchZeroDegrees) : 0.0f;
+  float handRoll = gHasPadOrientation ? wrapDegrees(gPadRollDegrees - gPadRollZeroDegrees) : 0.0f;
   int button = digitalRead(kButtonPin) == LOW ? 1 : 0;
 
   Serial.print("hy=");
@@ -128,10 +386,6 @@ void sendTelemetry() {
   Serial.print(handRoll, 1);
   Serial.print(",btn=");
   Serial.println(button);
-}
-
-float mapFloat(long value, long inMin, long inMax, float outMin, float outMax) {
-  return (static_cast<float>(value - inMin) * (outMax - outMin) / static_cast<float>(inMax - inMin)) + outMin;
 }
 
 void handleLedCommand(const String& command) {
