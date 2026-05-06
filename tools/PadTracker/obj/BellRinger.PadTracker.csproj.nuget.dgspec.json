@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj": {}
+  },
+  "projects": {
+    "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj",
+        "projectName": "BellRinger.PadTracker",
+        "projectPath": "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj",
+        "packagesPath": "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages",
+        "outputPath": "C:\\Bell Ringer\\tools\\PadTracker\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Bell Ringer\\NuGet.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "OpenCvSharp4.Windows": {
+              "target": "Package",
+              "version": "[4.13.0.20260302, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Bell Ringer\\tools\\.runtime\\dotnet\\sdk\\8.0.420/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
