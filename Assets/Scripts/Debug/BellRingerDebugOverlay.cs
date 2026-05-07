@@ -14,6 +14,7 @@ namespace BellRinger.Debug
 
         private readonly StringBuilder _builder = new StringBuilder(512);
         private bool _isVisible;
+        private PadImuReceiver _padImuReceiver;
 
         private void Start()
         {
@@ -36,6 +37,13 @@ namespace BellRinger.Debug
             }
 
             HardwareStatusSnapshot snapshot = HardwareBridge.Instance.GetStatusSnapshot();
+            if (_padImuReceiver == null)
+            {
+                _padImuReceiver = FindFirstObjectByType<PadImuReceiver>();
+            }
+
+            bool usingDedicatedPadImu = _padImuReceiver != null && !_padImuReceiver.UsingSharedHardwareBridgeTelemetry;
+
             _builder.Clear();
             _builder.AppendLine("Bell Ringer Hardware Debug");
             _builder.Append("Mode: ").AppendLine(snapshot.isSimulation ? "Simulation" : "Serial");
@@ -47,11 +55,22 @@ namespace BellRinger.Debug
                 .Append(snapshot.telemetry.headYaw.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.headPitch.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.headRoll.ToString("0.0")).AppendLine();
-            _builder.Append("Hand: ")
+            _builder.Append(usingDedicatedPadImu ? "Bridge Hand: " : "Hand: ")
                 .Append(snapshot.telemetry.handYaw.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.handPitch.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.handRoll.ToString("0.0")).AppendLine();
             _builder.Append("Button: ").AppendLine(snapshot.telemetry.buttonPressed ? "Pressed" : "Released");
+            if (_padImuReceiver != null)
+            {
+                _builder.Append("Pad IMU: ")
+                    .AppendLine(_padImuReceiver.UsingSharedHardwareBridgeTelemetry ? "Shared HardwareBridge" : "Dedicated Serial");
+                _builder.Append("Pad IMU Port: ").AppendLine(string.IsNullOrWhiteSpace(_padImuReceiver.ActivePortName) ? "(none)" : _padImuReceiver.ActivePortName);
+                _builder.Append("Pad IMU Fresh: ").AppendLine(_padImuReceiver.HasFreshSample ? "Yes" : "No");
+                _builder.Append("Pad IMU YPR: ")
+                    .Append(_padImuReceiver.MappedYawDegrees.ToString("0.0")).Append(", ")
+                    .Append(_padImuReceiver.MappedPitchDegrees.ToString("0.0")).Append(", ")
+                    .Append(_padImuReceiver.MappedRollDegrees.ToString("0.0")).AppendLine();
+            }
             _builder.Append("Ports: ").AppendLine(snapshot.availablePorts == null || snapshot.availablePorts.Length == 0 ? "(none)" : string.Join(", ", snapshot.availablePorts));
 
             if (!string.IsNullOrEmpty(snapshot.lastError))
@@ -64,7 +83,7 @@ namespace BellRinger.Debug
                 _builder.Append("Last command: ").AppendLine(snapshot.lastCommand);
             }
 
-            GUI.Box(new Rect(16f, 16f, 520f, 360f), _builder.ToString());
+            GUI.Box(new Rect(16f, 16f, 520f, _padImuReceiver == null ? 360f : 440f), _builder.ToString());
         }
 
         private static bool OverlayDisabledByEnvironment()

@@ -27,11 +27,13 @@ namespace
 
     constexpr unsigned long SerialBaud = 115200UL;
     constexpr unsigned long SampleIntervalUs = 10000UL;
-    constexpr uint16_t GyroCalibrationSamples = 300;
+    constexpr uint16_t GyroCalibrationSamples = 600;
     constexpr float AccelScale = 16384.0f;
     constexpr float GyroScale = 131.0f;
     constexpr float MagScaleUt = 0.15f;
-    constexpr float MadgwickBeta = 0.12f;
+    constexpr bool UseMagnetometerFusion = false;
+    constexpr float GyroDeadbandDps = 0.35f;
+    constexpr float MadgwickBeta = 0.045f;
 
     struct ImuSample
     {
@@ -161,6 +163,11 @@ namespace
         return degrees;
     }
 
+    float applyGyroDeadband(float valueDps)
+    {
+        return abs(valueDps) < GyroDeadbandDps ? 0.0f : valueDps;
+    }
+
     bool probeDevice(uint8_t address, uint8_t& whoAmI)
     {
         return readRegisters(address, RegisterWhoAmI, 1, &whoAmI);
@@ -281,9 +288,9 @@ namespace
         sample.accelXG = ax / AccelScale;
         sample.accelYG = ay / AccelScale;
         sample.accelZG = az / AccelScale;
-        sample.gyroXDps = (gx / GyroScale) - gGyroBiasXDps;
-        sample.gyroYDps = (gy / GyroScale) - gGyroBiasYDps;
-        sample.gyroZDps = (gz / GyroScale) - gGyroBiasZDps;
+        sample.gyroXDps = applyGyroDeadband((gx / GyroScale) - gGyroBiasXDps);
+        sample.gyroYDps = applyGyroDeadband((gy / GyroScale) - gGyroBiasYDps);
+        sample.gyroZDps = applyGyroDeadband((gz / GyroScale) - gGyroBiasZDps);
         return true;
     }
 
@@ -609,7 +616,14 @@ namespace
 
     void updateOrientation(const ImuSample& sample, float deltaSeconds)
     {
-        madgwickUpdateMarg(sample, deltaSeconds);
+        if (UseMagnetometerFusion)
+        {
+            madgwickUpdateMarg(sample, deltaSeconds);
+        }
+        else
+        {
+            madgwickUpdateImu(sample, deltaSeconds);
+        }
 
         float relativeW = 1.0f;
         float relativeX = 0.0f;
@@ -678,6 +692,7 @@ void setup()
     calibrateGyroBias();
     gLastSampleMicros = micros();
     Serial.println(gHasMagnetometer ? F("[PadMPU] magnetometer ready") : F("[PadMPU] magnetometer missing"));
+    Serial.println(UseMagnetometerFusion ? F("[PadMPU] fusion mode: 9-axis absolute heading") : F("[PadMPU] fusion mode: 6-axis controller yaw"));
     Serial.println(F("[PadMPU] streaming wy/wp/wr + quaternion at 100 Hz"));
     Serial.println(F("[PadMPU] Send 'r' or 'recenter' to zero the current pose"));
 }

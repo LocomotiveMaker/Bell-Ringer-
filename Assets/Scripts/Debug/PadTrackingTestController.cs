@@ -12,20 +12,26 @@ namespace BellRinger.Debug
         [SerializeField] private Color imuFreshColor = new Color(0.72f, 0.92f, 1f, 1f);
         [SerializeField] private Color imuStaleColor = new Color(0.56f, 0.58f, 0.64f, 1f);
         [SerializeField] private Color imuPreviewColor = new Color(0.98f, 0.62f, 0.18f, 1f);
+        [SerializeField] private Color imuReferenceColor = new Color(0.2f, 0.22f, 0.26f, 1f);
         [SerializeField] private Vector3 imuPreviewAnchor = new Vector3(-0.48f, -0.08f, 0.92f);
         [SerializeField] private float imuPreviewShakeDistance = 0.025f;
 
         private Camera _camera;
         private PadTrackingReceiver _receiver;
         private PadImuReceiver _imuReceiver;
+        private PadImuPoseCalibrationTool _imuCalibrationTool;
         private Renderer _ghostRenderer;
         private Transform _ghostTransform;
         private Transform _orientationMarkerTransform;
         private Renderer _orientationMarkerRenderer;
         private Transform _imuPreviewRootTransform;
+        private Renderer _imuPreviewReferencePlateRenderer;
         private Transform _imuPreviewPlateTransform;
         private Renderer _imuPreviewPlateRenderer;
         private Transform _imuPreviewMarkerTransform;
+        private Renderer _imuPreviewMarkerRenderer;
+        private Renderer _imuPreviewRightMarkerRenderer;
+        private Renderer _imuPreviewUpMarkerRenderer;
         private bool _cameraInitialized;
         private bool _staticSceneCreated;
 
@@ -52,7 +58,7 @@ namespace BellRinger.Debug
                 return;
             }
 
-            DrawOverlay(new Rect(16f, 16f, 620f, 680f));
+            DrawOverlay(new Rect(16f, 16f, 620f, 940f));
             DrawScreenPreview(new Rect(652f, 16f, 300f, 220f));
         }
 
@@ -100,6 +106,15 @@ namespace BellRinger.Debug
                 if (_imuReceiver == null)
                 {
                     _imuReceiver = gameObject.AddComponent<PadImuReceiver>();
+                }
+            }
+
+            if (_imuCalibrationTool == null)
+            {
+                _imuCalibrationTool = GetComponent<PadImuPoseCalibrationTool>();
+                if (_imuCalibrationTool == null)
+                {
+                    _imuCalibrationTool = gameObject.AddComponent<PadImuPoseCalibrationTool>();
                 }
             }
 
@@ -221,8 +236,40 @@ namespace BellRinger.Debug
                 }
 
                 GUILayout.Label("If you change preferredPortName in the Inspector during Play, press Reconnect IMU.");
-                GUILayout.Label("Orange preview rectangle = IMU-only visualizer. Shake grows with faster movement.");
+                GUILayout.Label("Preview colors: gray = neutral, orange = live body, white = front, red = right, green = up.");
+                GUILayout.Label("Shake grows with faster movement. Compare the orange body against the gray neutral plate.");
                 GUILayout.Label("Quaternion mode uses Mount Trim buttons instead of Euler axis remapping.");
+            }
+
+            if (_imuCalibrationTool != null)
+            {
+                GUILayout.Space(10f);
+                GUILayout.Label("IMU Pose Calibration");
+                GUILayout.Label("0 center, 1 left, 2 right, 3 forward, 4 back, 5 clockwise, 6 counterclockwise, R apply");
+                GUILayout.Label($"Status: {_imuCalibrationTool.LastStatus}");
+                GUILayout.Label($"Solve error: mean {_imuCalibrationTool.LastMeanErrorDegrees:0.0}°  max {_imuCalibrationTool.LastMaxErrorDegrees:0.0}°");
+
+                if (_imuCalibrationTool.IsCapturePending)
+                {
+                    GUILayout.Label($"Capturing: {_imuCalibrationTool.PendingPoseLabel}  progress {_imuCalibrationTool.CaptureProgress01:0.00}");
+                }
+
+                DrawCalibrationRow(0);
+                DrawCalibrationRow(1);
+                DrawCalibrationRow(2);
+                DrawCalibrationRow(3);
+                DrawCalibrationRow(4);
+                DrawCalibrationRow(5);
+                DrawCalibrationRow(6);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Apply Calibration (R)", GUILayout.Height(28f)))
+                {
+                    _imuCalibrationTool.ApplyCapturedCalibration();
+                }
+
+                GUILayout.EndHorizontal();
+                GUILayout.Label("각 자세에서 손을 멈춘 뒤 숫자를 누르십시오. 버튼을 누르면 짧게 평균 캡처합니다.");
             }
 
             if (!string.IsNullOrWhiteSpace(_receiver.LastError))
@@ -286,21 +333,46 @@ namespace BellRinger.Debug
             GameObject previewRoot = new GameObject("ImuPreviewRoot");
             _imuPreviewRootTransform = previewRoot.transform;
 
+            GameObject previewReferencePlate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            previewReferencePlate.name = "ImuPreviewReferencePlate";
+            previewReferencePlate.transform.SetParent(_imuPreviewRootTransform, false);
+            previewReferencePlate.transform.localScale = new Vector3(0.31f, 0.01f, 0.18f);
+            _imuPreviewReferencePlateRenderer = previewReferencePlate.GetComponent<Renderer>();
+            _imuPreviewReferencePlateRenderer.sharedMaterial = CreateRuntimeMaterial(imuReferenceColor);
+
             GameObject previewPlate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             previewPlate.name = "ImuPreviewPlate";
             previewPlate.transform.SetParent(_imuPreviewRootTransform, false);
+            previewPlate.transform.localPosition = new Vector3(0f, 0.018f, 0f);
             previewPlate.transform.localScale = new Vector3(0.28f, 0.018f, 0.16f);
             _imuPreviewPlateTransform = previewPlate.transform;
             _imuPreviewPlateRenderer = previewPlate.GetComponent<Renderer>();
             _imuPreviewPlateRenderer.sharedMaterial = CreateRuntimeMaterial(imuPreviewColor);
 
             GameObject previewMarker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            previewMarker.name = "ImuPreviewMarker";
+            previewMarker.name = "ImuPreviewFrontMarker";
             previewMarker.transform.SetParent(_imuPreviewPlateTransform, false);
             previewMarker.transform.localPosition = new Vector3(0f, 0.035f, 0.055f);
             previewMarker.transform.localScale = new Vector3(0.045f, 0.04f, 0.03f);
-            previewMarker.GetComponent<Renderer>().sharedMaterial = CreateRuntimeMaterial(Color.white);
+            _imuPreviewMarkerRenderer = previewMarker.GetComponent<Renderer>();
+            _imuPreviewMarkerRenderer.sharedMaterial = CreateRuntimeMaterial(Color.white);
             _imuPreviewMarkerTransform = previewMarker.transform;
+
+            GameObject previewRightMarker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            previewRightMarker.name = "ImuPreviewRightMarker";
+            previewRightMarker.transform.SetParent(_imuPreviewPlateTransform, false);
+            previewRightMarker.transform.localPosition = new Vector3(0.102f, 0.026f, 0f);
+            previewRightMarker.transform.localScale = new Vector3(0.03f, 0.022f, 0.09f);
+            _imuPreviewRightMarkerRenderer = previewRightMarker.GetComponent<Renderer>();
+            _imuPreviewRightMarkerRenderer.sharedMaterial = CreateRuntimeMaterial(new Color(1f, 0.28f, 0.22f, 1f));
+
+            GameObject previewUpMarker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            previewUpMarker.name = "ImuPreviewUpMarker";
+            previewUpMarker.transform.SetParent(_imuPreviewPlateTransform, false);
+            previewUpMarker.transform.localPosition = new Vector3(0f, 0.07f, -0.045f);
+            previewUpMarker.transform.localScale = new Vector3(0.028f, 0.08f, 0.028f);
+            _imuPreviewUpMarkerRenderer = previewUpMarker.GetComponent<Renderer>();
+            _imuPreviewUpMarkerRenderer.sharedMaterial = CreateRuntimeMaterial(new Color(0.28f, 1f, 0.36f, 1f));
 
             GameObject centerMarker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             centerMarker.name = "NeutralReference";
@@ -327,7 +399,8 @@ namespace BellRinger.Debug
                 (cameraTransform.up * Mathf.Cos(time * 23f) * imuPreviewShakeDistance * 0.7f * shake);
 
             _imuPreviewRootTransform.position = basePosition + shakeOffset;
-            _imuPreviewRootTransform.rotation = cameraTransform.rotation * (_imuReceiver.HasFreshSample ? _imuReceiver.RelativeRotation : Quaternion.identity);
+            _imuPreviewRootTransform.rotation = cameraTransform.rotation;
+            _imuPreviewPlateTransform.localRotation = _imuReceiver.RelativeRotation;
             _imuPreviewPlateTransform.localScale = new Vector3(0.28f + (shake * 0.02f), 0.018f, 0.16f + (shake * 0.01f));
 
             if (_imuPreviewPlateRenderer != null)
@@ -335,9 +408,34 @@ namespace BellRinger.Debug
                 _imuPreviewPlateRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample ? imuPreviewColor : imuStaleColor;
             }
 
+            if (_imuPreviewReferencePlateRenderer != null)
+            {
+                _imuPreviewReferencePlateRenderer.sharedMaterial.color = imuReferenceColor;
+            }
+
             if (_imuPreviewMarkerTransform != null)
             {
                 _imuPreviewMarkerTransform.localPosition = new Vector3(0f, 0.035f + (shake * 0.01f), 0.055f);
+            }
+
+            Color axisColor = _imuReceiver.HasFreshSample ? Color.white : imuStaleColor;
+            if (_imuPreviewMarkerRenderer != null)
+            {
+                _imuPreviewMarkerRenderer.sharedMaterial.color = axisColor;
+            }
+
+            if (_imuPreviewRightMarkerRenderer != null)
+            {
+                _imuPreviewRightMarkerRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample
+                    ? new Color(1f, 0.28f, 0.22f, 1f)
+                    : new Color(0.46f, 0.32f, 0.32f, 1f);
+            }
+
+            if (_imuPreviewUpMarkerRenderer != null)
+            {
+                _imuPreviewUpMarkerRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample
+                    ? new Color(0.28f, 1f, 0.36f, 1f)
+                    : new Color(0.34f, 0.46f, 0.34f, 1f);
             }
         }
 
@@ -372,6 +470,23 @@ namespace BellRinger.Debug
                 onNegative90?.Invoke();
             }
 
+            GUILayout.EndHorizontal();
+        }
+
+        private void DrawCalibrationRow(int slotIndex)
+        {
+            if (_imuCalibrationTool == null)
+            {
+                return;
+            }
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(_imuCalibrationTool.GetPoseLabel(slotIndex), GUILayout.Width(180f));
+            GUILayout.Label(_imuCalibrationTool.HasCaptureForSlot(slotIndex) ? "Captured" : "Pending", GUILayout.Width(80f));
+            if (GUILayout.Button("Capture", GUILayout.Width(96f)))
+            {
+                _imuCalibrationTool.BeginCapture(slotIndex);
+            }
             GUILayout.EndHorizontal();
         }
 

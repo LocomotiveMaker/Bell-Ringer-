@@ -19,8 +19,8 @@ namespace BellRinger.Hardware
         public const string SerialPortEnvName = "BELL_RINGER_PAD_IMU_PORT";
         public const string SerialBaudEnvName = "BELL_RINGER_PAD_IMU_BAUD";
 
-        [SerializeField] private bool useSharedHardwareBridgeTelemetry = true;
-        [SerializeField] private string preferredPortName = string.Empty;
+        [SerializeField] private bool useSharedHardwareBridgeTelemetry = false;
+        [SerializeField] private string preferredPortName = "COM10";
         [SerializeField] private int baudRate = 115200;
         [SerializeField] private bool autoConnectOnStart = true;
         [SerializeField] private float reconnectIntervalSeconds = 2f;
@@ -57,6 +57,9 @@ namespace BellRinger.Hardware
         private bool _hasDerivedPose;
         private bool _hasQuaternionTelemetry;
         private Quaternion _rawHandQuaternion = Quaternion.identity;
+        private bool _hasRuntimeQuaternionCalibration;
+        private Quaternion _calibrationReferenceQuaternion = Quaternion.identity;
+        private Quaternion _calibrationBasisQuaternion = Quaternion.identity;
 
         public bool IsConnected => _usingSharedHardwareBridgeTelemetry
             ? HardwareBridge.Instance != null && HardwareBridge.Instance.IsConnected
@@ -82,6 +85,7 @@ namespace BellRinger.Hardware
         public float MotionIntensity01 => _motionIntensity01;
         public bool UsingSharedHardwareBridgeTelemetry => _usingSharedHardwareBridgeTelemetry;
         public bool HasQuaternionTelemetry => _hasQuaternionTelemetry;
+        public bool HasRuntimeQuaternionCalibration => _hasRuntimeQuaternionCalibration;
         public string YawAxisLabel => BuildAxisLabel(yawAxis, invertYaw);
         public string PitchAxisLabel => BuildAxisLabel(pitchAxis, invertPitch);
         public string RollAxisLabel => BuildAxisLabel(rollAxis, invertRoll);
@@ -133,6 +137,7 @@ namespace BellRinger.Hardware
 
             _initialized = true;
             ApplyEnvironmentOverrides();
+            LoadSavedCalibration();
             RefreshAvailablePorts();
 
             if (autoConnectOnStart)
@@ -245,6 +250,36 @@ namespace BellRinger.Hardware
             UpdateDerivedPose();
         }
 
+        public bool TryGetRawQuaternion(out Quaternion rawQuaternion)
+        {
+            rawQuaternion = _rawHandQuaternion;
+            return _hasQuaternionTelemetry && HasFreshSample;
+        }
+
+        public void ApplyRuntimeQuaternionCalibration(Quaternion referenceQuaternion, Quaternion basisQuaternion)
+        {
+            _calibrationReferenceQuaternion = NormalizeQuaternion(referenceQuaternion);
+            _calibrationBasisQuaternion = NormalizeQuaternion(basisQuaternion);
+            _hasRuntimeQuaternionCalibration = true;
+            UpdateDerivedPose();
+        }
+
+        public void ApplySavedMountCalibration(Quaternion basisQuaternion)
+        {
+            _calibrationReferenceQuaternion = Quaternion.identity;
+            _calibrationBasisQuaternion = NormalizeQuaternion(basisQuaternion);
+            _hasRuntimeQuaternionCalibration = true;
+            UpdateDerivedPose();
+        }
+
+        public void ClearRuntimeQuaternionCalibration()
+        {
+            _calibrationReferenceQuaternion = Quaternion.identity;
+            _calibrationBasisQuaternion = Quaternion.identity;
+            _hasRuntimeQuaternionCalibration = false;
+            UpdateDerivedPose();
+        }
+
         private void ApplyEnvironmentOverrides()
         {
             string portOverride = Environment.GetEnvironmentVariable(SerialPortEnvName);
@@ -258,6 +293,16 @@ namespace BellRinger.Hardware
             {
                 baudRate = parsedBaud;
             }
+        }
+
+        private void LoadSavedCalibration()
+        {
+            if (!PadImuCalibrationStore.TryLoadBasisQuaternion(out Quaternion basisQuaternion))
+            {
+                return;
+            }
+
+            ApplySavedMountCalibration(basisQuaternion);
         }
 
         private void RefreshAvailablePorts()
@@ -378,7 +423,8 @@ namespace BellRinger.Hardware
 
             if (useQuaternionWhenAvailable && _hasQuaternionTelemetry)
             {
-                Quaternion trimmedQuaternion = Quaternion.Normalize(_rawHandQuaternion * Quaternion.Euler(localRotationTrimEuler));
+                Quaternion correctedQuaternion = ApplyQuaternionCalibration(_rawHandQuaternion);
+                Quaternion trimmedQuaternion = Quaternion.Normalize(correctedQuaternion * Quaternion.Euler(localRotationTrimEuler));
                 Vector3 signedEuler = ToSignedEulerDegrees(trimmedQuaternion.eulerAngles);
                 _mappedYawDegrees = signedEuler.y;
                 _mappedPitchDegrees = -signedEuler.x;
@@ -425,6 +471,18 @@ namespace BellRinger.Hardware
                 NormalizeSignedAngle(localRotationTrimEuler.y + eulerDelta.y),
                 NormalizeSignedAngle(localRotationTrimEuler.z + eulerDelta.z));
             UpdateDerivedPose();
+        }
+
+        private Quaternion ApplyQuaternionCalibration(Quaternion rawQuaternion)
+        {
+            Quaternion normalizedRawQuaternion = NormalizeQuaternion(rawQuaternion);
+            if (!_hasRuntimeQuaternionCalibration)
+            {
+                return normalizedRawQuaternion;
+            }
+
+            Quaternion relativeQuaternion = Quaternion.Normalize(Quaternion.Inverse(_calibrationReferenceQuaternion) * normalizedRawQuaternion);
+            return Quaternion.Normalize(Quaternion.Inverse(_calibrationBasisQuaternion) * relativeQuaternion * _calibrationBasisQuaternion);
         }
 
         private float ReadMappedAxis(ImuAxis axis, bool inverted)

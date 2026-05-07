@@ -2,7 +2,8 @@
 #include <Wire.h>
 
 const unsigned long kBaudRate = 115200;
-const bool kEnableTelemetry = true;
+const bool kEnablePadImu = false;
+const bool kEnableTelemetry = false;
 const unsigned long kTelemetryIntervalMs = 10;
 const int kButtonPin = 2;
 const int kLeftMatrixPin = 6;
@@ -239,7 +240,7 @@ void updatePadOrientation(const ImuSample& sample, float deltaSeconds) {
 }
 
 void servicePadImu() {
-  if (gMpuAddress == 0) {
+  if (!kEnablePadImu || gMpuAddress == 0) {
     return;
   }
 
@@ -272,22 +273,26 @@ void setup() {
   while (!Serial) {
   }
 
-  Wire.begin();
-  Wire.setClock(400000UL);
-
   Serial.println("ACK boot");
 
-  if (detectPadMpuAddress() && initializePadMpu()) {
-    calibratePadGyroBias();
-    lastImuSampleAtUs = micros();
-  } else {
-    Serial.println("ACK imu_missing");
+  if (kEnablePadImu) {
+    Wire.begin();
+    Wire.setClock(400000UL);
+
+    if (detectPadMpuAddress() && initializePadMpu()) {
+      calibratePadGyroBias();
+      lastImuSampleAtUs = micros();
+    } else {
+      Serial.println("ACK imu_missing");
+    }
   }
 }
 
 void loop() {
   readCommands();
-  servicePadImu();
+  if (kEnablePadImu) {
+    servicePadImu();
+  }
   sendTelemetry();
 }
 
@@ -319,8 +324,12 @@ void handleCommand(const String& command) {
   if (command == "PING") {
     Serial.println("ACK ping");
   } else if (command == "IMU recenter" || command == "r" || command == "recenter") {
-    recenterPadImu();
-    Serial.println("ACK imu_recenter");
+    if (kEnablePadImu) {
+      recenterPadImu();
+      Serial.println("ACK imu_recenter");
+    } else {
+      Serial.println("ACK imu_disabled");
+    }
   } else if (command == "LED clear") {
     clearMatrices();
     showMatrices();
