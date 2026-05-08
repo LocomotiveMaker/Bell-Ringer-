@@ -83,7 +83,10 @@ namespace BellRinger.Debug
                 _builder.Append("Last command: ").AppendLine(snapshot.lastCommand);
             }
 
-            GUI.Box(new Rect(16f, 16f, 520f, _padImuReceiver == null ? 360f : 440f), _builder.ToString());
+            float width = 360f;
+            float height = _padImuReceiver == null ? 300f : 360f;
+            float x = Mathf.Max(16f, Screen.width - width - 16f);
+            GUI.Box(new Rect(x, 16f, width, height), _builder.ToString());
         }
 
         private static bool OverlayDisabledByEnvironment()

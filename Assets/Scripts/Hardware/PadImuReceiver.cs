@@ -21,11 +21,14 @@ namespace BellRinger.Hardware
 
         [SerializeField] private bool useSharedHardwareBridgeTelemetry = false;
         [SerializeField] private string preferredPortName = "COM10";
-        [SerializeField] private int baudRate = 115200;
+        [SerializeField] private int baudRate = 230400;
         [SerializeField] private bool autoConnectOnStart = true;
         [SerializeField] private float reconnectIntervalSeconds = 2f;
         [SerializeField] private float staleAfterSeconds = 0.25f;
         [SerializeField] private bool useQuaternionWhenAvailable = true;
+        [SerializeField] private bool enableGyroPrediction = true;
+        [SerializeField] private float maxPredictionSeconds = 0.024f;
+        [SerializeField] private float stillnessSuppressPredictionThreshold = 0.82f;
         [SerializeField] private ImuAxis yawAxis = ImuAxis.Yaw;
         [SerializeField] private ImuAxis pitchAxis = ImuAxis.Pitch;
         [SerializeField] private ImuAxis rollAxis = ImuAxis.Roll;
@@ -60,6 +63,13 @@ namespace BellRinger.Hardware
         private bool _hasRuntimeQuaternionCalibration;
         private Quaternion _calibrationReferenceQuaternion = Quaternion.identity;
         private Quaternion _calibrationBasisQuaternion = Quaternion.identity;
+        private float _gyroXDegreesPerSecond;
+        private float _gyroYDegreesPerSecond;
+        private float _gyroZDegreesPerSecond;
+        private float _stillness01;
+        private int _fusionMode;
+        private bool _magCalibrationActive;
+        private float _magCalibrationProgress01;
 
         public bool IsConnected => _usingSharedHardwareBridgeTelemetry
             ? HardwareBridge.Instance != null && HardwareBridge.Instance.IsConnected
@@ -86,6 +96,12 @@ namespace BellRinger.Hardware
         public bool UsingSharedHardwareBridgeTelemetry => _usingSharedHardwareBridgeTelemetry;
         public bool HasQuaternionTelemetry => _hasQuaternionTelemetry;
         public bool HasRuntimeQuaternionCalibration => _hasRuntimeQuaternionCalibration;
+        public Vector3 GyroDegreesPerSecond => new Vector3(_gyroXDegreesPerSecond, _gyroYDegreesPerSecond, _gyroZDegreesPerSecond);
+        public float Stillness01 => _stillness01;
+        public int FusionMode => _fusionMode;
+        public bool UsingMagnetometerFusion => _fusionMode >= 9;
+        public bool MagCalibrationActive => _magCalibrationActive;
+        public float MagCalibrationProgress01 => _magCalibrationProgress01;
         public string YawAxisLabel => BuildAxisLabel(yawAxis, invertYaw);
         public string PitchAxisLabel => BuildAxisLabel(pitchAxis, invertPitch);
         public string RollAxisLabel => BuildAxisLabel(rollAxis, invertRoll);
@@ -156,6 +172,26 @@ namespace BellRinger.Hardware
             }
 
             SendCommand("r");
+        }
+
+        public void StartMagCalibration()
+        {
+            SendImuCommand("magcal_start");
+        }
+
+        public void FinishMagCalibrationAndSave()
+        {
+            SendImuCommand("magcal_stop");
+        }
+
+        public void ResetMagCalibration()
+        {
+            SendImuCommand("magcal_reset");
+        }
+
+        public void RequestMagCalibrationStatus()
+        {
+            SendImuCommand("magcal_status");
         }
 
         public void RefreshAndReconnect()
@@ -280,6 +316,18 @@ namespace BellRinger.Hardware
             UpdateDerivedPose();
         }
 
+        private void SendImuCommand(string command)
+        {
+            if (_usingSharedHardwareBridgeTelemetry)
+            {
+                _lastError = "Mag calibration commands are only supported on the dedicated IMU serial receiver.";
+                UnityEngine.Debug.LogWarning($"[PadImuReceiver] {_lastError}");
+                return;
+            }
+
+            SendCommand(command);
+        }
+
         private void ApplyEnvironmentOverrides()
         {
             string portOverride = Environment.GetEnvironmentVariable(SerialPortEnvName);
@@ -292,6 +340,12 @@ namespace BellRinger.Hardware
             if (int.TryParse(baudOverride, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedBaud) && parsedBaud > 0)
             {
                 baudRate = parsedBaud;
+                return;
+            }
+
+            if (baudRate == 115200)
+            {
+                baudRate = 230400;
             }
         }
 
@@ -394,6 +448,13 @@ namespace BellRinger.Hardware
             _yawDegrees = snapshot.telemetry.handYaw;
             _pitchDegrees = snapshot.telemetry.handPitch;
             _rollDegrees = snapshot.telemetry.handRoll;
+            _gyroXDegreesPerSecond = 0f;
+            _gyroYDegreesPerSecond = 0f;
+            _gyroZDegreesPerSecond = 0f;
+            _stillness01 = 0f;
+            _fusionMode = 0;
+            _magCalibrationActive = false;
+            _magCalibrationProgress01 = 0f;
             _hasQuaternionTelemetry = snapshot.telemetry.handQuaternionValid;
             if (_hasQuaternionTelemetry)
             {
@@ -424,7 +485,8 @@ namespace BellRinger.Hardware
             if (useQuaternionWhenAvailable && _hasQuaternionTelemetry)
             {
                 Quaternion correctedQuaternion = ApplyQuaternionCalibration(_rawHandQuaternion);
-                Quaternion trimmedQuaternion = Quaternion.Normalize(correctedQuaternion * Quaternion.Euler(localRotationTrimEuler));
+                Quaternion predictedQuaternion = PredictQuaternionForward(correctedQuaternion);
+                Quaternion trimmedQuaternion = Quaternion.Normalize(predictedQuaternion * Quaternion.Euler(localRotationTrimEuler));
                 Vector3 signedEuler = ToSignedEulerDegrees(trimmedQuaternion.eulerAngles);
                 _mappedYawDegrees = signedEuler.y;
                 _mappedPitchDegrees = -signedEuler.x;
@@ -483,6 +545,35 @@ namespace BellRinger.Hardware
 
             Quaternion relativeQuaternion = Quaternion.Normalize(Quaternion.Inverse(_calibrationReferenceQuaternion) * normalizedRawQuaternion);
             return Quaternion.Normalize(Quaternion.Inverse(_calibrationBasisQuaternion) * relativeQuaternion * _calibrationBasisQuaternion);
+        }
+
+        private Quaternion PredictQuaternionForward(Quaternion correctedQuaternion)
+        {
+            if (!enableGyroPrediction || !HasFreshSample || _stillness01 >= stillnessSuppressPredictionThreshold)
+            {
+                return correctedQuaternion;
+            }
+
+            float predictionSeconds = Mathf.Min(maxPredictionSeconds, LastSampleAgeSeconds);
+            if (predictionSeconds <= 0.0001f)
+            {
+                return correctedQuaternion;
+            }
+
+            Vector3 deltaDegrees = new Vector3(_gyroXDegreesPerSecond, _gyroYDegreesPerSecond, _gyroZDegreesPerSecond) * predictionSeconds;
+            if (_hasRuntimeQuaternionCalibration)
+            {
+                deltaDegrees = Quaternion.Inverse(_calibrationBasisQuaternion) * deltaDegrees;
+            }
+
+            float deltaAngle = deltaDegrees.magnitude;
+            if (deltaAngle <= 0.0001f)
+            {
+                return correctedQuaternion;
+            }
+
+            Quaternion deltaRotation = Quaternion.AngleAxis(deltaAngle, deltaDegrees / deltaAngle);
+            return Quaternion.Normalize(correctedQuaternion * deltaRotation);
         }
 
         private float ReadMappedAxis(ImuAxis axis, bool inverted)
@@ -666,6 +757,13 @@ namespace BellRinger.Hardware
             float quatX = _rawHandQuaternion.x;
             float quatY = _rawHandQuaternion.y;
             float quatZ = _rawHandQuaternion.z;
+            float gyroX = _gyroXDegreesPerSecond;
+            float gyroY = _gyroYDegreesPerSecond;
+            float gyroZ = _gyroZDegreesPerSecond;
+            float stillness = _stillness01;
+            int fusionMode = _fusionMode;
+            bool magCalibrationActive = _magCalibrationActive;
+            float magCalibrationProgress = _magCalibrationProgress01;
 
             string[] parts = line.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string part in parts)
@@ -720,22 +818,55 @@ namespace BellRinger.Hardware
                         quatZ = parsedValue;
                         sawQuaternion = true;
                         break;
+                    case "gx":
+                        gyroX = parsedValue;
+                        break;
+                    case "gy":
+                        gyroY = parsedValue;
+                        break;
+                    case "gz":
+                        gyroZ = parsedValue;
+                        break;
+                    case "st":
+                        stillness = parsedValue;
+                        break;
+                    case "mf":
+                        fusionMode = Mathf.RoundToInt(parsedValue);
+                        break;
+                    case "mc":
+                        magCalibrationActive = parsedValue >= 0.5f;
+                        break;
+                    case "mp":
+                        magCalibrationProgress = parsedValue;
+                        break;
                 }
             }
 
-            if (!sawAny)
+            if (!sawAny && !sawQuaternion)
             {
                 return false;
             }
 
-            _yawDegrees = yaw;
-            _pitchDegrees = pitch;
-            _rollDegrees = roll;
+            if (sawAny)
+            {
+                _yawDegrees = yaw;
+                _pitchDegrees = pitch;
+                _rollDegrees = roll;
+            }
+
             _hasQuaternionTelemetry = sawQuaternion;
             if (sawQuaternion)
             {
                 _rawHandQuaternion = NormalizeQuaternion(new Quaternion(quatX, quatY, quatZ, quatW));
             }
+
+            _gyroXDegreesPerSecond = gyroX;
+            _gyroYDegreesPerSecond = gyroY;
+            _gyroZDegreesPerSecond = gyroZ;
+            _stillness01 = Mathf.Clamp01(stillness);
+            _fusionMode = fusionMode;
+            _magCalibrationActive = magCalibrationActive;
+            _magCalibrationProgress01 = Mathf.Clamp01(magCalibrationProgress);
 
             return true;
         }

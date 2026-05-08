@@ -190,6 +190,9 @@ namespace BellRinger.Debug
                 GUILayout.Label($"IMU raw yaw/pitch/roll: {_imuReceiver.YawDegrees:0.00} / {_imuReceiver.PitchDegrees:0.00} / {_imuReceiver.RollDegrees:0.00}");
                 GUILayout.Label($"IMU mapped yaw/pitch/roll: {_imuReceiver.MappedYawDegrees:0.00} / {_imuReceiver.MappedPitchDegrees:0.00} / {_imuReceiver.MappedRollDegrees:0.00}");
                 GUILayout.Label($"IMU sample age: {_imuReceiver.LastSampleAgeSeconds:0.000}s  baud: {_imuReceiver.ActiveBaudRate}");
+                GUILayout.Label($"IMU gyro dps XYZ: {_imuReceiver.GyroDegreesPerSecond.x:0.00} / {_imuReceiver.GyroDegreesPerSecond.y:0.00} / {_imuReceiver.GyroDegreesPerSecond.z:0.00}");
+                GUILayout.Label($"IMU stillness: {_imuReceiver.Stillness01:0.00}");
+                GUILayout.Label($"IMU fusion mode: {_imuReceiver.FusionMode} axis  mag cal active: {_imuReceiver.MagCalibrationActive}  progress: {_imuReceiver.MagCalibrationProgress01:0.00}");
                 GUILayout.Label($"IMU motion: {_imuReceiver.MotionIntensity01:0.00}");
                 GUILayout.Label($"IMU quaternion: {_imuReceiver.HasQuaternionTelemetry}");
                 GUILayout.Label($"IMU last line: {_imuReceiver.LastRawLine}");
@@ -230,12 +233,39 @@ namespace BellRinger.Debug
                     _imuReceiver.Recenter();
                 }
 
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Start Mag Cal", GUILayout.Height(26f)))
+                {
+                    _imuReceiver.StartMagCalibration();
+                }
+
+                if (GUILayout.Button("Finish + Save Mag Cal", GUILayout.Height(26f)))
+                {
+                    _imuReceiver.FinishMagCalibrationAndSave();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Reset Mag Cal", GUILayout.Height(24f)))
+                {
+                    _imuReceiver.ResetMagCalibration();
+                }
+
+                if (GUILayout.Button("Mag Cal Status", GUILayout.Height(24f)))
+                {
+                    _imuReceiver.RequestMagCalibrationStatus();
+                }
+                GUILayout.EndHorizontal();
+
                 if (!string.IsNullOrWhiteSpace(_imuReceiver.LastError))
                 {
                     GUILayout.Label($"IMU error: {_imuReceiver.LastError}");
                 }
 
                 GUILayout.Label("If you change preferredPortName in the Inspector during Play, press Reconnect IMU.");
+                GUILayout.Label("Dedicated IMU sketch now expects 230400 baud.");
+                GUILayout.Label("Mag calibration: press Start, rotate through wide figure-8 and all 3 axes for 10-15 seconds, then Finish + Save.");
+                GUILayout.Label("After a saved mag calibration, fusion mode should change from 6 to 9.");
                 GUILayout.Label("Preview colors: gray = neutral, orange = live body, white = front, red = right, green = up.");
                 GUILayout.Label("Shake grows with faster movement. Compare the orange body against the gray neutral plate.");
                 GUILayout.Label("Quaternion mode uses Mount Trim buttons instead of Euler axis remapping.");

@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <EEPROM.h>
 
 namespace
 {
@@ -25,21 +26,39 @@ namespace
     constexpr uint8_t AkCntl2 = 0x0B;
     constexpr uint8_t AkAsax = 0x10;
 
-    constexpr unsigned long SerialBaud = 115200UL;
-    constexpr unsigned long SampleIntervalUs = 10000UL;
+    constexpr unsigned long SerialBaud = 230400UL;
+    constexpr unsigned long SampleIntervalUs = 5000UL;
     constexpr uint16_t GyroCalibrationSamples = 600;
     constexpr float AccelScale = 16384.0f;
-    constexpr float GyroScale = 131.0f;
+    constexpr float GyroScale = 32.8f;
     constexpr float MagScaleUt = 0.15f;
-    constexpr bool UseMagnetometerFusion = false;
+    constexpr bool PreferMagnetometerFusion = true;
     constexpr float GyroDeadbandDps = 0.35f;
     constexpr float MadgwickBeta = 0.045f;
+    constexpr float StationaryAccelToleranceG = 0.06f;
+    constexpr float StationaryGyroToleranceDps = 1.35f;
+    constexpr float StationaryEnterSpeed = 5.5f;
+    constexpr float StationaryExitSpeed = 8.0f;
+    constexpr float GyroBiasAdaptSpeed = 0.75f;
+    constexpr float MagCalibrationSpanGoalUt = 45.0f;
+    constexpr uint32_t MagCalibrationMagic = 0x4D43414CUL;
+    constexpr uint16_t MagCalibrationVersion = 1;
+    constexpr unsigned long TelemetryIntervalUs = 10000UL;
+    constexpr float MagYawCorrectionGain = 2.2f;
+    constexpr float MagYawCorrectionMovingGain = 0.8f;
+    constexpr float MaxYawCorrectionPerStepDegrees = 4.0f;
 
     struct ImuSample
     {
         float accelXG;
         float accelYG;
         float accelZG;
+        float rawGyroXDps;
+        float rawGyroYDps;
+        float rawGyroZDps;
+        float unbiasedGyroXDps;
+        float unbiasedGyroYDps;
+        float unbiasedGyroZDps;
         float gyroXDps;
         float gyroYDps;
         float gyroZDps;
@@ -47,6 +66,19 @@ namespace
         float magYUt;
         float magZUt;
         bool hasMagnetometer;
+        bool stationaryCandidate;
+    };
+
+    struct StoredMagCalibration
+    {
+        uint32_t magic;
+        uint16_t version;
+        float biasXUt;
+        float biasYUt;
+        float biasZUt;
+        float scaleX;
+        float scaleY;
+        float scaleZ;
     };
 
     uint8_t gMpuAddress = 0;
@@ -63,6 +95,18 @@ namespace
     float gLastMagXUt = 0.0f;
     float gLastMagYUt = 0.0f;
     float gLastMagZUt = 0.0f;
+    float gMagBiasXUt = 0.0f;
+    float gMagBiasYUt = 0.0f;
+    float gMagBiasZUt = 0.0f;
+    float gMagScaleX = 1.0f;
+    float gMagScaleY = 1.0f;
+    float gMagScaleZ = 1.0f;
+    float gMagMinXUt = 0.0f;
+    float gMagMinYUt = 0.0f;
+    float gMagMinZUt = 0.0f;
+    float gMagMaxXUt = 0.0f;
+    float gMagMaxYUt = 0.0f;
+    float gMagMaxZUt = 0.0f;
     float gQuatW = 1.0f;
     float gQuatX = 0.0f;
     float gQuatY = 0.0f;
@@ -76,6 +120,19 @@ namespace
     float gRollDegrees = 0.0f;
     char gCommandBuffer[32] = {0};
     uint8_t gCommandLength = 0;
+    float gStationaryBlend = 0.0f;
+    float gLastGyroXDps = 0.0f;
+    float gLastGyroYDps = 0.0f;
+    float gLastGyroZDps = 0.0f;
+    float gMagCalibrationProgress01 = 0.0f;
+    bool gHasSavedMagCalibration = false;
+    bool gMagCalibrationActive = false;
+    uint32_t gMagCalibrationSampleCount = 0;
+    unsigned long gLastTelemetryMicros = 0;
+    float gMagReferenceHeadingDegrees = 0.0f;
+    bool gHasMagReferenceHeading = false;
+
+    void quaternionToYawPitchRollDegrees(float w, float x, float y, float z, float& yaw, float& pitch, float& roll);
 
     bool writeRegister(uint8_t deviceAddress, uint8_t registerAddress, uint8_t value)
     {
@@ -148,6 +205,16 @@ namespace
         outZ = (aw * bz) + (ax * by) - (ay * bx) + (az * bw);
     }
 
+    void quaternionFromAxisAngle(float axisX, float axisY, float axisZ, float angleDegrees, float& outW, float& outX, float& outY, float& outZ)
+    {
+        float halfRadians = angleDegrees * DEG_TO_RAD * 0.5f;
+        float sinHalf = sin(halfRadians);
+        outW = cos(halfRadians);
+        outX = axisX * sinHalf;
+        outY = axisY * sinHalf;
+        outZ = axisZ * sinHalf;
+    }
+
     float wrapDegrees(float degrees)
     {
         while (degrees > 180.0f)
@@ -168,6 +235,126 @@ namespace
         return abs(valueDps) < GyroDeadbandDps ? 0.0f : valueDps;
     }
 
+    float angleDifferenceDegrees(float targetDegrees, float currentDegrees)
+    {
+        return wrapDegrees(targetDegrees - currentDegrees);
+    }
+
+    float sanitizePositiveScale(float value)
+    {
+        return value > 0.0001f ? value : 1.0f;
+    }
+
+    bool shouldUseMagnetometerFusion()
+    {
+        return PreferMagnetometerFusion && gHasMagnetometer && gHasSavedMagCalibration;
+    }
+
+    void resetMagCalibrationAccumulator()
+    {
+        gMagMinXUt = 100000.0f;
+        gMagMinYUt = 100000.0f;
+        gMagMinZUt = 100000.0f;
+        gMagMaxXUt = -100000.0f;
+        gMagMaxYUt = -100000.0f;
+        gMagMaxZUt = -100000.0f;
+        gMagCalibrationProgress01 = 0.0f;
+        gMagCalibrationSampleCount = 0;
+    }
+
+    void updateMagCalibrationProgressFromRanges()
+    {
+        float spanX = max(0.0f, gMagMaxXUt - gMagMinXUt);
+        float spanY = max(0.0f, gMagMaxYUt - gMagMinYUt);
+        float spanZ = max(0.0f, gMagMaxZUt - gMagMinZUt);
+        float axisCoverage =
+            (min(1.0f, spanX / MagCalibrationSpanGoalUt) +
+             min(1.0f, spanY / MagCalibrationSpanGoalUt) +
+             min(1.0f, spanZ / MagCalibrationSpanGoalUt)) / 3.0f;
+        float sampleCoverage = min(1.0f, gMagCalibrationSampleCount / 800.0f);
+        gMagCalibrationProgress01 = min(1.0f, axisCoverage * 0.75f + sampleCoverage * 0.25f);
+    }
+
+    void updateMagCalibrationAccumulator(float magXUt, float magYUt, float magZUt)
+    {
+        if (!gMagCalibrationActive)
+        {
+            return;
+        }
+
+        gMagMinXUt = min(gMagMinXUt, magXUt);
+        gMagMinYUt = min(gMagMinYUt, magYUt);
+        gMagMinZUt = min(gMagMinZUt, magZUt);
+        gMagMaxXUt = max(gMagMaxXUt, magXUt);
+        gMagMaxYUt = max(gMagMaxYUt, magYUt);
+        gMagMaxZUt = max(gMagMaxZUt, magZUt);
+        ++gMagCalibrationSampleCount;
+        updateMagCalibrationProgressFromRanges();
+    }
+
+    void applyStoredMagCalibration(float& magXUt, float& magYUt, float& magZUt)
+    {
+        if (!gHasSavedMagCalibration)
+        {
+            return;
+        }
+
+        magXUt = (magXUt - gMagBiasXUt) * gMagScaleX;
+        magYUt = (magYUt - gMagBiasYUt) * gMagScaleY;
+        magZUt = (magZUt - gMagBiasZUt) * gMagScaleZ;
+    }
+
+    void saveMagCalibrationToEeprom()
+    {
+        StoredMagCalibration data = {};
+        data.magic = MagCalibrationMagic;
+        data.version = MagCalibrationVersion;
+        data.biasXUt = gMagBiasXUt;
+        data.biasYUt = gMagBiasYUt;
+        data.biasZUt = gMagBiasZUt;
+        data.scaleX = gMagScaleX;
+        data.scaleY = gMagScaleY;
+        data.scaleZ = gMagScaleZ;
+        EEPROM.put(0, data);
+    }
+
+    bool loadMagCalibrationFromEeprom()
+    {
+        StoredMagCalibration data = {};
+        EEPROM.get(0, data);
+        if (data.magic != MagCalibrationMagic || data.version != MagCalibrationVersion)
+        {
+            return false;
+        }
+
+        gMagBiasXUt = data.biasXUt;
+        gMagBiasYUt = data.biasYUt;
+        gMagBiasZUt = data.biasZUt;
+        gMagScaleX = sanitizePositiveScale(data.scaleX);
+        gMagScaleY = sanitizePositiveScale(data.scaleY);
+        gMagScaleZ = sanitizePositiveScale(data.scaleZ);
+        return true;
+    }
+
+    void clearMagCalibration()
+    {
+        gHasSavedMagCalibration = false;
+        gMagCalibrationActive = false;
+        gMagCalibrationProgress01 = 0.0f;
+        gMagBiasXUt = 0.0f;
+        gMagBiasYUt = 0.0f;
+        gMagBiasZUt = 0.0f;
+        gMagScaleX = 1.0f;
+        gMagScaleY = 1.0f;
+        gMagScaleZ = 1.0f;
+        gMagReferenceHeadingDegrees = 0.0f;
+        gHasMagReferenceHeading = false;
+
+        StoredMagCalibration cleared = {};
+        EEPROM.put(0, cleared);
+        resetMagCalibrationAccumulator();
+    }
+
     bool probeDevice(uint8_t address, uint8_t& whoAmI)
     {
         return readRegisters(address, RegisterWhoAmI, 1, &whoAmI);
@@ -176,23 +363,56 @@ namespace
     bool detectMpuAddress()
     {
         uint8_t whoAmI = 0;
-        if (probeDevice(Mpu9250AddressLow, whoAmI))
+        for (uint8_t attempt = 0; attempt < 5; ++attempt)
         {
-            gMpuAddress = Mpu9250AddressLow;
-            Serial.print(F("[PadMPU] Found candidate at 0x68 WHO_AM_I=0x"));
-            Serial.println(whoAmI, HEX);
-            return true;
-        }
+            if (probeDevice(Mpu9250AddressLow, whoAmI))
+            {
+                gMpuAddress = Mpu9250AddressLow;
+                Serial.print(F("[PadMPU] Found candidate at 0x68 WHO_AM_I=0x"));
+                Serial.println(whoAmI, HEX);
+                return true;
+            }
 
-        if (probeDevice(Mpu9250AddressHigh, whoAmI))
-        {
-            gMpuAddress = Mpu9250AddressHigh;
-            Serial.print(F("[PadMPU] Found candidate at 0x69 WHO_AM_I=0x"));
-            Serial.println(whoAmI, HEX);
-            return true;
+            if (probeDevice(Mpu9250AddressHigh, whoAmI))
+            {
+                gMpuAddress = Mpu9250AddressHigh;
+                Serial.print(F("[PadMPU] Found candidate at 0x69 WHO_AM_I=0x"));
+                Serial.println(whoAmI, HEX);
+                return true;
+            }
+
+            delay(80);
         }
 
         return false;
+    }
+
+    void printI2cScanResults()
+    {
+        Serial.print(F("[PadMPU] I2C scan:"));
+        bool foundAny = false;
+        for (uint8_t address = 1; address < 127; ++address)
+        {
+            Wire.beginTransmission(address);
+            if (Wire.endTransmission() == 0)
+            {
+                foundAny = true;
+                Serial.print(' ');
+                if (address < 16)
+                {
+                    Serial.print('0');
+                }
+
+                Serial.print(address, HEX);
+            }
+        }
+
+        if (!foundAny)
+        {
+            Serial.print(F(" <none>"));
+        }
+
+        Serial.println();
     }
 
     bool initializeMpu9250()
@@ -211,11 +431,11 @@ namespace
 
         if (!writeRegister(gMpuAddress, RegisterPowerManagement1, 0x01) ||
             !writeRegister(gMpuAddress, RegisterPowerManagement2, 0x00) ||
-            !writeRegister(gMpuAddress, RegisterConfig, 0x03) ||
-            !writeRegister(gMpuAddress, RegisterSampleRateDivider, 0x04) ||
-            !writeRegister(gMpuAddress, RegisterGyroConfig, 0x00) ||
+            !writeRegister(gMpuAddress, RegisterConfig, 0x01) ||
+            !writeRegister(gMpuAddress, RegisterSampleRateDivider, 0x00) ||
+            !writeRegister(gMpuAddress, RegisterGyroConfig, 0x10) ||
             !writeRegister(gMpuAddress, RegisterAccelConfig, 0x00) ||
-            !writeRegister(gMpuAddress, RegisterAccelConfig2, 0x03))
+            !writeRegister(gMpuAddress, RegisterAccelConfig2, 0x01))
         {
             return false;
         }
@@ -288,9 +508,27 @@ namespace
         sample.accelXG = ax / AccelScale;
         sample.accelYG = ay / AccelScale;
         sample.accelZG = az / AccelScale;
-        sample.gyroXDps = applyGyroDeadband((gx / GyroScale) - gGyroBiasXDps);
-        sample.gyroYDps = applyGyroDeadband((gy / GyroScale) - gGyroBiasYDps);
-        sample.gyroZDps = applyGyroDeadband((gz / GyroScale) - gGyroBiasZDps);
+        sample.rawGyroXDps = gx / GyroScale;
+        sample.rawGyroYDps = gy / GyroScale;
+        sample.rawGyroZDps = gz / GyroScale;
+        sample.unbiasedGyroXDps = sample.rawGyroXDps - gGyroBiasXDps;
+        sample.unbiasedGyroYDps = sample.rawGyroYDps - gGyroBiasYDps;
+        sample.unbiasedGyroZDps = sample.rawGyroZDps - gGyroBiasZDps;
+        sample.gyroXDps = applyGyroDeadband(sample.unbiasedGyroXDps);
+        sample.gyroYDps = applyGyroDeadband(sample.unbiasedGyroYDps);
+        sample.gyroZDps = applyGyroDeadband(sample.unbiasedGyroZDps);
+
+        float accelMagnitude = sqrt(
+            (sample.accelXG * sample.accelXG) +
+            (sample.accelYG * sample.accelYG) +
+            (sample.accelZG * sample.accelZG));
+        float gyroMagnitude = sqrt(
+            (sample.unbiasedGyroXDps * sample.unbiasedGyroXDps) +
+            (sample.unbiasedGyroYDps * sample.unbiasedGyroYDps) +
+            (sample.unbiasedGyroZDps * sample.unbiasedGyroZDps));
+        sample.stationaryCandidate =
+            abs(accelMagnitude - 1.0f) <= StationaryAccelToleranceG &&
+            gyroMagnitude <= StationaryGyroToleranceDps;
         return true;
     }
 
@@ -311,10 +549,9 @@ namespace
                 int16_t rawY = combineInt16(raw[3], raw[2]);
                 int16_t rawZ = combineInt16(raw[5], raw[4]);
 
-                // Common MPU9250 breakout alignment.
-                gLastMagXUt = rawY * MagScaleUt * gMagAdjustY;
-                gLastMagYUt = rawX * MagScaleUt * gMagAdjustX;
-                gLastMagZUt = -rawZ * MagScaleUt * gMagAdjustZ;
+                gLastMagXUt = rawX * MagScaleUt * gMagAdjustX;
+                gLastMagYUt = rawY * MagScaleUt * gMagAdjustY;
+                gLastMagZUt = rawZ * MagScaleUt * gMagAdjustZ;
                 gHasLastMagSample = true;
             }
         }
@@ -324,10 +561,75 @@ namespace
             return;
         }
 
+        updateMagCalibrationAccumulator(gLastMagXUt, gLastMagYUt, gLastMagZUt);
+
         sample.hasMagnetometer = true;
         sample.magXUt = gLastMagXUt;
         sample.magYUt = gLastMagYUt;
         sample.magZUt = gLastMagZUt;
+        applyStoredMagCalibration(sample.magXUt, sample.magYUt, sample.magZUt);
+    }
+
+    void startMagCalibration()
+    {
+        if (!gHasMagnetometer)
+        {
+            Serial.println(F("[PadMPU] magcal failed: magnetometer missing"));
+            return;
+        }
+
+        gMagCalibrationActive = true;
+        resetMagCalibrationAccumulator();
+        Serial.println(F("[PadMPU] magcal start: rotate through wide figure-8 and all axes"));
+    }
+
+    void finishMagCalibrationAndSave()
+    {
+        if (!gMagCalibrationActive)
+        {
+            Serial.println(F("[PadMPU] magcal stop ignored: not active"));
+            return;
+        }
+
+        gMagCalibrationActive = false;
+        float spanX = max(0.0f, gMagMaxXUt - gMagMinXUt);
+        float spanY = max(0.0f, gMagMaxYUt - gMagMinYUt);
+        float spanZ = max(0.0f, gMagMaxZUt - gMagMinZUt);
+        if (spanX < 12.0f || spanY < 12.0f || spanZ < 12.0f)
+        {
+            Serial.println(F("[PadMPU] magcal failed: not enough motion coverage"));
+            updateMagCalibrationProgressFromRanges();
+            return;
+        }
+
+        float halfRangeX = spanX * 0.5f;
+        float halfRangeY = spanY * 0.5f;
+        float halfRangeZ = spanZ * 0.5f;
+        float averageRadius = (halfRangeX + halfRangeY + halfRangeZ) / 3.0f;
+
+        gMagBiasXUt = (gMagMaxXUt + gMagMinXUt) * 0.5f;
+        gMagBiasYUt = (gMagMaxYUt + gMagMinYUt) * 0.5f;
+        gMagBiasZUt = (gMagMaxZUt + gMagMinZUt) * 0.5f;
+        gMagScaleX = sanitizePositiveScale(averageRadius / max(0.0001f, halfRangeX));
+        gMagScaleY = sanitizePositiveScale(averageRadius / max(0.0001f, halfRangeY));
+        gMagScaleZ = sanitizePositiveScale(averageRadius / max(0.0001f, halfRangeZ));
+        gHasSavedMagCalibration = true;
+        gMagCalibrationProgress01 = 1.0f;
+        saveMagCalibrationToEeprom();
+
+        Serial.print(F("[PadMPU] magcal saved bias="));
+        Serial.print(gMagBiasXUt, 2);
+        Serial.print(',');
+        Serial.print(gMagBiasYUt, 2);
+        Serial.print(',');
+        Serial.print(gMagBiasZUt, 2);
+        Serial.print(F(" scale="));
+        Serial.print(gMagScaleX, 3);
+        Serial.print(',');
+        Serial.print(gMagScaleY, 3);
+        Serial.print(',');
+        Serial.println(gMagScaleZ, 3);
+        gHasMagReferenceHeading = false;
     }
 
     void recenterNow()
@@ -340,6 +642,34 @@ namespace
         gYawDegrees = 0.0f;
         gPitchDegrees = 0.0f;
         gRollDegrees = 0.0f;
+
+        if (shouldUseMagnetometerFusion() && gHasLastMagSample)
+        {
+            float yaw = 0.0f;
+            float pitch = 0.0f;
+            float roll = 0.0f;
+            quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, yaw, pitch, roll);
+            float rollRadians = roll * DEG_TO_RAD;
+            float pitchRadians = pitch * DEG_TO_RAD;
+
+            float magXUt = gLastMagXUt;
+            float magYUt = gLastMagYUt;
+            float magZUt = gLastMagZUt;
+            applyStoredMagCalibration(magXUt, magYUt, magZUt);
+
+            float horizontalX = magXUt * cos(pitchRadians) + magZUt * sin(pitchRadians);
+            float horizontalY =
+                magXUt * sin(rollRadians) * sin(pitchRadians) +
+                magYUt * cos(rollRadians) -
+                magZUt * sin(rollRadians) * cos(pitchRadians);
+
+            if ((horizontalX * horizontalX + horizontalY * horizontalY) > 0.0001f)
+            {
+                gMagReferenceHeadingDegrees = atan2(horizontalY, horizontalX) * 180.0f / PI;
+                gHasMagReferenceHeading = true;
+            }
+        }
+
         Serial.println(F("[PadMPU] recentered"));
     }
 
@@ -356,13 +686,45 @@ namespace
             if (c == '\n')
             {
                 gCommandBuffer[gCommandLength] = '\0';
-                if (gCommandLength > 0 &&
-                    (strcmp(gCommandBuffer, "r") == 0 ||
-                     strcmp(gCommandBuffer, "R") == 0 ||
-                     strcmp(gCommandBuffer, "recenter") == 0 ||
-                     strcmp(gCommandBuffer, "RECENTER") == 0))
+                if (gCommandLength > 0)
                 {
-                    recenterNow();
+                    if (strcmp(gCommandBuffer, "r") == 0 ||
+                        strcmp(gCommandBuffer, "R") == 0 ||
+                        strcmp(gCommandBuffer, "recenter") == 0 ||
+                        strcmp(gCommandBuffer, "RECENTER") == 0)
+                    {
+                        recenterNow();
+                    }
+                    else if (strcmp(gCommandBuffer, "magcal_start") == 0 ||
+                             strcmp(gCommandBuffer, "MAGCAL_START") == 0 ||
+                             strcmp(gCommandBuffer, "mag_start") == 0)
+                    {
+                        startMagCalibration();
+                    }
+                    else if (strcmp(gCommandBuffer, "magcal_stop") == 0 ||
+                             strcmp(gCommandBuffer, "MAGCAL_STOP") == 0 ||
+                             strcmp(gCommandBuffer, "mag_stop") == 0)
+                    {
+                        finishMagCalibrationAndSave();
+                    }
+                    else if (strcmp(gCommandBuffer, "magcal_reset") == 0 ||
+                             strcmp(gCommandBuffer, "MAGCAL_RESET") == 0)
+                    {
+                        clearMagCalibration();
+                        Serial.println(F("[PadMPU] magcal reset"));
+                    }
+                    else if (strcmp(gCommandBuffer, "magcal_status") == 0 ||
+                             strcmp(gCommandBuffer, "MAGCAL_STATUS") == 0)
+                    {
+                        Serial.print(F("[PadMPU] magcal active="));
+                        Serial.print(gMagCalibrationActive ? 1 : 0);
+                        Serial.print(F(" saved="));
+                        Serial.print(gHasSavedMagCalibration ? 1 : 0);
+                        Serial.print(F(" progress="));
+                        Serial.print(gMagCalibrationProgress01, 2);
+                        Serial.print(F(" fusion="));
+                        Serial.println(shouldUseMagnetometerFusion() ? 9 : 6);
+                    }
                 }
 
                 gCommandLength = 0;
@@ -394,9 +756,9 @@ namespace
                 continue;
             }
 
-            sumX += sample.gyroXDps + gGyroBiasXDps;
-            sumY += sample.gyroYDps + gGyroBiasYDps;
-            sumZ += sample.gyroZDps + gGyroBiasZDps;
+            sumX += sample.rawGyroXDps;
+            sumY += sample.rawGyroYDps;
+            sumZ += sample.rawGyroZDps;
             ++captured;
             delay(5);
         }
@@ -404,6 +766,24 @@ namespace
         gGyroBiasXDps = sumX / GyroCalibrationSamples;
         gGyroBiasYDps = sumY / GyroCalibrationSamples;
         gGyroBiasZDps = sumZ / GyroCalibrationSamples;
+    }
+
+    void updateStillnessAndGyroBias(const ImuSample& sample, float deltaSeconds)
+    {
+        float targetStillness = sample.stationaryCandidate ? 1.0f : 0.0f;
+        float blendSpeed = sample.stationaryCandidate ? StationaryEnterSpeed : StationaryExitSpeed;
+        float blendFactor = min(1.0f, blendSpeed * deltaSeconds);
+        gStationaryBlend += (targetStillness - gStationaryBlend) * blendFactor;
+
+        if (gStationaryBlend < 0.82f)
+        {
+            return;
+        }
+
+        float biasBlend = min(1.0f, GyroBiasAdaptSpeed * deltaSeconds * gStationaryBlend);
+        gGyroBiasXDps += (sample.rawGyroXDps - gGyroBiasXDps) * biasBlend;
+        gGyroBiasYDps += (sample.rawGyroYDps - gGyroBiasYDps) * biasBlend;
+        gGyroBiasZDps += (sample.rawGyroZDps - gGyroBiasZDps) * biasBlend;
     }
 
     void madgwickUpdateImu(const ImuSample& sample, float deltaSeconds)
@@ -614,16 +994,71 @@ namespace
         yaw = atan2(sinyCosp, cosyCosp) * 180.0f / PI;
     }
 
+    void correctYawFromMagnetometer(const ImuSample& sample, float deltaSeconds)
+    {
+        if (!shouldUseMagnetometerFusion() || !sample.hasMagnetometer || gMagCalibrationActive)
+        {
+            return;
+        }
+
+        float currentYaw = 0.0f;
+        float currentPitch = 0.0f;
+        float currentRoll = 0.0f;
+        quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, currentYaw, currentPitch, currentRoll);
+
+        float rollRadians = currentRoll * DEG_TO_RAD;
+        float pitchRadians = currentPitch * DEG_TO_RAD;
+        float horizontalX = sample.magXUt * cos(pitchRadians) + sample.magZUt * sin(pitchRadians);
+        float horizontalY =
+            sample.magXUt * sin(rollRadians) * sin(pitchRadians) +
+            sample.magYUt * cos(rollRadians) -
+            sample.magZUt * sin(rollRadians) * cos(pitchRadians);
+
+        if ((horizontalX * horizontalX + horizontalY * horizontalY) <= 0.0001f)
+        {
+            return;
+        }
+
+        float measuredHeadingDegrees = atan2(horizontalY, horizontalX) * 180.0f / PI;
+        if (!gHasMagReferenceHeading)
+        {
+            gMagReferenceHeadingDegrees = measuredHeadingDegrees;
+            gHasMagReferenceHeading = true;
+            return;
+        }
+
+        float desiredYawDegrees = angleDifferenceDegrees(measuredHeadingDegrees, gMagReferenceHeadingDegrees);
+        float yawErrorDegrees = angleDifferenceDegrees(desiredYawDegrees, currentYaw);
+        float correctionGain = gStationaryBlend >= 0.75f ? MagYawCorrectionGain : MagYawCorrectionMovingGain;
+        float correctionDegrees = yawErrorDegrees * min(1.0f, correctionGain * deltaSeconds);
+        correctionDegrees = constrain(correctionDegrees, -MaxYawCorrectionPerStepDegrees, MaxYawCorrectionPerStepDegrees);
+        if (abs(correctionDegrees) <= 0.001f)
+        {
+            return;
+        }
+
+        float correctionW = 1.0f;
+        float correctionX = 0.0f;
+        float correctionY = 0.0f;
+        float correctionZ = 0.0f;
+        quaternionFromAxisAngle(0.0f, 0.0f, 1.0f, correctionDegrees, correctionW, correctionX, correctionY, correctionZ);
+
+        float newW = 1.0f;
+        float newX = 0.0f;
+        float newY = 0.0f;
+        float newZ = 0.0f;
+        multiplyQuaternions(correctionW, correctionX, correctionY, correctionZ, gQuatW, gQuatX, gQuatY, gQuatZ, newW, newX, newY, newZ);
+        normalizeQuaternion(newW, newX, newY, newZ);
+        gQuatW = newW;
+        gQuatX = newX;
+        gQuatY = newY;
+        gQuatZ = newZ;
+    }
+
     void updateOrientation(const ImuSample& sample, float deltaSeconds)
     {
-        if (UseMagnetometerFusion)
-        {
-            madgwickUpdateMarg(sample, deltaSeconds);
-        }
-        else
-        {
-            madgwickUpdateImu(sample, deltaSeconds);
-        }
+        madgwickUpdateImu(sample, deltaSeconds);
+        correctYawFromMagnetometer(sample, deltaSeconds);
 
         float relativeW = 1.0f;
         float relativeX = 0.0f;
@@ -645,11 +1080,11 @@ namespace
         getRelativeQuaternion(relativeW, relativeX, relativeY, relativeZ);
 
         Serial.print(F("wy="));
-        Serial.print(gYawDegrees, 2);
+        Serial.print(gYawDegrees, 1);
         Serial.print(F(",wp="));
-        Serial.print(gPitchDegrees, 2);
+        Serial.print(gPitchDegrees, 1);
         Serial.print(F(",wr="));
-        Serial.print(gRollDegrees, 2);
+        Serial.print(gRollDegrees, 1);
         Serial.print(F(",wqw="));
         Serial.print(relativeW, 4);
         Serial.print(F(",wqx="));
@@ -658,7 +1093,20 @@ namespace
         Serial.print(relativeY, 4);
         Serial.print(F(",wqz="));
         Serial.print(relativeZ, 4);
-        Serial.println(F(",btn=0"));
+        Serial.print(F(",gx="));
+        Serial.print(gLastGyroXDps, 2);
+        Serial.print(F(",gy="));
+        Serial.print(gLastGyroYDps, 2);
+        Serial.print(F(",gz="));
+        Serial.print(gLastGyroZDps, 2);
+        Serial.print(F(",st="));
+        Serial.print(gStationaryBlend, 2);
+        Serial.print(F(",mf="));
+        Serial.print(shouldUseMagnetometerFusion() ? 9 : 6);
+        Serial.print(F(",mc="));
+        Serial.print(gMagCalibrationActive ? 1 : 0);
+        Serial.print(F(",mp="));
+        Serial.println(gMagCalibrationProgress01, 2);
     }
 }
 
@@ -675,10 +1123,12 @@ void setup()
 
     Wire.begin();
     Wire.setClock(400000UL);
+    delay(120);
 
     if (!detectMpuAddress())
     {
         Serial.println(F("[PadMPU] ERROR no device at 0x68 or 0x69"));
+        printI2cScanResults();
         return;
     }
 
@@ -689,12 +1139,17 @@ void setup()
     }
 
     gHasMagnetometer = initializeAk8963();
+    resetMagCalibrationAccumulator();
+    gHasSavedMagCalibration = loadMagCalibrationFromEeprom();
     calibrateGyroBias();
     gLastSampleMicros = micros();
+    gLastTelemetryMicros = gLastSampleMicros;
     Serial.println(gHasMagnetometer ? F("[PadMPU] magnetometer ready") : F("[PadMPU] magnetometer missing"));
-    Serial.println(UseMagnetometerFusion ? F("[PadMPU] fusion mode: 9-axis absolute heading") : F("[PadMPU] fusion mode: 6-axis controller yaw"));
-    Serial.println(F("[PadMPU] streaming wy/wp/wr + quaternion at 100 Hz"));
+    Serial.println(gHasSavedMagCalibration ? F("[PadMPU] mag calibration loaded from EEPROM") : F("[PadMPU] mag calibration missing"));
+    Serial.println(shouldUseMagnetometerFusion() ? F("[PadMPU] fusion mode: 9-axis calibrated heading") : F("[PadMPU] fusion mode: 6-axis controller yaw"));
+    Serial.println(F("[PadMPU] fusion updates at 200 Hz, telemetry at 100 Hz"));
     Serial.println(F("[PadMPU] Send 'r' or 'recenter' to zero the current pose"));
+    Serial.println(F("[PadMPU] Send 'magcal_start' then rotate on all axes, then 'magcal_stop'"));
 }
 
 void loop()
@@ -722,7 +1177,12 @@ void loop()
     }
 
     readMagnetometer(sample);
-    updateOrientation(sample, elapsedMicros * 0.000001f);
+    float deltaSeconds = elapsedMicros * 0.000001f;
+    updateStillnessAndGyroBias(sample, deltaSeconds);
+    updateOrientation(sample, deltaSeconds);
+    gLastGyroXDps = sample.gyroXDps;
+    gLastGyroYDps = sample.gyroYDps;
+    gLastGyroZDps = sample.gyroZDps;
 
     if (!gHasOrientation)
     {
@@ -730,5 +1190,9 @@ void loop()
         recenterNow();
     }
 
-    printTelemetry();
+    if (nowMicros - gLastTelemetryMicros >= TelemetryIntervalUs)
+    {
+        gLastTelemetryMicros = nowMicros;
+        printTelemetry();
+    }
 }
