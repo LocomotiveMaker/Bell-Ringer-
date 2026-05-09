@@ -70,6 +70,7 @@ namespace BellRinger.Hardware
         private int _fusionMode;
         private bool _magCalibrationActive;
         private float _magCalibrationProgress01;
+        private string _lastSetupStatus = string.Empty;
 
         public bool IsConnected => _usingSharedHardwareBridgeTelemetry
             ? HardwareBridge.Instance != null && HardwareBridge.Instance.IsConnected
@@ -106,6 +107,7 @@ namespace BellRinger.Hardware
         public string PitchAxisLabel => BuildAxisLabel(pitchAxis, invertPitch);
         public string RollAxisLabel => BuildAxisLabel(rollAxis, invertRoll);
         public Vector3 LocalRotationTrimEuler => localRotationTrimEuler;
+        public string LastSetupStatus => _lastSetupStatus;
 
         private void Start()
         {
@@ -154,6 +156,7 @@ namespace BellRinger.Hardware
             _initialized = true;
             ApplyEnvironmentOverrides();
             LoadSavedCalibration();
+            LoadSavedUserSetup();
             RefreshAvailablePorts();
 
             if (autoConnectOnStart)
@@ -286,6 +289,32 @@ namespace BellRinger.Hardware
             UpdateDerivedPose();
         }
 
+        public void SaveUserSetup()
+        {
+            PadImuUserSetupStore.Save(new PadImuUserSetupData
+            {
+                yawAxis = (int)yawAxis,
+                pitchAxis = (int)pitchAxis,
+                rollAxis = (int)rollAxis,
+                invertYaw = invertYaw,
+                invertPitch = invertPitch,
+                invertRoll = invertRoll,
+                trimX = localRotationTrimEuler.x,
+                trimY = localRotationTrimEuler.y,
+                trimZ = localRotationTrimEuler.z,
+            });
+
+            _lastSetupStatus = "Pad IMU setup saved.";
+        }
+
+        public void ReloadSavedUserSetup()
+        {
+            if (!LoadSavedUserSetup())
+            {
+                _lastSetupStatus = "No saved Pad IMU setup was found.";
+            }
+        }
+
         public bool TryGetRawQuaternion(out Quaternion rawQuaternion)
         {
             rawQuaternion = _rawHandQuaternion;
@@ -357,6 +386,25 @@ namespace BellRinger.Hardware
             }
 
             ApplySavedMountCalibration(basisQuaternion);
+        }
+
+        private bool LoadSavedUserSetup()
+        {
+            if (!PadImuUserSetupStore.TryLoad(out PadImuUserSetupData data))
+            {
+                return false;
+            }
+
+            yawAxis = ClampAxisIndex(data.yawAxis);
+            pitchAxis = ClampAxisIndex(data.pitchAxis);
+            rollAxis = ClampAxisIndex(data.rollAxis);
+            invertYaw = data.invertYaw;
+            invertPitch = data.invertPitch;
+            invertRoll = data.invertRoll;
+            localRotationTrimEuler = new Vector3(data.trimX, data.trimY, data.trimZ);
+            UpdateDerivedPose();
+            _lastSetupStatus = "Saved Pad IMU setup loaded.";
+            return true;
         }
 
         private void RefreshAvailablePorts()
@@ -1044,6 +1092,17 @@ namespace BellRinger.Hardware
             }
 
             return false;
+        }
+
+        private static ImuAxis ClampAxisIndex(int rawValue)
+        {
+            return rawValue switch
+            {
+                0 => ImuAxis.Yaw,
+                1 => ImuAxis.Pitch,
+                2 => ImuAxis.Roll,
+                _ => ImuAxis.Yaw,
+            };
         }
     }
 }

@@ -28,6 +28,7 @@ namespace BellRinger.Gameplay
         public bool HasFreshCameraYaw => trackingReceiver != null && trackingReceiver.HasFreshCameraYaw;
         public bool UsingCameraYaw { get; private set; }
         public bool UsingImuYawFallback { get; private set; }
+        public bool UsingHeldYaw { get; private set; }
         public Vector3 CameraSpacePosition => trackingReceiver != null ? trackingReceiver.ApproximateCameraSpacePosition : Vector3.zero;
         public Quaternion RelativeRotation => _relativeRotation;
         public float ResolvedYawDegrees => _resolvedYawDegrees;
@@ -66,6 +67,7 @@ namespace BellRinger.Gameplay
 
             UsingCameraYaw = false;
             UsingImuYawFallback = false;
+            UsingHeldYaw = false;
 
             if (padImuReceiver != null && padImuReceiver.HasFreshSample)
             {
@@ -80,11 +82,18 @@ namespace BellRinger.Gameplay
                 UsingCameraYaw = true;
                 hasAnyRotationSource = true;
             }
-            else if (allowImuYawFallback && padImuReceiver != null && padImuReceiver.HasFreshSample)
+            else if (allowImuYawFallback &&
+                     padImuReceiver != null &&
+                     padImuReceiver.HasFreshSample &&
+                     (trackingReceiver == null || !_hasRelativeRotation || !trackingReceiver.HasPose))
             {
                 targetYaw = padImuReceiver.MappedYawDegrees;
                 UsingImuYawFallback = true;
                 hasAnyRotationSource = true;
+            }
+            else if (preferCameraYaw && _hasRelativeRotation)
+            {
+                UsingHeldYaw = true;
             }
 
             if (!hasAnyRotationSource)

@@ -24,17 +24,22 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 $projectPath = Resolve-Path (Join-Path $projectRoot "tools\PadTracker\BellRinger.PadTracker.csproj")
 $nugetConfigPath = Resolve-Path (Join-Path $projectRoot "NuGet.config")
-$buildArguments = @("build", $projectPath.Path, "--configfile", $nugetConfigPath.Path)
-if (-not $Restore) {
-    $buildArguments += "--no-restore"
+$builtAppPath = Join-Path $projectRoot "tools\PadTracker\bin\Debug\net8.0\BellRinger.PadTracker.dll"
+$hasBuiltApp = Test-Path $builtAppPath
+
+if ($Restore -or -not $hasBuiltApp) {
+    $buildArguments = @("build", $projectPath.Path, "--configfile", $nugetConfigPath.Path)
+    if (-not $Restore) {
+        $buildArguments += "--no-restore"
+    }
+
+    dotnet @buildArguments
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
 }
 
-dotnet @buildArguments
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-}
-
-$arguments = @("run", "--no-build", "--no-restore", "--project", $projectPath.Path, "--")
+$arguments = @($builtAppPath)
 
 if ($Scan) {
     $arguments += "--scan-cameras"

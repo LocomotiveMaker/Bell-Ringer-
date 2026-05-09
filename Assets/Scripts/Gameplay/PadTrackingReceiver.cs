@@ -76,7 +76,7 @@ namespace BellRinger.Gameplay
         private void Update()
         {
             ConsumePendingPacket();
-            if (!_detected && LastDetectionAgeSeconds > staleAfterSeconds)
+            if (_detected && LastDetectionAgeSeconds > staleAfterSeconds)
             {
                 _detected = false;
             }
@@ -232,20 +232,22 @@ namespace BellRinger.Gameplay
 
             _lastDetectionRealtime = Time.realtimeSinceStartup;
             Vector3 targetPosition = new Vector3(packet.approxX, packet.approxY, packet.approxZ);
+            float lerpFactor = 1f - Mathf.Exp(-smoothingStrength * Time.unscaledDeltaTime);
             if (!_hasPose || smoothingStrength <= 0f)
             {
                 _cameraSpacePosition = targetPosition;
                 _hasPose = true;
-                return;
             }
-
-            float lerpFactor = 1f - Mathf.Exp(-smoothingStrength * Time.unscaledDeltaTime);
-            _cameraSpacePosition = Vector3.Lerp(_cameraSpacePosition, targetPosition, lerpFactor);
+            else
+            {
+                _cameraSpacePosition = Vector3.Lerp(_cameraSpacePosition, targetPosition, lerpFactor);
+            }
 
             if (packet.cameraYawAvailable)
             {
+                bool hadCameraYawBefore = _lastCameraYawRealtime > 0f;
                 _lastCameraYawRealtime = Time.realtimeSinceStartup;
-                if (!_cameraYawAvailable || smoothingStrength <= 0f)
+                if (!hadCameraYawBefore || smoothingStrength <= 0f)
                 {
                     _cameraYawDegrees = packet.cameraYawDegrees;
                 }

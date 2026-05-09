@@ -38,6 +38,8 @@ namespace BellRinger.Debug
         private Renderer _imuPreviewUpMarkerRenderer;
         private bool _cameraInitialized;
         private bool _staticSceneCreated;
+        private Vector2 _leftOverlayScroll;
+        private Vector2 _rightOverlayScroll;
 
         private void Start()
         {
@@ -62,8 +64,20 @@ namespace BellRinger.Debug
                 return;
             }
 
-            DrawOverlay(new Rect(16f, 16f, 660f, 1080f));
-            DrawScreenPreview(new Rect(692f, 16f, 300f, 220f));
+            float margin = 16f;
+            float gap = 16f;
+            float previewHeight = 220f;
+            float columnWidth = Mathf.Max(360f, (Screen.width - (margin * 2f) - gap) * 0.5f);
+            float availableHeight = Mathf.Max(320f, Screen.height - (margin * 2f));
+            float rightColumnHeight = Mathf.Max(320f, availableHeight - previewHeight - gap);
+
+            Rect leftRect = new Rect(margin, margin, columnWidth, availableHeight);
+            Rect rightRect = new Rect(Screen.width - margin - columnWidth, margin, columnWidth, rightColumnHeight);
+            Rect previewRect = new Rect(rightRect.x, rightRect.yMax + gap, Mathf.Min(columnWidth, 320f), previewHeight);
+
+            DrawLeftOverlay(leftRect);
+            DrawRightOverlay(rightRect);
+            DrawScreenPreview(previewRect);
         }
 
         private void EnsureScene()
@@ -207,12 +221,13 @@ namespace BellRinger.Debug
                 _orientationMarkerTransform.position = _ghostTransform.position + (_ghostTransform.forward * 0.11f);
                 _orientationMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw ? imuFreshColor : imuStaleColor;
             }
-
         }
 
-        private void DrawOverlay(Rect rect)
+        private void DrawLeftOverlay(Rect rect)
         {
-            GUILayout.BeginArea(rect, "Pad Tracking Test", GUI.skin.window);
+            GUILayout.BeginArea(rect, "Pad Tracking", GUI.skin.window);
+            _leftOverlayScroll = GUILayout.BeginScrollView(_leftOverlayScroll);
+
             GUILayout.Label("1. Make the phone appear as a Windows webcam.");
             GUILayout.Label("2. Run tools/Run-PadTracker.ps1.");
             GUILayout.Label("3. Hold the V-board by hand and move it in front of the camera.");
@@ -237,6 +252,7 @@ namespace BellRinger.Debug
                 {
                     GUILayout.Label($"Head port: {_headImuReceiver.ActivePortName}  connected: {_headImuReceiver.IsConnected}  fresh: {_headImuReceiver.HasFreshSample}");
                 }
+
                 GUILayout.Label($"Head physical pitch/roll: {_headTiltInputProvider.PhysicalPitchDegrees:0.00} / {_headTiltInputProvider.PhysicalRollDegrees:0.00}");
                 GUILayout.Label($"Head neutral pitch/roll: {_headTiltInputProvider.NeutralPitchDegrees:0.00} / {_headTiltInputProvider.NeutralRollDegrees:0.00}");
                 GUILayout.Label($"Head virtual yaw/pitch/roll: {_headTiltInputProvider.VirtualYawDegrees:0.00} / {_headTiltInputProvider.VirtualPitchDegrees:0.00} / {_headTiltInputProvider.VirtualRollDegrees:0.00}");
@@ -244,191 +260,262 @@ namespace BellRinger.Debug
                 {
                     _headImuReceiver.RefreshAndReconnect();
                 }
+
                 if (GUILayout.Button("Recenter Head Tilt", GUILayout.Height(28f)))
                 {
                     _headTiltInputProvider.Recenter();
                 }
+
                 GUILayout.Space(8f);
             }
 
             if (_padPoseProvider != null)
             {
                 GUILayout.Label("Pad Pose");
-                GUILayout.Label($"Pad yaw source: {(_padPoseProvider.UsingCameraYaw ? "Camera" : (_padPoseProvider.UsingImuYawFallback ? "IMU fallback" : "Hold"))}");
+                GUILayout.Label($"Pad yaw source: {BuildPadYawSourceLabel()}");
                 GUILayout.Label($"Pad resolved yaw/pitch/roll: {_padPoseProvider.ResolvedYawDegrees:0.00} / {_padPoseProvider.ResolvedPitchDegrees:0.00} / {_padPoseProvider.ResolvedRollDegrees:0.00}");
                 GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}");
                 GUILayout.Space(8f);
             }
 
-            if (_imuReceiver != null)
-            {
-                string ports = _imuReceiver.AvailablePorts == null || _imuReceiver.AvailablePorts.Length == 0
-                    ? "<none>"
-                    : string.Join(", ", _imuReceiver.AvailablePorts);
-                string imuSource = _imuReceiver.UsingSharedHardwareBridgeTelemetry ? "Shared HardwareBridge" : "Dedicated Serial";
-
-                GUILayout.Label($"IMU source: {imuSource}");
-                GUILayout.Label($"IMU port: {_imuReceiver.ActivePortName}  connected: {_imuReceiver.IsConnected}  fresh: {_imuReceiver.HasFreshSample}");
-                GUILayout.Label($"Available COM: {ports}");
-                GUILayout.Label($"IMU raw yaw/pitch/roll: {_imuReceiver.YawDegrees:0.00} / {_imuReceiver.PitchDegrees:0.00} / {_imuReceiver.RollDegrees:0.00}");
-                GUILayout.Label($"IMU mapped yaw/pitch/roll: {_imuReceiver.MappedYawDegrees:0.00} / {_imuReceiver.MappedPitchDegrees:0.00} / {_imuReceiver.MappedRollDegrees:0.00}");
-                GUILayout.Label($"IMU sample age: {_imuReceiver.LastSampleAgeSeconds:0.000}s  baud: {_imuReceiver.ActiveBaudRate}");
-                GUILayout.Label($"IMU gyro dps XYZ: {_imuReceiver.GyroDegreesPerSecond.x:0.00} / {_imuReceiver.GyroDegreesPerSecond.y:0.00} / {_imuReceiver.GyroDegreesPerSecond.z:0.00}");
-                GUILayout.Label($"IMU stillness: {_imuReceiver.Stillness01:0.00}");
-                GUILayout.Label($"IMU fusion mode: {_imuReceiver.FusionMode} axis  mag cal active: {_imuReceiver.MagCalibrationActive}  progress: {_imuReceiver.MagCalibrationProgress01:0.00}");
-                GUILayout.Label($"IMU motion: {_imuReceiver.MotionIntensity01:0.00}");
-                GUILayout.Label($"IMU quaternion: {_imuReceiver.HasQuaternionTelemetry}");
-                GUILayout.Label($"IMU last line: {_imuReceiver.LastRawLine}");
-                GUILayout.Space(6f);
-                if (_imuReceiver.HasQuaternionTelemetry)
-                {
-                    Vector3 trim = _imuReceiver.LocalRotationTrimEuler;
-                    GUILayout.Label($"Mount trim XYZ: {trim.x:0} / {trim.y:0} / {trim.z:0}");
-                    DrawTrimButtonRow("Trim X", _imuReceiver.RotateTrimXPositive, _imuReceiver.RotateTrimXNegative);
-                    DrawTrimButtonRow("Trim Y", _imuReceiver.RotateTrimYPositive, _imuReceiver.RotateTrimYNegative);
-                    DrawTrimButtonRow("Trim Z", _imuReceiver.RotateTrimZPositive, _imuReceiver.RotateTrimZNegative);
-
-                    if (GUILayout.Button("Reset Mount Trim", GUILayout.Height(24f)))
-                    {
-                        _imuReceiver.ResetMountTrim();
-                    }
-                }
-                else
-                {
-                    GUILayout.Label("Axis Mapping");
-                    DrawAxisMappingRow("Yaw", _imuReceiver.YawAxisLabel, _imuReceiver.CycleYawAxis, _imuReceiver.ToggleYawInvert);
-                    DrawAxisMappingRow("Pitch", _imuReceiver.PitchAxisLabel, _imuReceiver.CyclePitchAxis, _imuReceiver.TogglePitchInvert);
-                    DrawAxisMappingRow("Roll", _imuReceiver.RollAxisLabel, _imuReceiver.CycleRollAxis, _imuReceiver.ToggleRollInvert);
-
-                    if (GUILayout.Button("Reset Axis Mapping", GUILayout.Height(24f)))
-                    {
-                        _imuReceiver.ResetAxisMapping();
-                    }
-                }
-
-                if (GUILayout.Button("Reconnect IMU", GUILayout.Height(28f)))
-                {
-                    _imuReceiver.RefreshAndReconnect();
-                }
-
-                if (GUILayout.Button("Recenter IMU", GUILayout.Height(28f)))
-                {
-                    _imuReceiver.Recenter();
-                }
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Start Mag Cal", GUILayout.Height(26f)))
-                {
-                    _imuReceiver.StartMagCalibration();
-                }
-
-                if (GUILayout.Button("Finish + Save Mag Cal", GUILayout.Height(26f)))
-                {
-                    _imuReceiver.FinishMagCalibrationAndSave();
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Reset Mag Cal", GUILayout.Height(24f)))
-                {
-                    _imuReceiver.ResetMagCalibration();
-                }
-
-                if (GUILayout.Button("Mag Cal Status", GUILayout.Height(24f)))
-                {
-                    _imuReceiver.RequestMagCalibrationStatus();
-                }
-                GUILayout.EndHorizontal();
-
-                if (!string.IsNullOrWhiteSpace(_imuReceiver.LastError))
-                {
-                    GUILayout.Label($"IMU error: {_imuReceiver.LastError}");
-                }
-
-                GUILayout.Label("If you change preferredPortName in the Inspector during Play, press Reconnect IMU.");
-                GUILayout.Label("Dedicated IMU sketch now expects 230400 baud.");
-                GUILayout.Label("Pad yaw authority: camera first, IMU yaw only as fallback/debug.");
-                GUILayout.Label("Pad preview colors: gray = neutral, orange = live body, white = front, red = right, green = up.");
-                GUILayout.Label("Shake grows with faster movement. Compare the orange body against the gray neutral plate.");
-                GUILayout.Label("Quaternion mode uses Mount Trim buttons instead of Euler axis remapping.");
-            }
-
-            if (_padGamepadRumbleTester != null)
-            {
-                GUILayout.Space(10f);
-                GUILayout.Label("Pad Gamepad Rumble");
-                GUILayout.Label($"Gamepad: {_padGamepadRumbleTester.DeviceName}");
-                GUILayout.Label($"Rumble active: {_padGamepadRumbleTester.RumbleActive}");
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Light Rumble", GUILayout.Height(26f)))
-                {
-                    _padGamepadRumbleTester.TriggerLightPulse();
-                }
-
-                if (GUILayout.Button("Heavy Rumble", GUILayout.Height(26f)))
-                {
-                    _padGamepadRumbleTester.TriggerHeavyPulse();
-                }
-                GUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Stop Rumble", GUILayout.Height(24f)))
-                {
-                    _padGamepadRumbleTester.StopRumble();
-                }
-
-                if (!string.IsNullOrWhiteSpace(_padGamepadRumbleTester.LastError))
-                {
-                    GUILayout.Label($"Rumble error: {_padGamepadRumbleTester.LastError}");
-                }
-            }
-
-            if (_imuCalibrationTool != null)
-            {
-                GUILayout.Space(10f);
-                GUILayout.Label("IMU Pose Calibration");
-                GUILayout.Label("0 center, 1 left, 2 right, 3 forward, 4 back, 5 clockwise, 6 counterclockwise, R apply");
-                GUILayout.Label($"Status: {_imuCalibrationTool.LastStatus}");
-                GUILayout.Label($"Solve error: mean {_imuCalibrationTool.LastMeanErrorDegrees:0.0}°  max {_imuCalibrationTool.LastMaxErrorDegrees:0.0}°");
-
-                if (_imuCalibrationTool.IsCapturePending)
-                {
-                    GUILayout.Label($"Capturing: {_imuCalibrationTool.PendingPoseLabel}  progress {_imuCalibrationTool.CaptureProgress01:0.00}");
-                }
-
-                DrawCalibrationRow(0);
-                DrawCalibrationRow(1);
-                DrawCalibrationRow(2);
-                DrawCalibrationRow(3);
-                DrawCalibrationRow(4);
-                DrawCalibrationRow(5);
-                DrawCalibrationRow(6);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Apply Calibration (R)", GUILayout.Height(28f)))
-                {
-                    _imuCalibrationTool.ApplyCapturedCalibration();
-                }
-
-                GUILayout.EndHorizontal();
-                GUILayout.Label("각 자세에서 손을 멈춘 뒤 숫자를 누르십시오. 버튼을 누르면 짧게 평균 캡처합니다.");
-            }
-
             if (!string.IsNullOrWhiteSpace(_receiver.LastError))
             {
-                GUILayout.Space(8f);
                 GUILayout.Label($"Receiver error: {_receiver.LastError}");
             }
 
             GUILayout.Space(8f);
             GUILayout.Label("Ghost color: cyan = live detection, amber = last held pose.");
             GUILayout.Label("Front sphere: pale blue = fresh IMU rotation, gray = no fresh IMU sample.");
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
+        }
+
+        private void DrawRightOverlay(Rect rect)
+        {
+            GUILayout.BeginArea(rect, "Pad IMU / Rumble", GUI.skin.window);
+            _rightOverlayScroll = GUILayout.BeginScrollView(_rightOverlayScroll);
+            DrawImuSection();
+            DrawRumbleSection();
+            DrawCalibrationSection();
+            GUILayout.EndScrollView();
+            GUILayout.EndArea();
+        }
+
+        private void DrawImuSection()
+        {
+            if (_imuReceiver == null)
+            {
+                return;
+            }
+
+            string ports = _imuReceiver.AvailablePorts == null || _imuReceiver.AvailablePorts.Length == 0
+                ? "<none>"
+                : string.Join(", ", _imuReceiver.AvailablePorts);
+            string imuSource = _imuReceiver.UsingSharedHardwareBridgeTelemetry ? "Shared HardwareBridge" : "Dedicated Serial";
+
+            GUILayout.Label("Pad IMU");
+            GUILayout.Label($"IMU source: {imuSource}");
+            GUILayout.Label($"IMU port: {_imuReceiver.ActivePortName}  connected: {_imuReceiver.IsConnected}  fresh: {_imuReceiver.HasFreshSample}");
+            GUILayout.Label($"Available COM: {ports}");
+            GUILayout.Label($"IMU raw yaw/pitch/roll: {_imuReceiver.YawDegrees:0.00} / {_imuReceiver.PitchDegrees:0.00} / {_imuReceiver.RollDegrees:0.00}");
+            GUILayout.Label($"IMU mapped yaw/pitch/roll: {_imuReceiver.MappedYawDegrees:0.00} / {_imuReceiver.MappedPitchDegrees:0.00} / {_imuReceiver.MappedRollDegrees:0.00}");
+            GUILayout.Label($"IMU sample age: {_imuReceiver.LastSampleAgeSeconds:0.000}s  baud: {_imuReceiver.ActiveBaudRate}");
+            GUILayout.Label($"IMU gyro dps XYZ: {_imuReceiver.GyroDegreesPerSecond.x:0.00} / {_imuReceiver.GyroDegreesPerSecond.y:0.00} / {_imuReceiver.GyroDegreesPerSecond.z:0.00}");
+            GUILayout.Label($"IMU stillness: {_imuReceiver.Stillness01:0.00}");
+            GUILayout.Label($"IMU fusion mode: {_imuReceiver.FusionMode} axis  mag cal active: {_imuReceiver.MagCalibrationActive}  progress: {_imuReceiver.MagCalibrationProgress01:0.00}");
+            GUILayout.Label($"IMU motion: {_imuReceiver.MotionIntensity01:0.00}");
+            GUILayout.Label($"IMU quaternion: {_imuReceiver.HasQuaternionTelemetry}");
+            GUILayout.Label($"IMU last line: {_imuReceiver.LastRawLine}");
+            GUILayout.Space(6f);
+
+            if (_imuReceiver.HasQuaternionTelemetry)
+            {
+                Vector3 trim = _imuReceiver.LocalRotationTrimEuler;
+                GUILayout.Label($"Mount trim XYZ: {trim.x:0} / {trim.y:0} / {trim.z:0}");
+                DrawTrimButtonRow("Trim X", _imuReceiver.RotateTrimXPositive, _imuReceiver.RotateTrimXNegative);
+                DrawTrimButtonRow("Trim Y", _imuReceiver.RotateTrimYPositive, _imuReceiver.RotateTrimYNegative);
+                DrawTrimButtonRow("Trim Z", _imuReceiver.RotateTrimZPositive, _imuReceiver.RotateTrimZNegative);
+
+                if (GUILayout.Button("Reset Mount Trim", GUILayout.Height(24f)))
+                {
+                    _imuReceiver.ResetMountTrim();
+                }
+            }
+            else
+            {
+                GUILayout.Label("Axis Mapping");
+                DrawAxisMappingRow("Yaw", _imuReceiver.YawAxisLabel, _imuReceiver.CycleYawAxis, _imuReceiver.ToggleYawInvert);
+                DrawAxisMappingRow("Pitch", _imuReceiver.PitchAxisLabel, _imuReceiver.CyclePitchAxis, _imuReceiver.TogglePitchInvert);
+                DrawAxisMappingRow("Roll", _imuReceiver.RollAxisLabel, _imuReceiver.CycleRollAxis, _imuReceiver.ToggleRollInvert);
+
+                if (GUILayout.Button("Reset Axis Mapping", GUILayout.Height(24f)))
+                {
+                    _imuReceiver.ResetAxisMapping();
+                }
+            }
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Load Saved IMU Setup", GUILayout.Height(26f)))
+            {
+                _imuReceiver.ReloadSavedUserSetup();
+            }
+
+            if (GUILayout.Button("Save IMU Setup", GUILayout.Height(26f)))
+            {
+                _imuReceiver.SaveUserSetup();
+            }
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Reconnect IMU", GUILayout.Height(28f)))
+            {
+                _imuReceiver.RefreshAndReconnect();
+            }
+
+            if (GUILayout.Button("Recenter IMU", GUILayout.Height(28f)))
+            {
+                _imuReceiver.Recenter();
+            }
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Start Mag Cal", GUILayout.Height(26f)))
+            {
+                _imuReceiver.StartMagCalibration();
+            }
+
+            if (GUILayout.Button("Finish + Save Mag Cal", GUILayout.Height(26f)))
+            {
+                _imuReceiver.FinishMagCalibrationAndSave();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Reset Mag Cal", GUILayout.Height(24f)))
+            {
+                _imuReceiver.ResetMagCalibration();
+            }
+
+            if (GUILayout.Button("Mag Cal Status", GUILayout.Height(24f)))
+            {
+                _imuReceiver.RequestMagCalibrationStatus();
+            }
+            GUILayout.EndHorizontal();
+
+            if (!string.IsNullOrWhiteSpace(_imuReceiver.LastError))
+            {
+                GUILayout.Label($"IMU error: {_imuReceiver.LastError}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(_imuReceiver.LastSetupStatus))
+            {
+                GUILayout.Label($"IMU setup: {_imuReceiver.LastSetupStatus}");
+            }
+
+            GUILayout.Label("If you change preferredPortName in the Inspector during Play, press Reconnect IMU.");
+            GUILayout.Label("Dedicated IMU sketch now expects 230400 baud.");
+            GUILayout.Label("Pad yaw authority: camera first, then hold. IMU yaw is fallback/debug only.");
+            GUILayout.Label("Quaternion mode uses Mount Trim buttons instead of Euler axis remapping.");
+            GUILayout.Space(10f);
+        }
+
+        private void DrawRumbleSection()
+        {
+            if (_padGamepadRumbleTester == null)
+            {
+                return;
+            }
+
+            GUILayout.Label("Pad Gamepad Rumble");
+            GUILayout.Label($"Selected: {_padGamepadRumbleTester.DeviceName}");
+            GUILayout.Label($"Current: {_padGamepadRumbleTester.CurrentDeviceName}");
+            GUILayout.Label($"Available: {_padGamepadRumbleTester.AvailableGamepadsSummary}");
+            GUILayout.Label($"Rumble active: {_padGamepadRumbleTester.RumbleActive}");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Select Next Gamepad", GUILayout.Height(24f)))
+            {
+                _padGamepadRumbleTester.SelectNextGamepad();
+            }
+
+            if (GUILayout.Button("Use Current Gamepad", GUILayout.Height(24f)))
+            {
+                _padGamepadRumbleTester.UseCurrentGamepad();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Light Rumble", GUILayout.Height(26f)))
+            {
+                _padGamepadRumbleTester.TriggerLightPulse();
+            }
+
+            if (GUILayout.Button("Heavy Rumble", GUILayout.Height(26f)))
+            {
+                _padGamepadRumbleTester.TriggerHeavyPulse();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Rumble All Gamepads", GUILayout.Height(24f)))
+            {
+                _padGamepadRumbleTester.TriggerAllGamepads();
+            }
+
+            if (GUILayout.Button("Stop Rumble", GUILayout.Height(24f)))
+            {
+                _padGamepadRumbleTester.StopRumble();
+            }
+            GUILayout.EndHorizontal();
+
+            if (!string.IsNullOrWhiteSpace(_padGamepadRumbleTester.LastAction))
+            {
+                GUILayout.Label($"Rumble action: {_padGamepadRumbleTester.LastAction}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(_padGamepadRumbleTester.LastError))
+            {
+                GUILayout.Label($"Rumble error: {_padGamepadRumbleTester.LastError}");
+            }
+
+            GUILayout.Space(10f);
+        }
+
+        private void DrawCalibrationSection()
+        {
+            if (_imuCalibrationTool == null)
+            {
+                return;
+            }
+
+            GUILayout.Label("IMU Pose Calibration");
+            GUILayout.Label("0 center, 1 left, 2 right, 3 forward, 4 back, 5 clockwise, 6 counterclockwise, R apply");
+            GUILayout.Label($"Status: {_imuCalibrationTool.LastStatus}");
+            GUILayout.Label($"Solve error: mean {_imuCalibrationTool.LastMeanErrorDegrees:0.0}deg  max {_imuCalibrationTool.LastMaxErrorDegrees:0.0}deg");
+
+            if (_imuCalibrationTool.IsCapturePending)
+            {
+                GUILayout.Label($"Capturing: {_imuCalibrationTool.PendingPoseLabel}  progress {_imuCalibrationTool.CaptureProgress01:0.00}");
+            }
+
+            DrawCalibrationRow(0);
+            DrawCalibrationRow(1);
+            DrawCalibrationRow(2);
+            DrawCalibrationRow(3);
+            DrawCalibrationRow(4);
+            DrawCalibrationRow(5);
+            DrawCalibrationRow(6);
+
+            if (GUILayout.Button("Apply Calibration (R)", GUILayout.Height(28f)))
+            {
+                _imuCalibrationTool.ApplyCapturedCalibration();
+            }
+
+            GUILayout.Label("Hold each pose still first, then press the number or Capture button.");
         }
 
         private void DrawScreenPreview(Rect rect)
         {
             GUILayout.BeginArea(rect, "Camera Screen Preview", GUI.skin.window);
-            Rect preview = new Rect(16f, 40f, 268f, 150f);
+            Rect preview = new Rect(16f, 40f, rect.width - 32f, 150f);
             GUI.color = new Color(0f, 0f, 0f, 0.78f);
             GUI.DrawTexture(preview, Texture2D.whiteTexture);
 
@@ -443,7 +530,7 @@ namespace BellRinger.Debug
             GUI.DrawTexture(new Rect(dotX - (dotSize * 0.5f), dotY - (dotSize * 0.5f), dotSize, dotSize), Texture2D.whiteTexture);
 
             GUI.color = Color.white;
-            GUI.Label(new Rect(16f, 196f, 260f, 20f), "Dot is the tracker center in camera space.");
+            GUI.Label(new Rect(16f, 196f, rect.width - 32f, 20f), "Dot is the tracker center in camera space.");
             GUILayout.EndArea();
         }
 
@@ -580,6 +667,31 @@ namespace BellRinger.Debug
             }
         }
 
+        private string BuildPadYawSourceLabel()
+        {
+            if (_padPoseProvider == null)
+            {
+                return "None";
+            }
+
+            if (_padPoseProvider.UsingCameraYaw)
+            {
+                return "Camera";
+            }
+
+            if (_padPoseProvider.UsingImuYawFallback)
+            {
+                return "IMU fallback";
+            }
+
+            if (_padPoseProvider.UsingHeldYaw)
+            {
+                return "Hold";
+            }
+
+            return "None";
+        }
+
         private static void DrawAxisMappingRow(string label, string axisLabel, System.Action onCycleAxis, System.Action onToggleInvert)
         {
             GUILayout.BeginHorizontal();
@@ -628,6 +740,7 @@ namespace BellRinger.Debug
             {
                 _imuCalibrationTool.BeginCapture(slotIndex);
             }
+
             GUILayout.EndHorizontal();
         }
 
