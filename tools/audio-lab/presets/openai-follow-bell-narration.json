@@ -1,0 +1,8 @@
+{
+  "input": "The bell is ahead of you. Follow it. If the sound slips away, press the button and listen again.",
+  "instructions": "Speak calmly, close to the listener, with low urgency and short phrases. Avoid theatrical delivery.",
+  "voice": "coral",
+  "model": "gpt-4o-mini-tts",
+  "responseFormat": "wav",
+  "speed": 0.94
+}

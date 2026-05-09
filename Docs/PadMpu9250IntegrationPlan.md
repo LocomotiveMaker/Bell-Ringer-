@@ -21,12 +21,19 @@ So the next priority is:
 Use this split:
 
 - `vision tracker` owns `pad position`
-- `MPU9250` owns `pad rotation`
+- `vision tracker` also owns `pad yaw` when two-marker pose is available
+- `MPU9250` owns `pad pitch/roll`
+- `MPU yaw` is fallback/debug only
 - `Unity` owns the final merged pose
 
-This is still the correct architecture.
+This is still the correct architecture for the pad.
 
-Do not move rotation back into the camera path unless there is a strong reason later.
+For the head path, do **not** chase real yaw with the MPU9250.
+Use a separate `head tilt` provider:
+
+- `physical head pitch -> virtual pitch`
+- `physical head roll -> virtual yaw`
+- `physical head yaw` ignored
 
 ## 3. Important Design Decision
 
@@ -57,7 +64,7 @@ But the receiver should be separate from the LED bridge.
 
 The fastest correct path is:
 
-### Phase A: 6-axis style gameplay rotation
+### Phase A: pad pitch/roll from 6-axis IMU, yaw from camera
 
 Use:
 
@@ -70,24 +77,24 @@ And add:
 
 This gives:
 
-- stable pitch
-- stable roll
-- usable yaw for gameplay if the user can recenter
+- stable pad pitch
+- stable pad roll
+- yaw with no long-term drift while camera pose is available
 
-This is the best first implementation because:
+This is the best implementation because:
 
 - it is much simpler
 - it avoids immediate magnetometer calibration pain
-- it is enough to validate the merged pose pipeline
+- it prevents bad IMU yaw from polluting the other axes
 
-### Phase B: magnetometer upgrade only if needed
+### Phase B: magnetometer experiments only if needed
 
 Use the MPU9250 magnetometer later only if:
 
-- yaw drift is clearly unacceptable in real play
-- recenter is not enough
+- the camera yaw path is unavailable for the final pad build
+- a short fallback yaw is still needed
 
-Do not pay the magnetometer complexity cost before measuring that need.
+Do not make the head path depend on magnetometer yaw.
 
 ## 5. Arduino-Side Plan
 

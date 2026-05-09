@@ -319,6 +319,8 @@ static TrackingPacket BuildPacket(
         approxZ = 0f,
         markerSizePx = 0f,
         confidence = 0f,
+        cameraYawAvailable = false,
+        cameraYawDegrees = 0f,
         timeSeconds = nowSeconds
     };
 
@@ -392,6 +394,13 @@ static TrackingPacket BuildPacket(
     packet.confidence = (float)confidence;
     packet.mode = detection.ModeLabel;
     packet.searchScale = (float)detection.SearchScale;
+
+    if (TryEstimateBoardYawDegrees(options, detection, frameWidth, frameHeight, out float cameraYawDegrees))
+    {
+        packet.cameraYawAvailable = true;
+        packet.cameraYawDegrees = cameraYawDegrees;
+    }
+
     return packet;
 }
 
@@ -422,7 +431,7 @@ static void DrawOverlay(Mat preview, TrackingPacket packet, DetectionResult dete
     Cv2.PutText(preview, $"Detected: {packet.detected}  IDs: {packet.markerIds}", new Point(16, 30), HersheyFonts.HersheySimplex, 0.7, infoColor, 2, LineTypes.AntiAlias);
     Cv2.PutText(preview, $"X {packet.approxX:0.000}m  Y {packet.approxY:0.000}m  Z {packet.approxZ:0.000}m", new Point(16, 58), HersheyFonts.HersheySimplex, 0.65, infoColor, 2, LineTypes.AntiAlias);
     Cv2.PutText(preview, $"Screen {packet.screenX01:0.000}, {packet.screenY01:0.000}  size {packet.markerSizePx:0.0}px", new Point(16, 86), HersheyFonts.HersheySimplex, 0.65, infoColor, 2, LineTypes.AntiAlias);
-    Cv2.PutText(preview, $"FPS {packet.fps:0.0}  mode {packet.mode}  scale {packet.searchScale:0.00}", new Point(16, 114), HersheyFonts.HersheySimplex, 0.65, new Scalar(230, 230, 230), 2, LineTypes.AntiAlias);
+    Cv2.PutText(preview, $"Yaw {(packet.cameraYawAvailable ? packet.cameraYawDegrees.ToString("0.0") : "--")}  FPS {packet.fps:0.0}  mode {packet.mode}  scale {packet.searchScale:0.00}", new Point(16, 114), HersheyFonts.HersheySimplex, 0.65, new Scalar(230, 230, 230), 2, LineTypes.AntiAlias);
 
     if (packet.detected)
     {
@@ -490,6 +499,123 @@ static double Distance(Point2f a, Point2f b)
     double dx = a.X - b.X;
     double dy = a.Y - b.Y;
     return Math.Sqrt((dx * dx) + (dy * dy));
+}
+
+static bool TryEstimateBoardYawDegrees(
+    PadTrackerOptions options,
+    DetectionResult detection,
+    int frameWidth,
+    int frameHeight,
+    out float yawDegrees)
+{
+    yawDegrees = 0f;
+
+    if (!detection.Detected || detection.MarkerIds.Length < 2)
+    {
+        return false;
+    }
+
+    double focalPixels = frameWidth / (2.0 * Math.Tan(options.HorizontalFovDegrees * Math.PI / 360.0));
+    double[,] cameraMatrixValues =
+    {
+        { focalPixels, 0.0, frameWidth * 0.5 },
+        { 0.0, focalPixels, frameHeight * 0.5 },
+        { 0.0, 0.0, 1.0 }
+    };
+    double[] distortionCoefficients = { 0.0, 0.0, 0.0, 0.0 };
+
+    float halfMarkerSize = (float)(options.MarkerSizeMeters * 0.5);
+    Point3f[] objectPoints =
+    {
+        new Point3f(-halfMarkerSize, halfMarkerSize, 0f),
+        new Point3f(halfMarkerSize, halfMarkerSize, 0f),
+        new Point3f(halfMarkerSize, -halfMarkerSize, 0f),
+        new Point3f(-halfMarkerSize, -halfMarkerSize, 0f),
+    };
+
+    using Mat cameraMatrix = Mat.FromArray(cameraMatrixValues);
+    using Mat distortionCoefficientsMat = Mat.FromArray(distortionCoefficients);
+    using Mat objectPointsMat = Mat.FromArray(objectPoints);
+
+    Vec3d accumulatedNormal = default;
+    int solvedMarkers = 0;
+
+    for (int markerIndex = 0; markerIndex < detection.MarkerCorners.Length; markerIndex++)
+    {
+        Point2f[] corners = detection.MarkerCorners[markerIndex];
+        if (corners.Length != 4)
+        {
+            continue;
+        }
+
+        using Mat imagePointsMat = Mat.FromArray(corners);
+        using Mat rotationVector = new Mat();
+        using Mat translationVector = new Mat();
+        bool solved = true;
+        try
+        {
+            Cv2.SolvePnP(
+                objectPointsMat,
+                imagePointsMat,
+                cameraMatrix,
+                distortionCoefficientsMat,
+                rotationVector,
+                translationVector,
+                false,
+                SolvePnPMethod.Iterative);
+        }
+        catch (OpenCvSharpException)
+        {
+            solved = false;
+        }
+
+        if (!solved)
+        {
+            continue;
+        }
+
+        using Mat rotationMatrix = new Mat();
+        Cv2.Rodrigues(rotationVector, rotationMatrix);
+
+        Vec3d markerNormal = new Vec3d(
+            rotationMatrix.At<double>(0, 2),
+            rotationMatrix.At<double>(1, 2),
+            rotationMatrix.At<double>(2, 2));
+
+        if (markerNormal.Item2 < 0.0)
+        {
+            markerNormal *= -1.0;
+        }
+
+        accumulatedNormal += markerNormal;
+        solvedMarkers++;
+    }
+
+    if (solvedMarkers < 2)
+    {
+        return false;
+    }
+
+    double magnitude = Math.Sqrt(
+        (accumulatedNormal.Item0 * accumulatedNormal.Item0) +
+        (accumulatedNormal.Item1 * accumulatedNormal.Item1) +
+        (accumulatedNormal.Item2 * accumulatedNormal.Item2));
+
+    if (magnitude <= 0.00001)
+    {
+        return false;
+    }
+
+    double normalX = accumulatedNormal.Item0 / magnitude;
+    double normalZ = accumulatedNormal.Item2 / magnitude;
+    double horizontalMagnitude = Math.Sqrt((normalX * normalX) + (normalZ * normalZ));
+    if (horizontalMagnitude < 0.15)
+    {
+        return false;
+    }
+
+    yawDegrees = (float)(Math.Atan2(normalX, normalZ) * 180.0 / Math.PI);
+    return true;
 }
 
 static Point ToPoint(Point2f point, double scale)
@@ -630,6 +756,8 @@ sealed class TrackingPacket
     public float approxZ;
     public float markerSizePx;
     public float confidence;
+    public bool cameraYawAvailable;
+    public float cameraYawDegrees;
     public float timeSeconds;
     public string mode = string.Empty;
     public float searchScale;

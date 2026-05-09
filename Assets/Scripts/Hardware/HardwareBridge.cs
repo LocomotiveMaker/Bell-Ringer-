@@ -22,6 +22,7 @@ namespace BellRinger.Hardware
         [SerializeField] private float reconnectIntervalSeconds = 3f;
         [SerializeField] private float simulationYawSpeedDegreesPerSecond = 90f;
         [SerializeField] private float simulationPitchSpeedDegreesPerSecond = 60f;
+        [SerializeField] private float simulationRollSpeedDegreesPerSecond = 70f;
 
         private object _serialPort;
         private readonly StringBuilder _serialBuffer = new StringBuilder(1024);
@@ -715,13 +716,17 @@ namespace BellRinger.Hardware
 
             float headYawDelta = AxisValue(keyboard.leftArrowKey.isPressed, keyboard.rightArrowKey.isPressed) * simulationYawSpeedDegreesPerSecond * deltaTime;
             float headPitchDelta = AxisValue(keyboard.downArrowKey.isPressed, keyboard.upArrowKey.isPressed) * simulationPitchSpeedDegreesPerSecond * deltaTime;
+            float headRollDelta = AxisValue(keyboard.qKey.isPressed, keyboard.eKey.isPressed) * simulationRollSpeedDegreesPerSecond * deltaTime;
             float handYawDelta = AxisValue(keyboard.jKey.isPressed, keyboard.lKey.isPressed) * simulationYawSpeedDegreesPerSecond * deltaTime;
             float handPitchDelta = AxisValue(keyboard.kKey.isPressed, keyboard.iKey.isPressed) * simulationPitchSpeedDegreesPerSecond * deltaTime;
+            float handRollDelta = AxisValue(keyboard.uKey.isPressed, keyboard.oKey.isPressed) * simulationRollSpeedDegreesPerSecond * deltaTime;
 
             _telemetry.headYaw += headYawDelta;
             _telemetry.headPitch += headPitchDelta;
+            _telemetry.headRoll += headRollDelta;
             _telemetry.handYaw += handYawDelta;
             _telemetry.handPitch += handPitchDelta;
+            _telemetry.handRoll += handRollDelta;
 
             if (keyboard.spaceKey.wasPressedThisFrame)
             {

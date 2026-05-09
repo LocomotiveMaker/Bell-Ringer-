@@ -8,6 +8,7 @@ The current prototype assumes:
 - the external tracker reads that webcam
 - the tracker sends UDP packets to Unity
 - Unity shows a live debug ghost for the pad
+- when both V-board faces are visible, the tracker also estimates `camera yaw`
 
 ## What The User Must Prepare
 
@@ -118,6 +119,7 @@ The on-screen panel will show:
 - whether marker detection is fresh
 - which marker IDs are visible
 - approximate `X / Y / Z` camera-space position
+- whether `camera yaw` is currently available
 
 ## Important User-Tuned Values
 

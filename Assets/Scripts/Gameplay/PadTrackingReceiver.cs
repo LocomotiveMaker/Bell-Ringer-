@@ -32,15 +32,19 @@ namespace BellRinger.Gameplay
         private float _confidence;
         private float _lastPacketRealtime;
         private float _lastDetectionRealtime;
+        private float _lastCameraYawRealtime;
         private string _markerIds = string.Empty;
         private string _lastPacketJson = string.Empty;
         private Vector3 _cameraSpacePosition = new Vector3(0f, 0f, 0.7f);
+        private bool _cameraYawAvailable;
+        private float _cameraYawDegrees;
 
         public int ListenPort => listenPort;
         public bool IsDetected => _detected;
         public bool HasPose => _hasPose;
         public bool HasFreshPacket => LastPacketAgeSeconds <= staleAfterSeconds;
         public bool HasFreshDetection => _detected && LastDetectionAgeSeconds <= staleAfterSeconds;
+        public bool HasFreshCameraYaw => _cameraYawAvailable && LastCameraYawAgeSeconds <= staleAfterSeconds;
         public int MarkerCount => _markerCount;
         public int FrameWidth => _frameWidth;
         public int FrameHeight => _frameHeight;
@@ -51,10 +55,13 @@ namespace BellRinger.Gameplay
         public float Confidence => _confidence;
         public float LastPacketAgeSeconds => _lastPacketRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastPacketRealtime;
         public float LastDetectionAgeSeconds => _lastDetectionRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastDetectionRealtime;
+        public float LastCameraYawAgeSeconds => _lastCameraYawRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastCameraYawRealtime;
         public string MarkerIds => _markerIds;
         public string LastPacketJson => _lastPacketJson;
         public string LastError => _lastError;
         public Vector3 ApproximateCameraSpacePosition => _cameraSpacePosition;
+        public bool CameraYawAvailable => _cameraYawAvailable;
+        public float CameraYawDegrees => _cameraYawDegrees;
 
         private void OnEnable()
         {
@@ -72,6 +79,11 @@ namespace BellRinger.Gameplay
             if (!_detected && LastDetectionAgeSeconds > staleAfterSeconds)
             {
                 _detected = false;
+            }
+
+            if (_cameraYawAvailable && LastCameraYawAgeSeconds > staleAfterSeconds)
+            {
+                _cameraYawAvailable = false;
             }
         }
 
@@ -229,6 +241,21 @@ namespace BellRinger.Gameplay
 
             float lerpFactor = 1f - Mathf.Exp(-smoothingStrength * Time.unscaledDeltaTime);
             _cameraSpacePosition = Vector3.Lerp(_cameraSpacePosition, targetPosition, lerpFactor);
+
+            if (packet.cameraYawAvailable)
+            {
+                _lastCameraYawRealtime = Time.realtimeSinceStartup;
+                if (!_cameraYawAvailable || smoothingStrength <= 0f)
+                {
+                    _cameraYawDegrees = packet.cameraYawDegrees;
+                }
+                else
+                {
+                    _cameraYawDegrees = Mathf.LerpAngle(_cameraYawDegrees, packet.cameraYawDegrees, lerpFactor);
+                }
+
+                _cameraYawAvailable = true;
+            }
         }
 
         [Serializable]
@@ -247,6 +274,8 @@ namespace BellRinger.Gameplay
             public float approxZ;
             public float markerSizePx;
             public float confidence;
+            public bool cameraYawAvailable;
+            public float cameraYawDegrees;
             public float timeSeconds;
         }
     }

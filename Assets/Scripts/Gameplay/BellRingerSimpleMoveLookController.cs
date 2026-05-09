@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using BellRinger.Hardware;
 
 namespace BellRinger.Gameplay
 {
@@ -11,9 +12,11 @@ namespace BellRinger.Gameplay
         [SerializeField] private float gamepadLookDegreesPerSecond = 110f;
         [SerializeField] private float fixedHeight = 1.6f;
         [SerializeField] private float maximumPitchDegrees = 60f;
+        [SerializeField] private bool useHeadTiltProviderWhenFresh = true;
 
         private float _yawDegrees;
         private float _pitchDegrees;
+        private HeadTiltInputProvider _headTiltInputProvider;
 
         private void Start()
         {
@@ -30,6 +33,18 @@ namespace BellRinger.Gameplay
 
         private void UpdateLook()
         {
+            if (useHeadTiltProviderWhenFresh)
+            {
+                _headTiltInputProvider ??= GetComponent<HeadTiltInputProvider>();
+                if (_headTiltInputProvider != null && _headTiltInputProvider.HasFreshSample)
+                {
+                    _yawDegrees = _headTiltInputProvider.VirtualYawDegrees;
+                    _pitchDegrees = Mathf.Clamp(_headTiltInputProvider.VirtualPitchDegrees, -maximumPitchDegrees, maximumPitchDegrees);
+                    transform.rotation = Quaternion.Euler(_pitchDegrees, _yawDegrees, 0f);
+                    return;
+                }
+            }
+
             Vector2 lookDelta = Vector2.zero;
 
             if (Gamepad.current != null)

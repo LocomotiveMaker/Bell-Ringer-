@@ -1,0 +1,22 @@
+{
+  "name": "@bell-ringer/audio-lab",
+  "private": true,
+  "type": "module",
+  "description": "Offline audio analysis and provider integrations for Bell Ringer sound design.",
+  "scripts": {
+    "doctor": "node src/cli.js doctor",
+    "analyze": "node src/cli.js analyze",
+    "prepare:audio": "node src/cli.js prepare",
+    "openai:tts": "node src/cli.js openai-tts",
+    "openai:stt": "node src/cli.js openai-stt",
+    "eleven:sfx": "node src/cli.js eleven-sfx"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ffmpeg-static": "5.2.0",
+    "meyda": "5.6.3",
+    "music-metadata": "11.12.3",
+    "node-wav": "0.0.2",
+    "openai": "^5.19.1"
+  }
+}

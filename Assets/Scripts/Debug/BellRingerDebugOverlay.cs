@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using BellRinger.Hardware;
+using BellRinger.Gameplay;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,6 +16,8 @@ namespace BellRinger.Debug
         private readonly StringBuilder _builder = new StringBuilder(512);
         private bool _isVisible;
         private PadImuReceiver _padImuReceiver;
+        private PadPoseProvider _padPoseProvider;
+        private HeadTiltInputProvider _headTiltInputProvider;
 
         private void Start()
         {
@@ -42,6 +45,16 @@ namespace BellRinger.Debug
                 _padImuReceiver = FindFirstObjectByType<PadImuReceiver>();
             }
 
+            if (_padPoseProvider == null)
+            {
+                _padPoseProvider = FindFirstObjectByType<PadPoseProvider>();
+            }
+
+            if (_headTiltInputProvider == null)
+            {
+                _headTiltInputProvider = FindFirstObjectByType<HeadTiltInputProvider>();
+            }
+
             bool usingDedicatedPadImu = _padImuReceiver != null && !_padImuReceiver.UsingSharedHardwareBridgeTelemetry;
 
             _builder.Clear();
@@ -55,6 +68,12 @@ namespace BellRinger.Debug
                 .Append(snapshot.telemetry.headYaw.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.headPitch.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.headRoll.ToString("0.0")).AppendLine();
+            if (_headTiltInputProvider != null)
+            {
+                _builder.Append("Head Virtual: ")
+                    .Append(_headTiltInputProvider.VirtualYawDegrees.ToString("0.0")).Append(", ")
+                    .Append(_headTiltInputProvider.VirtualPitchDegrees.ToString("0.0")).Append(", 0.0").AppendLine();
+            }
             _builder.Append(usingDedicatedPadImu ? "Bridge Hand: " : "Hand: ")
                 .Append(snapshot.telemetry.handYaw.ToString("0.0")).Append(", ")
                 .Append(snapshot.telemetry.handPitch.ToString("0.0")).Append(", ")
@@ -71,6 +90,15 @@ namespace BellRinger.Debug
                     .Append(_padImuReceiver.MappedPitchDegrees.ToString("0.0")).Append(", ")
                     .Append(_padImuReceiver.MappedRollDegrees.ToString("0.0")).AppendLine();
             }
+            if (_padPoseProvider != null)
+            {
+                _builder.Append("Pad Pose YPR: ")
+                    .Append(_padPoseProvider.ResolvedYawDegrees.ToString("0.0")).Append(", ")
+                    .Append(_padPoseProvider.ResolvedPitchDegrees.ToString("0.0")).Append(", ")
+                    .Append(_padPoseProvider.ResolvedRollDegrees.ToString("0.0")).AppendLine();
+                _builder.Append("Pad Yaw Source: ")
+                    .AppendLine(_padPoseProvider.UsingCameraYaw ? "Camera" : (_padPoseProvider.UsingImuYawFallback ? "IMU fallback" : "Hold"));
+            }
             _builder.Append("Ports: ").AppendLine(snapshot.availablePorts == null || snapshot.availablePorts.Length == 0 ? "(none)" : string.Join(", ", snapshot.availablePorts));
 
             if (!string.IsNullOrEmpty(snapshot.lastError))
@@ -84,7 +112,7 @@ namespace BellRinger.Debug
             }
 
             float width = 360f;
-            float height = _padImuReceiver == null ? 300f : 360f;
+            float height = (_padImuReceiver == null && _padPoseProvider == null && _headTiltInputProvider == null) ? 300f : 400f;
             float x = Mathf.Max(16f, Screen.width - width - 16f);
             GUI.Box(new Rect(x, 16f, width, height), _builder.ToString());
         }

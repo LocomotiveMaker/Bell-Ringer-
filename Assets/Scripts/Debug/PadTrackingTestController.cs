@@ -19,6 +19,10 @@ namespace BellRinger.Debug
         private Camera _camera;
         private PadTrackingReceiver _receiver;
         private PadImuReceiver _imuReceiver;
+        private PadPoseProvider _padPoseProvider;
+        private HeadImuReceiver _headImuReceiver;
+        private HeadTiltInputProvider _headTiltInputProvider;
+        private PadGamepadRumbleTester _padGamepadRumbleTester;
         private PadImuPoseCalibrationTool _imuCalibrationTool;
         private Renderer _ghostRenderer;
         private Transform _ghostTransform;
@@ -58,8 +62,8 @@ namespace BellRinger.Debug
                 return;
             }
 
-            DrawOverlay(new Rect(16f, 16f, 620f, 940f));
-            DrawScreenPreview(new Rect(652f, 16f, 300f, 220f));
+            DrawOverlay(new Rect(16f, 16f, 660f, 1080f));
+            DrawScreenPreview(new Rect(692f, 16f, 300f, 220f));
         }
 
         private void EnsureScene()
@@ -86,6 +90,11 @@ namespace BellRinger.Debug
                 _camera.gameObject.AddComponent<AudioListener>();
             }
 
+            if (HardwareBridge.Instance == null)
+            {
+                new GameObject("BellRingerHardwareBridge").AddComponent<HardwareBridge>();
+            }
+
             if (_camera.GetComponent<BellRingerSimpleMoveLookController>() == null)
             {
                 _camera.gameObject.AddComponent<BellRingerSimpleMoveLookController>();
@@ -109,6 +118,42 @@ namespace BellRinger.Debug
                 }
             }
 
+            if (_padPoseProvider == null)
+            {
+                _padPoseProvider = GetComponent<PadPoseProvider>();
+                if (_padPoseProvider == null)
+                {
+                    _padPoseProvider = gameObject.AddComponent<PadPoseProvider>();
+                }
+            }
+
+            if (_headImuReceiver == null)
+            {
+                _headImuReceiver = _camera.GetComponent<HeadImuReceiver>();
+                if (_headImuReceiver == null)
+                {
+                    _headImuReceiver = _camera.gameObject.AddComponent<HeadImuReceiver>();
+                }
+            }
+
+            if (_headTiltInputProvider == null)
+            {
+                _headTiltInputProvider = _camera.GetComponent<HeadTiltInputProvider>();
+                if (_headTiltInputProvider == null)
+                {
+                    _headTiltInputProvider = _camera.gameObject.AddComponent<HeadTiltInputProvider>();
+                }
+            }
+
+            if (_padGamepadRumbleTester == null)
+            {
+                _padGamepadRumbleTester = GetComponent<PadGamepadRumbleTester>();
+                if (_padGamepadRumbleTester == null)
+                {
+                    _padGamepadRumbleTester = gameObject.AddComponent<PadGamepadRumbleTester>();
+                }
+            }
+
             if (_imuCalibrationTool == null)
             {
                 _imuCalibrationTool = GetComponent<PadImuPoseCalibrationTool>();
@@ -120,6 +165,9 @@ namespace BellRinger.Debug
 
             if (_staticSceneCreated)
             {
+                _padPoseProvider?.InitializeNow();
+                _imuReceiver?.InitializeNow();
+                _headImuReceiver?.InitializeNow();
                 return;
             }
 
@@ -131,33 +179,33 @@ namespace BellRinger.Debug
 
         private void UpdateGhost()
         {
-            if (_camera == null || _receiver == null || _ghostTransform == null || _ghostRenderer == null || !_receiver.HasPose)
+            if (_camera == null || _padPoseProvider == null || _ghostTransform == null || _ghostRenderer == null || !_padPoseProvider.HasPose)
             {
                 return;
             }
 
-            Vector3 cameraSpace = _receiver.ApproximateCameraSpacePosition;
+            Vector3 cameraSpace = _padPoseProvider.CameraSpacePosition;
             Transform cameraTransform = _camera.transform;
             _ghostTransform.position = cameraTransform.position
                 + (cameraTransform.right * cameraSpace.x)
                 + (cameraTransform.up * cameraSpace.y)
                 + (cameraTransform.forward * cameraSpace.z);
 
-            if (_imuReceiver != null && _imuReceiver.HasFreshSample)
+            if (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
             {
-                _ghostTransform.rotation = cameraTransform.rotation * _imuReceiver.RelativeRotation;
+                _ghostTransform.rotation = cameraTransform.rotation * _padPoseProvider.RelativeRotation;
             }
             else
             {
                 _ghostTransform.rotation = Quaternion.LookRotation(cameraTransform.forward, Vector3.up);
             }
 
-            _ghostRenderer.sharedMaterial.color = _receiver.HasFreshDetection ? trackedColor : staleColor;
+            _ghostRenderer.sharedMaterial.color = _padPoseProvider.HasFreshPosition ? trackedColor : staleColor;
 
             if (_orientationMarkerTransform != null && _orientationMarkerRenderer != null)
             {
                 _orientationMarkerTransform.position = _ghostTransform.position + (_ghostTransform.forward * 0.11f);
-                _orientationMarkerRenderer.sharedMaterial.color = _imuReceiver != null && _imuReceiver.HasFreshSample ? imuFreshColor : imuStaleColor;
+                _orientationMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw ? imuFreshColor : imuStaleColor;
             }
 
         }
@@ -175,7 +223,42 @@ namespace BellRinger.Debug
             GUILayout.Label($"Screen center: {_receiver.ScreenX01:0.000}, {_receiver.ScreenY01:0.000}");
             GUILayout.Label($"Approx camera-space meters: X {_receiver.ApproximateCameraSpacePosition.x:0.000}  Y {_receiver.ApproximateCameraSpacePosition.y:0.000}  Z {_receiver.ApproximateCameraSpacePosition.z:0.000}");
             GUILayout.Label($"Marker size px: {_receiver.MarkerSizePixels:0.0}  packet age: {_receiver.LastPacketAgeSeconds:0.000}s");
+            GUILayout.Label($"Camera yaw: {(_receiver.HasFreshCameraYaw ? _receiver.CameraYawDegrees.ToString("0.00") : "--")}  yaw fresh: {_receiver.HasFreshCameraYaw}");
             GUILayout.Space(10f);
+
+            if (_headTiltInputProvider != null)
+            {
+                GUILayout.Label("Head Tilt Input");
+                string headImuSource = _headImuReceiver == null
+                    ? "(none)"
+                    : (_headImuReceiver.UsingSharedHardwareBridgeTelemetry ? "Shared HardwareBridge" : "Dedicated Serial");
+                GUILayout.Label($"Head source: {headImuSource}");
+                if (_headImuReceiver != null)
+                {
+                    GUILayout.Label($"Head port: {_headImuReceiver.ActivePortName}  connected: {_headImuReceiver.IsConnected}  fresh: {_headImuReceiver.HasFreshSample}");
+                }
+                GUILayout.Label($"Head physical pitch/roll: {_headTiltInputProvider.PhysicalPitchDegrees:0.00} / {_headTiltInputProvider.PhysicalRollDegrees:0.00}");
+                GUILayout.Label($"Head neutral pitch/roll: {_headTiltInputProvider.NeutralPitchDegrees:0.00} / {_headTiltInputProvider.NeutralRollDegrees:0.00}");
+                GUILayout.Label($"Head virtual yaw/pitch/roll: {_headTiltInputProvider.VirtualYawDegrees:0.00} / {_headTiltInputProvider.VirtualPitchDegrees:0.00} / {_headTiltInputProvider.VirtualRollDegrees:0.00}");
+                if (_headImuReceiver != null && GUILayout.Button("Reconnect Head IMU", GUILayout.Height(26f)))
+                {
+                    _headImuReceiver.RefreshAndReconnect();
+                }
+                if (GUILayout.Button("Recenter Head Tilt", GUILayout.Height(28f)))
+                {
+                    _headTiltInputProvider.Recenter();
+                }
+                GUILayout.Space(8f);
+            }
+
+            if (_padPoseProvider != null)
+            {
+                GUILayout.Label("Pad Pose");
+                GUILayout.Label($"Pad yaw source: {(_padPoseProvider.UsingCameraYaw ? "Camera" : (_padPoseProvider.UsingImuYawFallback ? "IMU fallback" : "Hold"))}");
+                GUILayout.Label($"Pad resolved yaw/pitch/roll: {_padPoseProvider.ResolvedYawDegrees:0.00} / {_padPoseProvider.ResolvedPitchDegrees:0.00} / {_padPoseProvider.ResolvedRollDegrees:0.00}");
+                GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}");
+                GUILayout.Space(8f);
+            }
 
             if (_imuReceiver != null)
             {
@@ -264,11 +347,39 @@ namespace BellRinger.Debug
 
                 GUILayout.Label("If you change preferredPortName in the Inspector during Play, press Reconnect IMU.");
                 GUILayout.Label("Dedicated IMU sketch now expects 230400 baud.");
-                GUILayout.Label("Mag calibration: press Start, rotate through wide figure-8 and all 3 axes for 10-15 seconds, then Finish + Save.");
-                GUILayout.Label("After a saved mag calibration, fusion mode should change from 6 to 9.");
-                GUILayout.Label("Preview colors: gray = neutral, orange = live body, white = front, red = right, green = up.");
+                GUILayout.Label("Pad yaw authority: camera first, IMU yaw only as fallback/debug.");
+                GUILayout.Label("Pad preview colors: gray = neutral, orange = live body, white = front, red = right, green = up.");
                 GUILayout.Label("Shake grows with faster movement. Compare the orange body against the gray neutral plate.");
                 GUILayout.Label("Quaternion mode uses Mount Trim buttons instead of Euler axis remapping.");
+            }
+
+            if (_padGamepadRumbleTester != null)
+            {
+                GUILayout.Space(10f);
+                GUILayout.Label("Pad Gamepad Rumble");
+                GUILayout.Label($"Gamepad: {_padGamepadRumbleTester.DeviceName}");
+                GUILayout.Label($"Rumble active: {_padGamepadRumbleTester.RumbleActive}");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Light Rumble", GUILayout.Height(26f)))
+                {
+                    _padGamepadRumbleTester.TriggerLightPulse();
+                }
+
+                if (GUILayout.Button("Heavy Rumble", GUILayout.Height(26f)))
+                {
+                    _padGamepadRumbleTester.TriggerHeavyPulse();
+                }
+                GUILayout.EndHorizontal();
+
+                if (GUILayout.Button("Stop Rumble", GUILayout.Height(24f)))
+                {
+                    _padGamepadRumbleTester.StopRumble();
+                }
+
+                if (!string.IsNullOrWhiteSpace(_padGamepadRumbleTester.LastError))
+                {
+                    GUILayout.Label($"Rumble error: {_padGamepadRumbleTester.LastError}");
+                }
             }
 
             if (_imuCalibrationTool != null)
@@ -413,7 +524,7 @@ namespace BellRinger.Debug
 
         private void UpdateImuPreview(Transform cameraTransform)
         {
-            if (_imuPreviewRootTransform == null || _imuPreviewPlateTransform == null || _imuReceiver == null)
+            if (_imuPreviewRootTransform == null || _imuPreviewPlateTransform == null || _padPoseProvider == null || _imuReceiver == null)
             {
                 return;
             }
@@ -430,12 +541,12 @@ namespace BellRinger.Debug
 
             _imuPreviewRootTransform.position = basePosition + shakeOffset;
             _imuPreviewRootTransform.rotation = cameraTransform.rotation;
-            _imuPreviewPlateTransform.localRotation = _imuReceiver.RelativeRotation;
+            _imuPreviewPlateTransform.localRotation = _padPoseProvider.RelativeRotation;
             _imuPreviewPlateTransform.localScale = new Vector3(0.28f + (shake * 0.02f), 0.018f, 0.16f + (shake * 0.01f));
 
             if (_imuPreviewPlateRenderer != null)
             {
-                _imuPreviewPlateRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample ? imuPreviewColor : imuStaleColor;
+                _imuPreviewPlateRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw) ? imuPreviewColor : imuStaleColor;
             }
 
             if (_imuPreviewReferencePlateRenderer != null)
@@ -448,7 +559,7 @@ namespace BellRinger.Debug
                 _imuPreviewMarkerTransform.localPosition = new Vector3(0f, 0.035f + (shake * 0.01f), 0.055f);
             }
 
-            Color axisColor = _imuReceiver.HasFreshSample ? Color.white : imuStaleColor;
+            Color axisColor = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw) ? Color.white : imuStaleColor;
             if (_imuPreviewMarkerRenderer != null)
             {
                 _imuPreviewMarkerRenderer.sharedMaterial.color = axisColor;
@@ -456,14 +567,14 @@ namespace BellRinger.Debug
 
             if (_imuPreviewRightMarkerRenderer != null)
             {
-                _imuPreviewRightMarkerRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample
+                _imuPreviewRightMarkerRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
                     ? new Color(1f, 0.28f, 0.22f, 1f)
                     : new Color(0.46f, 0.32f, 0.32f, 1f);
             }
 
             if (_imuPreviewUpMarkerRenderer != null)
             {
-                _imuPreviewUpMarkerRenderer.sharedMaterial.color = _imuReceiver.HasFreshSample
+                _imuPreviewUpMarkerRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
                     ? new Color(0.28f, 1f, 0.36f, 1f)
                     : new Color(0.34f, 0.46f, 0.34f, 1f);
             }

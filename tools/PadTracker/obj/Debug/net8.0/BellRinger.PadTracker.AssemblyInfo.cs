@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BellRinger.PadTracker")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+844a0bad599ccc151d0139076c9e02537d1b7148")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fadac1f01d2a9f8cda2b6550c10f8926458ef6bc")]
 [assembly: System.Reflection.AssemblyProductAttribute("BellRinger.PadTracker")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BellRinger.PadTracker")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

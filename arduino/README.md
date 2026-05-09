@@ -4,6 +4,9 @@
 - Unity can target a fixed port with `BELL_RINGER_SERIAL_PORT=COM9`
 - Unity can override baud with `BELL_RINGER_SERIAL_BAUD=115200`
 - If no device is attached, Unity falls back to keyboard simulation by default
+- Current input philosophy:
+  - `head`: 6-axis `pitch/roll` only, Unity maps `roll -> virtual yaw`
+  - `pad`: camera owns `position + yaw`, IMU owns `pitch/roll`
 
 Expected telemetry line format:
 
