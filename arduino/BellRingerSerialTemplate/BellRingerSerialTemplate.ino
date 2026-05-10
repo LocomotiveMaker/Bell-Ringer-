@@ -2,12 +2,7 @@
 #include <Wire.h>
 
 const unsigned long kBaudRate = 115200;
-const bool kEnablePadImu = false;
-const bool kEnableTelemetry = false;
 const unsigned long kTelemetryIntervalMs = 10;
-const int kButtonPin = 2;
-const int kLeftMatrixPin = 6;
-const int kRightMatrixPin = 7;
 const int kPixelsPerMatrix = 64;
 const unsigned long kImuSampleIntervalUs = 10000UL;
 const uint16_t kGyroCalibrationSamples = 300;
@@ -25,6 +20,22 @@ const uint8_t kRegisterGyroConfig = 0x1B;
 const uint8_t kRegisterAccelConfig = 0x1C;
 const uint8_t kRegisterAccelConfig2 = 0x1D;
 const uint8_t kRegisterAccelXoutH = 0x3B;
+
+#if defined(ARDUINO_ARCH_ESP32)
+const bool kEnablePadImu = true;
+const bool kEnableTelemetry = true;
+const int kButtonPin = -1;
+const int kLeftMatrixPin = 38;   // Header D6 on the Geekble nano ESP32-S3
+const int kRightMatrixPin = 21;  // Header D7 on the Geekble nano ESP32-S3
+const int kImuSdaPin = 11;       // Header A4
+const int kImuSclPin = 12;       // Header A5 / SCL
+#else
+const bool kEnablePadImu = false;
+const bool kEnableTelemetry = false;
+const int kButtonPin = 2;
+const int kLeftMatrixPin = 6;
+const int kRightMatrixPin = 7;
+#endif
 
 Adafruit_NeoPixel leftMatrix(kPixelsPerMatrix, kLeftMatrixPin, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel rightMatrix(kPixelsPerMatrix, kRightMatrixPin, NEO_GRB + NEO_KHZ800);
@@ -259,8 +270,25 @@ void servicePadImu() {
   updatePadOrientation(sample, elapsedUs * 0.000001f);
 }
 
+void waitForSerialReady() {
+  unsigned long startedAt = millis();
+  while (!Serial && (millis() - startedAt) < 1500UL) {
+    delay(10);
+  }
+}
+
+void startWireBus() {
+#if defined(ARDUINO_ARCH_ESP32)
+  Wire.begin(kImuSdaPin, kImuSclPin);
+#else
+  Wire.begin();
+#endif
+}
+
 void setup() {
-  pinMode(kButtonPin, INPUT_PULLUP);
+  if (kButtonPin >= 0) {
+    pinMode(kButtonPin, INPUT_PULLUP);
+  }
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
@@ -270,13 +298,12 @@ void setup() {
   showMatrices();
 
   Serial.begin(kBaudRate);
-  while (!Serial) {
-  }
+  waitForSerialReady();
 
   Serial.println("ACK boot");
 
   if (kEnablePadImu) {
-    Wire.begin();
+    startWireBus();
     Wire.setClock(400000UL);
 
     if (detectPadMpuAddress() && initializePadMpu()) {
@@ -374,12 +401,12 @@ void sendTelemetry() {
   lastTelemetryAt = now;
 
   float headYaw = 0.0f;
-  float headPitch = 0.0f;
-  float headRoll = 0.0f;
-  float handYaw = gHasPadOrientation ? wrapDegrees(gPadYawDegrees - gPadYawZeroDegrees) : 0.0f;
-  float handPitch = gHasPadOrientation ? wrapDegrees(gPadPitchDegrees - gPadPitchZeroDegrees) : 0.0f;
-  float handRoll = gHasPadOrientation ? wrapDegrees(gPadRollDegrees - gPadRollZeroDegrees) : 0.0f;
-  int button = digitalRead(kButtonPin) == LOW ? 1 : 0;
+  float headPitch = gHasPadOrientation ? wrapDegrees(gPadPitchDegrees - gPadPitchZeroDegrees) : 0.0f;
+  float headRoll = gHasPadOrientation ? wrapDegrees(gPadRollDegrees - gPadRollZeroDegrees) : 0.0f;
+  float handYaw = 0.0f;
+  float handPitch = 0.0f;
+  float handRoll = 0.0f;
+  int button = (kButtonPin >= 0 && digitalRead(kButtonPin) == LOW) ? 1 : 0;
 
   Serial.print("hy=");
   Serial.print(headYaw, 1);

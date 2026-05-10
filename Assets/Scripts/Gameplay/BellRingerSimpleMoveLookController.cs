@@ -35,12 +35,12 @@ namespace BellRinger.Gameplay
         {
             if (useHeadTiltProviderWhenFresh)
             {
-                _headTiltInputProvider ??= GetComponent<HeadTiltInputProvider>();
+                _headTiltInputProvider ??= GetComponent<HeadTiltInputProvider>() ?? FindFirstObjectByType<HeadTiltInputProvider>();
                 if (_headTiltInputProvider != null && _headTiltInputProvider.HasFreshSample)
                 {
                     _yawDegrees = _headTiltInputProvider.VirtualYawDegrees;
                     _pitchDegrees = Mathf.Clamp(_headTiltInputProvider.VirtualPitchDegrees, -maximumPitchDegrees, maximumPitchDegrees);
-                    transform.rotation = Quaternion.Euler(_pitchDegrees, _yawDegrees, 0f);
+                    transform.rotation = _headTiltInputProvider.VirtualRotation;
                     return;
                 }
             }

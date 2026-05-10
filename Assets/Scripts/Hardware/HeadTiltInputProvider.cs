@@ -14,16 +14,26 @@ namespace BellRinger.Hardware
         [SerializeField] private float maximumVirtualPitchDegrees = 48f;
         [SerializeField] private float maximumVirtualYawDegrees = 55f;
         [SerializeField] private float smoothingStrength = 10f;
+        [SerializeField] private float stillnessHoldThreshold = 0.84f;
+        [SerializeField] private float inferredStillFrameDeltaDegrees = 0.18f;
+        [SerializeField] private float stillnessPhysicalDriftToleranceDegrees = 0.7f;
+        [SerializeField] private float snapToNeutralVirtualDegrees = 0.18f;
         [SerializeField] private bool invertPitch;
         [SerializeField] private bool invertRollToYaw;
 
         private bool _hasNeutral;
+        private bool _hasStillLock;
         private float _neutralPitchDegrees;
         private float _neutralRollDegrees;
         private float _physicalPitchDegrees;
         private float _physicalRollDegrees;
         private float _virtualYawDegrees;
         private float _virtualPitchDegrees;
+        private float _stillLockedPitchDegrees;
+        private float _stillLockedRollDegrees;
+        private bool _hasPreviousPhysicalSample;
+        private float _previousPhysicalPitchDegrees;
+        private float _previousPhysicalRollDegrees;
 
         public HeadImuReceiver HeadImuReceiver => headImuReceiver;
         public bool HasFreshSample => headImuReceiver != null && headImuReceiver.HasFreshSample && headImuReceiver.LastSampleAgeSeconds <= staleAfterSeconds;
@@ -47,6 +57,7 @@ namespace BellRinger.Hardware
             _neutralPitchDegrees = _physicalPitchDegrees;
             _neutralRollDegrees = _physicalRollDegrees;
             _hasNeutral = true;
+            _hasStillLock = false;
         }
 
         private void UpdateFromTelemetry()
@@ -69,8 +80,45 @@ namespace BellRinger.Hardware
 
             if (HasFreshSample)
             {
-                float pitchDelta = NormalizeSignedAngle(_physicalPitchDegrees - _neutralPitchDegrees);
-                float rollDelta = NormalizeSignedAngle(_physicalRollDegrees - _neutralRollDegrees);
+                float stablePitchDegrees = _physicalPitchDegrees;
+                float stableRollDegrees = _physicalRollDegrees;
+                bool hasInferredStillness = false;
+                if (_hasPreviousPhysicalSample)
+                {
+                    float pitchFrameDelta = Mathf.Abs(NormalizeSignedAngle(_physicalPitchDegrees - _previousPhysicalPitchDegrees));
+                    float rollFrameDelta = Mathf.Abs(NormalizeSignedAngle(_physicalRollDegrees - _previousPhysicalRollDegrees));
+                    hasInferredStillness = pitchFrameDelta <= inferredStillFrameDeltaDegrees &&
+                                           rollFrameDelta <= inferredStillFrameDeltaDegrees;
+                }
+
+                bool isStill = headImuReceiver.Stillness01 >= stillnessHoldThreshold || hasInferredStillness;
+                if (isStill)
+                {
+                    if (!_hasStillLock)
+                    {
+                        _stillLockedPitchDegrees = _physicalPitchDegrees;
+                        _stillLockedRollDegrees = _physicalRollDegrees;
+                        _hasStillLock = true;
+                    }
+                    else if (Mathf.Abs(NormalizeSignedAngle(_physicalPitchDegrees - _stillLockedPitchDegrees)) > stillnessPhysicalDriftToleranceDegrees ||
+                             Mathf.Abs(NormalizeSignedAngle(_physicalRollDegrees - _stillLockedRollDegrees)) > stillnessPhysicalDriftToleranceDegrees)
+                    {
+                        isStill = false;
+                    }
+                }
+
+                if (isStill)
+                {
+                    stablePitchDegrees = _stillLockedPitchDegrees;
+                    stableRollDegrees = _stillLockedRollDegrees;
+                }
+                else
+                {
+                    _hasStillLock = false;
+                }
+
+                float pitchDelta = NormalizeSignedAngle(stablePitchDegrees - _neutralPitchDegrees);
+                float rollDelta = NormalizeSignedAngle(stableRollDegrees - _neutralRollDegrees);
 
                 if (invertPitch)
                 {
@@ -86,10 +134,23 @@ namespace BellRinger.Hardware
                 targetYaw = Mathf.Clamp(ApplyDeadzone(rollDelta, rollDeadzoneDegrees) * rollToYawSensitivity, -maximumVirtualYawDegrees, maximumVirtualYawDegrees);
             }
 
+            _previousPhysicalPitchDegrees = _physicalPitchDegrees;
+            _previousPhysicalRollDegrees = _physicalRollDegrees;
+            _hasPreviousPhysicalSample = HasFreshSample;
+
             float deltaTime = Mathf.Max(0.0001f, Time.unscaledDeltaTime);
             float lerpFactor = 1f - Mathf.Exp(-Mathf.Max(0f, smoothingStrength) * deltaTime);
             _virtualYawDegrees = Mathf.Lerp(_virtualYawDegrees, targetYaw, lerpFactor);
             _virtualPitchDegrees = Mathf.Lerp(_virtualPitchDegrees, targetPitch, lerpFactor);
+            if (Mathf.Abs(_virtualYawDegrees) <= snapToNeutralVirtualDegrees)
+            {
+                _virtualYawDegrees = 0f;
+            }
+
+            if (Mathf.Abs(_virtualPitchDegrees) <= snapToNeutralVirtualDegrees)
+            {
+                _virtualPitchDegrees = 0f;
+            }
         }
 
         private static float ApplyDeadzone(float valueDegrees, float deadzoneDegrees)

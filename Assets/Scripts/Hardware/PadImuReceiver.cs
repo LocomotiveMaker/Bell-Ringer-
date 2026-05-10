@@ -20,7 +20,7 @@ namespace BellRinger.Hardware
         public const string SerialBaudEnvName = "BELL_RINGER_PAD_IMU_BAUD";
 
         [SerializeField] private bool useSharedHardwareBridgeTelemetry = false;
-        [SerializeField] private string preferredPortName = "COM10";
+        [SerializeField] private string preferredPortName = "COM30";
         [SerializeField] private int baudRate = 230400;
         [SerializeField] private bool autoConnectOnStart = true;
         [SerializeField] private float reconnectIntervalSeconds = 2f;

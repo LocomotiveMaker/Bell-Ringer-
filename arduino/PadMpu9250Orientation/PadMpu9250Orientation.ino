@@ -3,6 +3,11 @@
 
 namespace
 {
+#if defined(ARDUINO_ARCH_ESP32)
+    constexpr int I2cSdaPin = 11;
+    constexpr int I2cSclPin = 12;
+    constexpr int EepromBytes = 128;
+#endif
     constexpr uint8_t Mpu9250AddressLow = 0x68;
     constexpr uint8_t Mpu9250AddressHigh = 0x69;
     constexpr uint8_t Ak8963Address = 0x0C;
@@ -316,6 +321,9 @@ namespace
         data.scaleY = gMagScaleY;
         data.scaleZ = gMagScaleZ;
         EEPROM.put(0, data);
+#if defined(ARDUINO_ARCH_ESP32)
+        EEPROM.commit();
+#endif
     }
 
     bool loadMagCalibrationFromEeprom()
@@ -352,6 +360,9 @@ namespace
 
         StoredMagCalibration cleared = {};
         EEPROM.put(0, cleared);
+#if defined(ARDUINO_ARCH_ESP32)
+        EEPROM.commit();
+#endif
         resetMagCalibrationAccumulator();
     }
 
@@ -1113,15 +1124,22 @@ namespace
 void setup()
 {
     Serial.begin(SerialBaud);
-    while (!Serial)
+    unsigned long serialWaitStartedAt = millis();
+    while (!Serial && (millis() - serialWaitStartedAt) < 1500UL)
     {
+        delay(10);
     }
 
     delay(250);
     Serial.println();
     Serial.println(F("[PadMPU] orientation start"));
 
+#if defined(ARDUINO_ARCH_ESP32)
+    EEPROM.begin(EepromBytes);
+    Wire.begin(I2cSdaPin, I2cSclPin);
+#else
     Wire.begin();
+#endif
     Wire.setClock(400000UL);
     delay(120);
 

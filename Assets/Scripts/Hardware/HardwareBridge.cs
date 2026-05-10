@@ -14,7 +14,7 @@ namespace BellRinger.Hardware
         public const string SerialBaudEnvName = "BELL_RINGER_SERIAL_BAUD";
         public const string SimulateHardwareEnvName = "BELL_RINGER_SIMULATE_HARDWARE";
 
-        [SerializeField] private string preferredPortName = "COM9";
+        [SerializeField] private string preferredPortName = "COM40";
         [SerializeField] private int baudRate = 115200;
         [SerializeField] private bool autoConnectOnStart = true;
         [SerializeField] private bool allowSimulationFallback = true;

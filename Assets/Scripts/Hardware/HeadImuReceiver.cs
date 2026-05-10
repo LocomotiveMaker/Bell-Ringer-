@@ -32,6 +32,7 @@ namespace BellRinger.Hardware
         private float _yawDegrees;
         private float _pitchDegrees;
         private float _rollDegrees;
+        private float _stillness01;
 
         public bool IsConnected => _usingSharedHardwareBridgeTelemetry
             ? HardwareBridge.Instance != null && HardwareBridge.Instance.IsConnected
@@ -48,6 +49,7 @@ namespace BellRinger.Hardware
         public float YawDegrees => _yawDegrees;
         public float PitchDegrees => _pitchDegrees;
         public float RollDegrees => _rollDegrees;
+        public float Stillness01 => _stillness01;
         public bool UsingSharedHardwareBridgeTelemetry => _usingSharedHardwareBridgeTelemetry;
 
         private void Start()
@@ -158,6 +160,7 @@ namespace BellRinger.Hardware
             _yawDegrees = snapshot.telemetry.headYaw;
             _pitchDegrees = snapshot.telemetry.headPitch;
             _rollDegrees = snapshot.telemetry.headRoll;
+            _stillness01 = 0f;
 
             if (hardwareBridge.LastUpdateAgeSeconds < float.PositiveInfinity)
             {
@@ -349,6 +352,14 @@ namespace BellRinger.Hardware
                     case "hr":
                     case "headroll":
                         parsedAny |= float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out _rollDegrees);
+                        break;
+                    case "st":
+                    case "hs":
+                    case "headstill":
+                        if (float.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsedStillness))
+                        {
+                            _stillness01 = Mathf.Clamp01(parsedStillness);
+                        }
                         break;
                 }
             }
