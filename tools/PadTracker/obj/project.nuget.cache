@@ -1,15 +1,33 @@
 {
   "version": 2,
-  "dgSpecHash": "OMMopz5aF9E=",
-  "success": false,
+  "dgSpecHash": "QuBySlbh7og=",
+  "success": true,
   "projectFilePath": "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\microsoft.win32.systemevents\\10.0.3\\microsoft.win32.systemevents.10.0.3.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\opencvsharp4\\4.13.0.20260302\\opencvsharp4.4.13.0.20260302.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\opencvsharp4.runtime.win\\4.13.0.20260302\\opencvsharp4.runtime.win.4.13.0.20260302.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\opencvsharp4.windows\\4.13.0.20260302\\opencvsharp4.windows.4.13.0.20260302.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\opencvsharp4.wpfextensions\\4.13.0.20260302\\opencvsharp4.wpfextensions.4.13.0.20260302.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\system.drawing.common\\10.0.3\\system.drawing.common.10.0.3.nupkg.sha512",
+    "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages\\system.memory\\4.6.3\\system.memory.4.6.3.nupkg.sha512"
+  ],
   "logs": [
     {
-      "code": "NU1301",
-      "level": "Error",
-      "message": "https://api.nuget.org/v3/index.json 원본에 대한 서비스 인덱스를 로드할 수 없습니다.",
-      "libraryId": "OpenCvSharp4.Windows"
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "패키지 취약성 데이터를 가져오는 동안 오류가 발생했습니다. https://api.nuget.org/v3/index.json 원본에 대한 서비스 인덱스를 로드할 수 없습니다."
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "프로젝트 대상 프레임워크 'net8.0' 대신 '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1'을(를) 사용하여 패키지 'OpenCvSharp4.WpfExtensions 4.13.0.20260302'을(를) 복원했습니다. 이 패키지는 프로젝트와 완벽하게 호환되지 않을 수 있습니다.",
+      "libraryId": "OpenCvSharp4.WpfExtensions",
+      "targetGraphs": [
+        "net8.0"
+      ]
     }
   ]
 }

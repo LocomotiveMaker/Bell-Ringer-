@@ -321,6 +321,9 @@ static TrackingPacket BuildPacket(
         confidence = 0f,
         cameraYawAvailable = false,
         cameraYawDegrees = 0f,
+        cameraPitchRollAvailable = false,
+        cameraPitchDegrees = 0f,
+        cameraRollDegrees = 0f,
         timeSeconds = nowSeconds
     };
 
@@ -395,10 +398,13 @@ static TrackingPacket BuildPacket(
     packet.mode = detection.ModeLabel;
     packet.searchScale = (float)detection.SearchScale;
 
-    if (TryEstimateBoardYawDegrees(options, detection, frameWidth, frameHeight, out float cameraYawDegrees))
+    if (TryEstimateBoardCameraOrientationDegrees(options, detection, frameWidth, frameHeight, out float cameraYawDegrees, out float cameraPitchDegrees, out float cameraRollDegrees))
     {
         packet.cameraYawAvailable = true;
         packet.cameraYawDegrees = cameraYawDegrees;
+        packet.cameraPitchRollAvailable = true;
+        packet.cameraPitchDegrees = cameraPitchDegrees;
+        packet.cameraRollDegrees = cameraRollDegrees;
     }
 
     return packet;
@@ -431,7 +437,7 @@ static void DrawOverlay(Mat preview, TrackingPacket packet, DetectionResult dete
     Cv2.PutText(preview, $"Detected: {packet.detected}  IDs: {packet.markerIds}", new Point(16, 30), HersheyFonts.HersheySimplex, 0.7, infoColor, 2, LineTypes.AntiAlias);
     Cv2.PutText(preview, $"X {packet.approxX:0.000}m  Y {packet.approxY:0.000}m  Z {packet.approxZ:0.000}m", new Point(16, 58), HersheyFonts.HersheySimplex, 0.65, infoColor, 2, LineTypes.AntiAlias);
     Cv2.PutText(preview, $"Screen {packet.screenX01:0.000}, {packet.screenY01:0.000}  size {packet.markerSizePx:0.0}px", new Point(16, 86), HersheyFonts.HersheySimplex, 0.65, infoColor, 2, LineTypes.AntiAlias);
-    Cv2.PutText(preview, $"Yaw {(packet.cameraYawAvailable ? packet.cameraYawDegrees.ToString("0.0") : "--")}  FPS {packet.fps:0.0}  mode {packet.mode}  scale {packet.searchScale:0.00}", new Point(16, 114), HersheyFonts.HersheySimplex, 0.65, new Scalar(230, 230, 230), 2, LineTypes.AntiAlias);
+    Cv2.PutText(preview, $"YPR {(packet.cameraYawAvailable ? packet.cameraYawDegrees.ToString("0.0") : "--")}/{(packet.cameraPitchRollAvailable ? packet.cameraPitchDegrees.ToString("0.0") : "--")}/{(packet.cameraPitchRollAvailable ? packet.cameraRollDegrees.ToString("0.0") : "--")}  FPS {packet.fps:0.0}  mode {packet.mode}  scale {packet.searchScale:0.00}", new Point(16, 114), HersheyFonts.HersheySimplex, 0.65, new Scalar(230, 230, 230), 2, LineTypes.AntiAlias);
 
     if (packet.detected)
     {
@@ -501,14 +507,18 @@ static double Distance(Point2f a, Point2f b)
     return Math.Sqrt((dx * dx) + (dy * dy));
 }
 
-static bool TryEstimateBoardYawDegrees(
+static bool TryEstimateBoardCameraOrientationDegrees(
     PadTrackerOptions options,
     DetectionResult detection,
     int frameWidth,
     int frameHeight,
-    out float yawDegrees)
+    out float yawDegrees,
+    out float pitchDegrees,
+    out float rollDegrees)
 {
     yawDegrees = 0f;
+    pitchDegrees = 0f;
+    rollDegrees = 0f;
 
     if (!detection.Detected || detection.MarkerIds.Length < 2)
     {
@@ -538,6 +548,8 @@ static bool TryEstimateBoardYawDegrees(
     using Mat objectPointsMat = Mat.FromArray(objectPoints);
 
     Vec3d accumulatedNormal = default;
+    double accumulatedRollSin = 0.0;
+    double accumulatedRollCos = 0.0;
     int solvedMarkers = 0;
 
     for (int markerIndex = 0; markerIndex < detection.MarkerCorners.Length; markerIndex++)
@@ -588,6 +600,9 @@ static bool TryEstimateBoardYawDegrees(
         }
 
         accumulatedNormal += markerNormal;
+        double topEdgeRadians = Math.Atan2(corners[1].Y - corners[0].Y, corners[1].X - corners[0].X);
+        accumulatedRollSin += Math.Sin(topEdgeRadians);
+        accumulatedRollCos += Math.Cos(topEdgeRadians);
         solvedMarkers++;
     }
 
@@ -607,6 +622,7 @@ static bool TryEstimateBoardYawDegrees(
     }
 
     double normalX = accumulatedNormal.Item0 / magnitude;
+    double normalY = accumulatedNormal.Item1 / magnitude;
     double normalZ = accumulatedNormal.Item2 / magnitude;
     double horizontalMagnitude = Math.Sqrt((normalX * normalX) + (normalZ * normalZ));
     if (horizontalMagnitude < 0.15)
@@ -615,6 +631,14 @@ static bool TryEstimateBoardYawDegrees(
     }
 
     yawDegrees = (float)(Math.Atan2(normalX, normalZ) * 180.0 / Math.PI);
+    pitchDegrees = (float)(Math.Atan2(-normalY, horizontalMagnitude) * 180.0 / Math.PI);
+
+    double rollMagnitude = Math.Sqrt((accumulatedRollSin * accumulatedRollSin) + (accumulatedRollCos * accumulatedRollCos));
+    if (rollMagnitude > 0.00001)
+    {
+        rollDegrees = (float)(Math.Atan2(accumulatedRollSin, accumulatedRollCos) * 180.0 / Math.PI);
+    }
+
     return true;
 }
 
@@ -758,6 +782,9 @@ sealed class TrackingPacket
     public float confidence;
     public bool cameraYawAvailable;
     public float cameraYawDegrees;
+    public bool cameraPitchRollAvailable;
+    public float cameraPitchDegrees;
+    public float cameraRollDegrees;
     public float timeSeconds;
     public string mode = string.Empty;
     public float searchScale;

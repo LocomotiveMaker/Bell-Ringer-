@@ -10,7 +10,9 @@ import { createTempPath } from "./paths.js";
 import { prepareAudioFile } from "./ffmpeg.js";
 
 function aggregateSeries(values) {
-  if (values.length === 0) {
+  const finiteValues = values.filter((value) => Number.isFinite(value));
+
+  if (finiteValues.length === 0) {
     return {
       mean: 0,
       min: 0,
@@ -19,14 +21,14 @@ function aggregateSeries(values) {
     };
   }
 
-  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const mean = finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
   const variance =
-    values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    finiteValues.reduce((sum, value) => sum + (value - mean) ** 2, 0) / finiteValues.length;
 
   return {
     mean,
-    min: Math.min(...values),
-    max: Math.max(...values),
+    min: Math.min(...finiteValues),
+    max: Math.max(...finiteValues),
     stdDev: Math.sqrt(variance)
   };
 }

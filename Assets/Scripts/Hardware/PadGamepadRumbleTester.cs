@@ -14,10 +14,15 @@ namespace BellRinger.Hardware
         [SerializeField] private float heavyLowMotor = 0.65f;
         [SerializeField] private float heavyHighMotor = 0.88f;
         [SerializeField] private float heavyDurationSeconds = 0.22f;
+        [SerializeField] private bool continuousTestRumbleOnStart = true;
+        [SerializeField] private float continuousLowMotor = 0.28f;
+        [SerializeField] private float continuousHighMotor = 0.42f;
         [SerializeField] private int selectedGamepadIndex = -1;
 
         private float _rumbleStopAtRealtime;
+        private float _nextContinuousRefreshAtRealtime;
         private bool _rumbleActive;
+        private bool _continuousRumble;
         private string _lastError = string.Empty;
         private string _lastAction = string.Empty;
 
@@ -35,12 +40,27 @@ namespace BellRinger.Hardware
         public string CurrentDeviceName => Gamepad.current == null ? "(none)" : DescribeGamepad(Gamepad.current, ResolveCurrentIndex());
         public string AvailableGamepadsSummary => BuildAvailableGamepadsSummary();
         public bool RumbleActive => _rumbleActive;
+        public bool ContinuousRumble => _continuousRumble;
         public string LastError => _lastError;
         public string LastAction => _lastAction;
+
+        private void Start()
+        {
+            if (continuousTestRumbleOnStart)
+            {
+                StartContinuousRumble();
+            }
+        }
 
         private void Update()
         {
             ClampSelectedGamepadIndex();
+
+            if (_continuousRumble)
+            {
+                MaintainContinuousRumble();
+                return;
+            }
 
             if (_rumbleActive && Time.realtimeSinceStartup >= _rumbleStopAtRealtime)
             {
@@ -85,16 +105,19 @@ namespace BellRinger.Hardware
 
         public void TriggerLightPulse()
         {
+            _continuousRumble = false;
             TriggerRumble(lightLowMotor, lightHighMotor, lightDurationSeconds);
         }
 
         public void TriggerHeavyPulse()
         {
+            _continuousRumble = false;
             TriggerRumble(heavyLowMotor, heavyHighMotor, heavyDurationSeconds);
         }
 
         public void TriggerAllGamepads()
         {
+            _continuousRumble = false;
             if (Gamepad.all.Count == 0)
             {
                 _lastError = "No connected gamepad was found.";
@@ -119,6 +142,13 @@ namespace BellRinger.Hardware
                 _lastError = $"Broadcast rumble failed: {exception.Message}";
                 _rumbleActive = false;
             }
+        }
+
+        public void StartContinuousRumble()
+        {
+            _continuousRumble = true;
+            _nextContinuousRefreshAtRealtime = 0f;
+            MaintainContinuousRumble();
         }
 
         public void TriggerRumble(float lowFrequency, float highFrequency, float durationSeconds)
@@ -148,6 +178,7 @@ namespace BellRinger.Hardware
 
         public void StopRumble()
         {
+            _continuousRumble = false;
             try
             {
                 InputSystem.ResetHaptics();
@@ -159,6 +190,39 @@ namespace BellRinger.Hardware
             }
 
             _rumbleActive = false;
+        }
+
+        private void MaintainContinuousRumble()
+        {
+            if (Time.realtimeSinceStartup < _nextContinuousRefreshAtRealtime)
+            {
+                return;
+            }
+
+            Gamepad gamepad = ResolveSelectedGamepad();
+            if (gamepad == null)
+            {
+                _rumbleActive = false;
+                _lastError = "No selected gamepad is available for continuous rumble.";
+                _nextContinuousRefreshAtRealtime = Time.realtimeSinceStartup + 0.5f;
+                return;
+            }
+
+            try
+            {
+                InputSystem.ResumeHaptics();
+                gamepad.SetMotorSpeeds(Mathf.Clamp01(continuousLowMotor), Mathf.Clamp01(continuousHighMotor));
+                _rumbleActive = true;
+                _lastError = string.Empty;
+                _lastAction = $"Continuous SetMotorSpeeds sent to {DescribeGamepad(gamepad, ResolveIndex(gamepad))}";
+            }
+            catch (Exception exception)
+            {
+                _rumbleActive = false;
+                _lastError = $"Continuous rumble failed: {exception.Message}";
+            }
+
+            _nextContinuousRefreshAtRealtime = Time.realtimeSinceStartup + 0.5f;
         }
 
         private Gamepad ResolveSelectedGamepad()

@@ -2,10 +2,14 @@
 
 `tools/audio-lab` is a small Node workspace for Bell Ringer audio iteration.
 
-It covers three jobs:
+It covers six jobs:
 
 - analyze local audio files into feature reports
 - normalize or convert source files into a lab-friendly WAV format
+- batch-analyze folders of downloaded candidates
+- create spectrogram PNGs without an external API
+- write category scorecards as CSV
+- convert candidate folders into Unity-ready WAV files
 - call external providers for narration and sound-effect generation
 
 ## Why these tools
@@ -45,10 +49,46 @@ Analyze any supported audio file. Internally it converts to mono 48k WAV and wri
 npm.cmd run analyze -- --input ..\downloads\sample.wav
 ```
 
+Analyze a whole folder, write per-file JSON reports, and write one category scorecard CSV.
+
+```powershell
+npm.cmd run batch -- --input ..\..\Assets\Audio\RawCandidates
+```
+
+Analyze a whole folder and also make spectrogram PNGs.
+
+```powershell
+npm.cmd run batch -- --input ..\..\Assets\Audio\RawCandidates --spectrograms
+```
+
+Analyze a whole folder, make spectrograms, and convert Unity-ready WAV copies in the same output bundle.
+
+```powershell
+npm.cmd run batch -- --input ..\..\Assets\Audio\RawCandidates --spectrograms --unity-import --normalize
+```
+
+Create a spectrogram PNG for one file.
+
+```powershell
+npm.cmd run spectrogram -- --input ..\downloads\sample.wav
+```
+
+Build or rebuild a CSV scorecard from a folder of analysis JSON files.
+
+```powershell
+npm.cmd run scorecard -- --input output\batch\RawCandidates-2026-05-12-120000\analysis
+```
+
 Prepare a file into a normalized mono WAV for game-side iteration.
 
 ```powershell
 npm.cmd run prepare:audio -- --input ..\downloads\sample.mp3 --normalize
+```
+
+Convert a candidate folder into `Assets/Audio/Processed` as 48kHz mono WAV files.
+
+```powershell
+npm.cmd run unity:import -- --input ..\..\Assets\Audio\RawCandidates --normalize
 ```
 
 Generate narration with OpenAI TTS from a JSON spec.
@@ -72,7 +112,10 @@ npm.cmd run eleven:sfx -- --spec presets\elevenlabs-tinnitus-burst.json
 ## Output layout
 
 - `output/analysis`: JSON feature reports
+- `output/batch`: per-folder analysis bundles
 - `output/prepared`: converted WAV files
+- `output/scorecards`: CSV scorecards rebuilt from reports
+- `output/spectrograms`: one-off spectrogram PNGs
 - `output/openai`: narration audio and transcription files
 - `output/elevenlabs`: generated sound effects
 - `tmp`: transient WAV files used for analysis
@@ -87,3 +130,13 @@ The analyzer writes:
 - derived scores for brightness, noisiness, instability, transient density, and harshness
 
 These are heuristics for narrowing candidates. They are not a replacement for listening.
+
+## Suggested no-API workflow
+
+1. Download candidates into `Assets/Audio/RawCandidates/<Category>`.
+2. Run `npm.cmd run batch -- --input ..\..\Assets\Audio\RawCandidates --spectrograms`.
+3. Open `scorecard.csv` and sort by the scores that matter for the category.
+4. Listen only to the narrowed set.
+5. Run `npm.cmd run unity:import -- --input ..\..\Assets\Audio\RawCandidates\<Category> --output ..\..\Assets\Audio\Processed\<Category> --normalize` for selected files.
+
+For Bell Ringer categories, `brightness` and `harshness` are useful for tinnitus and wall noise, `noisiness` helps separate rain/wind beds from clean bells, and `instability` helps find glitch-like candidates. The final pick still needs listening.

@@ -10,16 +10,11 @@
         "projectUniqueName": "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj",
         "projectName": "BellRinger.PadTracker",
         "projectPath": "C:\\Bell Ringer\\tools\\PadTracker\\BellRinger.PadTracker.csproj",
-        "packagesPath": "C:\\Bell Ringer\\tools\\.runtime\\dotnet-home\\.nuget\\packages\\",
+        "packagesPath": "C:\\Bell Ringer\\tools\\.runtime\\nuget-packages",
         "outputPath": "C:\\Bell Ringer\\tools\\PadTracker\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Bell Ringer\\NuGet.Config",
-          "C:\\Bell Ringer\\tools\\.runtime\\appdata\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+          "C:\\Bell Ringer\\NuGet.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"

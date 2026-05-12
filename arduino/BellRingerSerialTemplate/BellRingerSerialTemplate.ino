@@ -7,8 +7,9 @@ const int kPixelsPerMatrix = 64;
 const unsigned long kImuSampleIntervalUs = 10000UL;
 const uint16_t kGyroCalibrationSamples = 300;
 const float kAccelScale = 16384.0f;
-const float kGyroScale = 131.0f;
-const float kComplementaryTimeConstantSeconds = 0.35f;
+const float kGyroScale = 65.5f;
+const float kMadgwickBeta = 0.08f;
+const float kGyroDeadbandDps = 0.18f;
 const uint8_t kMpu9250AddressLow = 0x68;
 const uint8_t kMpu9250AddressHigh = 0x69;
 const uint8_t kRegisterWhoAmI = 0x75;
@@ -51,6 +52,10 @@ float gPadRollDegrees = 0.0f;
 float gPadYawZeroDegrees = 0.0f;
 float gPadPitchZeroDegrees = 0.0f;
 float gPadRollZeroDegrees = 0.0f;
+float gQuatW = 1.0f;
+float gQuatX = 0.0f;
+float gQuatY = 0.0f;
+float gQuatZ = 0.0f;
 float gGyroBiasXDps = 0.0f;
 float gGyroBiasYDps = 0.0f;
 float gGyroBiasZDps = 0.0f;
@@ -144,7 +149,7 @@ bool initializePadMpu() {
     return false;
   }
 
-  if (!writeRegister(gMpuAddress, kRegisterGyroConfig, 0x00)) {
+  if (!writeRegister(gMpuAddress, kRegisterGyroConfig, 0x08)) {
     return false;
   }
 
@@ -231,23 +236,137 @@ float wrapDegrees(float degrees) {
   return degrees;
 }
 
+float invSqrt(float value) {
+  return 1.0f / sqrt(value);
+}
+
+float applyGyroDeadband(float valueDps) {
+  return abs(valueDps) < kGyroDeadbandDps ? 0.0f : valueDps;
+}
+
+void normalizeQuaternion(float& w, float& x, float& y, float& z) {
+  float norm = invSqrt((w * w) + (x * x) + (y * y) + (z * z));
+  w *= norm;
+  x *= norm;
+  y *= norm;
+  z *= norm;
+}
+
+void setQuaternionFromYawPitchRoll(float yawDegrees, float pitchDegrees, float rollDegrees) {
+  float halfYaw = yawDegrees * DEG_TO_RAD * 0.5f;
+  float halfPitch = pitchDegrees * DEG_TO_RAD * 0.5f;
+  float halfRoll = rollDegrees * DEG_TO_RAD * 0.5f;
+  float cy = cos(halfYaw);
+  float sy = sin(halfYaw);
+  float cp = cos(halfPitch);
+  float sp = sin(halfPitch);
+  float cr = cos(halfRoll);
+  float sr = sin(halfRoll);
+
+  gQuatW = (cr * cp * cy) + (sr * sp * sy);
+  gQuatX = (sr * cp * cy) - (cr * sp * sy);
+  gQuatY = (cr * sp * cy) + (sr * cp * sy);
+  gQuatZ = (cr * cp * sy) - (sr * sp * cy);
+  normalizeQuaternion(gQuatW, gQuatX, gQuatY, gQuatZ);
+}
+
+void quaternionToYawPitchRollDegrees(float w, float x, float y, float z, float& yaw, float& pitch, float& roll) {
+  float sinrCosp = 2.0f * ((w * x) + (y * z));
+  float cosrCosp = 1.0f - (2.0f * ((x * x) + (y * y)));
+  roll = atan2(sinrCosp, cosrCosp) * RAD_TO_DEG;
+
+  float sinp = 2.0f * ((w * y) - (z * x));
+  pitch = abs(sinp) >= 1.0f
+      ? (sinp < 0.0f ? -90.0f : 90.0f)
+      : asin(sinp) * RAD_TO_DEG;
+
+  float sinyCosp = 2.0f * ((w * z) + (x * y));
+  float cosyCosp = 1.0f - (2.0f * ((y * y) + (z * z)));
+  yaw = atan2(sinyCosp, cosyCosp) * RAD_TO_DEG;
+}
+
+void madgwickUpdateImu(const ImuSample& sample, float deltaSeconds) {
+  float q0 = gQuatW;
+  float q1 = gQuatX;
+  float q2 = gQuatY;
+  float q3 = gQuatZ;
+  float gx = applyGyroDeadband(sample.gyroXDps) * DEG_TO_RAD;
+  float gy = applyGyroDeadband(sample.gyroYDps) * DEG_TO_RAD;
+  float gz = applyGyroDeadband(sample.gyroZDps) * DEG_TO_RAD;
+  float ax = sample.accelXG;
+  float ay = sample.accelYG;
+  float az = sample.accelZG;
+
+  float qDot0 = 0.5f * ((-q1 * gx) - (q2 * gy) - (q3 * gz));
+  float qDot1 = 0.5f * ((q0 * gx) + (q2 * gz) - (q3 * gy));
+  float qDot2 = 0.5f * ((q0 * gy) - (q1 * gz) + (q3 * gx));
+  float qDot3 = 0.5f * ((q0 * gz) + (q1 * gy) - (q2 * gx));
+
+  if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+    float recipNorm = invSqrt((ax * ax) + (ay * ay) + (az * az));
+    ax *= recipNorm;
+    ay *= recipNorm;
+    az *= recipNorm;
+
+    float twoQ0 = 2.0f * q0;
+    float twoQ1 = 2.0f * q1;
+    float twoQ2 = 2.0f * q2;
+    float twoQ3 = 2.0f * q3;
+    float fourQ0 = 4.0f * q0;
+    float fourQ1 = 4.0f * q1;
+    float fourQ2 = 4.0f * q2;
+    float eightQ1 = 8.0f * q1;
+    float eightQ2 = 8.0f * q2;
+    float q0q0 = q0 * q0;
+    float q1q1 = q1 * q1;
+    float q2q2 = q2 * q2;
+    float q3q3 = q3 * q3;
+
+    float s0 = (fourQ0 * q2q2) + (twoQ2 * ax) + (fourQ0 * q1q1) - (twoQ1 * ay);
+    float s1 = (fourQ1 * q3q3) - (twoQ3 * ax) + (4.0f * q0q0 * q1) - (twoQ0 * ay) - fourQ1 + (eightQ1 * q1q1) + (eightQ1 * q2q2) + (fourQ1 * az);
+    float s2 = (4.0f * q0q0 * q2) + (twoQ0 * ax) + (fourQ2 * q3q3) - (twoQ3 * ay) - fourQ2 + (eightQ2 * q1q1) + (eightQ2 * q2q2) + (fourQ2 * az);
+    float s3 = (4.0f * q1q1 * q3) - (twoQ1 * ax) + (4.0f * q2q2 * q3) - (twoQ2 * ay);
+    float gradientMagnitude = (s0 * s0) + (s1 * s1) + (s2 * s2) + (s3 * s3);
+    if (gradientMagnitude > 0.000001f) {
+      recipNorm = invSqrt(gradientMagnitude);
+      s0 *= recipNorm;
+      s1 *= recipNorm;
+      s2 *= recipNorm;
+      s3 *= recipNorm;
+
+      qDot0 -= kMadgwickBeta * s0;
+      qDot1 -= kMadgwickBeta * s1;
+      qDot2 -= kMadgwickBeta * s2;
+      qDot3 -= kMadgwickBeta * s3;
+    }
+  }
+
+  q0 += qDot0 * deltaSeconds;
+  q1 += qDot1 * deltaSeconds;
+  q2 += qDot2 * deltaSeconds;
+  q3 += qDot3 * deltaSeconds;
+  normalizeQuaternion(q0, q1, q2, q3);
+  gQuatW = q0;
+  gQuatX = q1;
+  gQuatY = q2;
+  gQuatZ = q3;
+}
+
 void updatePadOrientation(const ImuSample& sample, float deltaSeconds) {
   const float accelRollDegrees = atan2(sample.accelYG, sample.accelZG) * 180.0f / PI;
   const float accelPitchDegrees = atan2(-sample.accelXG, sqrt((sample.accelYG * sample.accelYG) + (sample.accelZG * sample.accelZG))) * 180.0f / PI;
 
   if (!gHasPadOrientation) {
-    gPadRollDegrees = accelRollDegrees;
-    gPadPitchDegrees = accelPitchDegrees;
-    gPadYawDegrees = 0.0f;
+    setQuaternionFromYawPitchRoll(0.0f, accelPitchDegrees, accelRollDegrees);
     gHasPadOrientation = true;
     recenterPadImu();
-    return;
   }
 
-  const float alpha = kComplementaryTimeConstantSeconds / (kComplementaryTimeConstantSeconds + deltaSeconds);
-  gPadRollDegrees = (alpha * (gPadRollDegrees + (sample.gyroXDps * deltaSeconds))) + ((1.0f - alpha) * accelRollDegrees);
-  gPadPitchDegrees = (alpha * (gPadPitchDegrees + (sample.gyroYDps * deltaSeconds))) + ((1.0f - alpha) * accelPitchDegrees);
-  gPadYawDegrees = wrapDegrees(gPadYawDegrees + (sample.gyroZDps * deltaSeconds));
+  madgwickUpdateImu(sample, deltaSeconds);
+  quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, gPadYawDegrees, gPadPitchDegrees, gPadRollDegrees);
+  gPadYawDegrees = wrapDegrees(gPadYawDegrees);
+  gPadPitchDegrees = wrapDegrees(gPadPitchDegrees);
+  gPadRollDegrees = wrapDegrees(gPadRollDegrees);
 }
 
 void servicePadImu() {
@@ -400,7 +519,7 @@ void sendTelemetry() {
 
   lastTelemetryAt = now;
 
-  float headYaw = 0.0f;
+  float headYaw = gHasPadOrientation ? wrapDegrees(gPadYawDegrees - gPadYawZeroDegrees) : 0.0f;
   float headPitch = gHasPadOrientation ? wrapDegrees(gPadPitchDegrees - gPadPitchZeroDegrees) : 0.0f;
   float headRoll = gHasPadOrientation ? wrapDegrees(gPadRollDegrees - gPadRollZeroDegrees) : 0.0f;
   float handYaw = 0.0f;

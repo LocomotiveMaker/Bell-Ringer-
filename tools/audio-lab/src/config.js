@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 const sourceDir = path.dirname(fileURLToPath(import.meta.url));
 export const packageRoot = path.resolve(sourceDir, "..");
+export const repoRoot = path.resolve(packageRoot, "..", "..");
 
 export function getConfiguredDir(envName, fallbackRelativePath) {
   const rawValue = process.env[envName]?.trim();

@@ -12,6 +12,8 @@ namespace BellRinger.Gameplay
         [SerializeField] private int listenPort = 39051;
         [SerializeField] private float staleAfterSeconds = 0.35f;
         [SerializeField] private float smoothingStrength = 14f;
+        [SerializeField] private float cameraYawSmoothingStrength = 30f;
+        [SerializeField] private float cameraPitchRollSmoothingStrength = 18f;
 
         private readonly object _packetLock = new object();
         private UdpClient _udpClient;
@@ -33,11 +35,15 @@ namespace BellRinger.Gameplay
         private float _lastPacketRealtime;
         private float _lastDetectionRealtime;
         private float _lastCameraYawRealtime;
+        private float _lastCameraPitchRollRealtime;
         private string _markerIds = string.Empty;
         private string _lastPacketJson = string.Empty;
         private Vector3 _cameraSpacePosition = new Vector3(0f, 0f, 0.7f);
         private bool _cameraYawAvailable;
         private float _cameraYawDegrees;
+        private bool _cameraPitchRollAvailable;
+        private float _cameraPitchDegrees;
+        private float _cameraRollDegrees;
 
         public int ListenPort => listenPort;
         public bool IsDetected => _detected;
@@ -45,6 +51,7 @@ namespace BellRinger.Gameplay
         public bool HasFreshPacket => LastPacketAgeSeconds <= staleAfterSeconds;
         public bool HasFreshDetection => _detected && LastDetectionAgeSeconds <= staleAfterSeconds;
         public bool HasFreshCameraYaw => _cameraYawAvailable && LastCameraYawAgeSeconds <= staleAfterSeconds;
+        public bool HasFreshCameraPitchRoll => _cameraPitchRollAvailable && LastCameraPitchRollAgeSeconds <= staleAfterSeconds;
         public int MarkerCount => _markerCount;
         public int FrameWidth => _frameWidth;
         public int FrameHeight => _frameHeight;
@@ -56,12 +63,16 @@ namespace BellRinger.Gameplay
         public float LastPacketAgeSeconds => _lastPacketRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastPacketRealtime;
         public float LastDetectionAgeSeconds => _lastDetectionRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastDetectionRealtime;
         public float LastCameraYawAgeSeconds => _lastCameraYawRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastCameraYawRealtime;
+        public float LastCameraPitchRollAgeSeconds => _lastCameraPitchRollRealtime <= 0f ? float.PositiveInfinity : Time.realtimeSinceStartup - _lastCameraPitchRollRealtime;
         public string MarkerIds => _markerIds;
         public string LastPacketJson => _lastPacketJson;
         public string LastError => _lastError;
         public Vector3 ApproximateCameraSpacePosition => _cameraSpacePosition;
         public bool CameraYawAvailable => _cameraYawAvailable;
         public float CameraYawDegrees => _cameraYawDegrees;
+        public bool CameraPitchRollAvailable => _cameraPitchRollAvailable;
+        public float CameraPitchDegrees => _cameraPitchDegrees;
+        public float CameraRollDegrees => _cameraRollDegrees;
 
         private void OnEnable()
         {
@@ -85,6 +96,11 @@ namespace BellRinger.Gameplay
             {
                 _cameraYawAvailable = false;
             }
+
+            if (_cameraPitchRollAvailable && LastCameraPitchRollAgeSeconds > staleAfterSeconds)
+            {
+                _cameraPitchRollAvailable = false;
+            }
         }
 
         private void OnValidate()
@@ -92,6 +108,8 @@ namespace BellRinger.Gameplay
             listenPort = Mathf.Clamp(listenPort, 1024, 65535);
             staleAfterSeconds = Mathf.Max(0.05f, staleAfterSeconds);
             smoothingStrength = Mathf.Max(0f, smoothingStrength);
+            cameraYawSmoothingStrength = Mathf.Max(0f, cameraYawSmoothingStrength);
+            cameraPitchRollSmoothingStrength = Mathf.Max(0f, cameraPitchRollSmoothingStrength);
         }
 
         private void StartReceiver()
@@ -245,18 +263,38 @@ namespace BellRinger.Gameplay
 
             if (packet.cameraYawAvailable)
             {
-                bool hadCameraYawBefore = _lastCameraYawRealtime > 0f;
+                bool hadCameraYawBefore = HasFreshCameraYaw;
                 _lastCameraYawRealtime = Time.realtimeSinceStartup;
-                if (!hadCameraYawBefore || smoothingStrength <= 0f)
+                float yawLerpFactor = 1f - Mathf.Exp(-cameraYawSmoothingStrength * Time.unscaledDeltaTime);
+                if (!hadCameraYawBefore || cameraYawSmoothingStrength <= 0f)
                 {
                     _cameraYawDegrees = packet.cameraYawDegrees;
                 }
                 else
                 {
-                    _cameraYawDegrees = Mathf.LerpAngle(_cameraYawDegrees, packet.cameraYawDegrees, lerpFactor);
+                    _cameraYawDegrees = Mathf.LerpAngle(_cameraYawDegrees, packet.cameraYawDegrees, yawLerpFactor);
                 }
 
                 _cameraYawAvailable = true;
+            }
+
+            if (packet.cameraPitchRollAvailable)
+            {
+                bool hadCameraPitchRollBefore = HasFreshCameraPitchRoll;
+                _lastCameraPitchRollRealtime = Time.realtimeSinceStartup;
+                float pitchRollLerpFactor = 1f - Mathf.Exp(-cameraPitchRollSmoothingStrength * Time.unscaledDeltaTime);
+                if (!hadCameraPitchRollBefore || cameraPitchRollSmoothingStrength <= 0f)
+                {
+                    _cameraPitchDegrees = packet.cameraPitchDegrees;
+                    _cameraRollDegrees = packet.cameraRollDegrees;
+                }
+                else
+                {
+                    _cameraPitchDegrees = Mathf.LerpAngle(_cameraPitchDegrees, packet.cameraPitchDegrees, pitchRollLerpFactor);
+                    _cameraRollDegrees = Mathf.LerpAngle(_cameraRollDegrees, packet.cameraRollDegrees, pitchRollLerpFactor);
+                }
+
+                _cameraPitchRollAvailable = true;
             }
         }
 
@@ -278,6 +316,9 @@ namespace BellRinger.Gameplay
             public float confidence;
             public bool cameraYawAvailable;
             public float cameraYawDegrees;
+            public bool cameraPitchRollAvailable;
+            public float cameraPitchDegrees;
+            public float cameraRollDegrees;
             public float timeSeconds;
         }
     }

@@ -6,7 +6,11 @@
   "scripts": {
     "doctor": "node src/cli.js doctor",
     "analyze": "node src/cli.js analyze",
+    "batch": "node src/cli.js batch",
+    "scorecard": "node src/cli.js scorecard",
+    "spectrogram": "node src/cli.js spectrogram",
     "prepare:audio": "node src/cli.js prepare",
+    "unity:import": "node src/cli.js unity-import",
     "openai:tts": "node src/cli.js openai-tts",
     "openai:stt": "node src/cli.js openai-stt",
     "eleven:sfx": "node src/cli.js eleven-sfx"

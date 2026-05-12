@@ -26,6 +26,7 @@ namespace
     constexpr float GyroScale = 65.5f;
     constexpr float ComplementaryAlpha = 0.985f;
     constexpr float GyroStillnessDeadbandDps = 0.25f;
+    constexpr float MadgwickBeta = 0.08f;
     constexpr float StationaryAccelToleranceG = 0.06f;
     constexpr float StationaryGyroToleranceDps = 1.0f;
     constexpr float StationaryEnterSpeed = 5.5f;
@@ -52,6 +53,11 @@ namespace
     float gGyroBiasXDps = 0.0f;
     float gGyroBiasYDps = 0.0f;
     float gGyroBiasZDps = 0.0f;
+    float gQuatW = 1.0f;
+    float gQuatX = 0.0f;
+    float gQuatY = 0.0f;
+    float gQuatZ = 0.0f;
+    float gYawDegrees = 0.0f;
     float gPitchDegrees = 0.0f;
     float gRollDegrees = 0.0f;
     float gStillnessBlend = 0.0f;
@@ -224,9 +230,39 @@ namespace
         return degrees;
     }
 
+    float invSqrt(float value)
+    {
+        return 1.0f / sqrt(value);
+    }
+
+    void normalizeQuaternion(float& w, float& x, float& y, float& z)
+    {
+        float norm = invSqrt((w * w) + (x * x) + (y * y) + (z * z));
+        w *= norm;
+        x *= norm;
+        y *= norm;
+        z *= norm;
+    }
+
     float applyStillnessDeadband(float valueDps)
     {
         return abs(valueDps) < GyroStillnessDeadbandDps ? 0.0f : valueDps;
+    }
+
+    void quaternionToYawPitchRollDegrees(float w, float x, float y, float z, float& yaw, float& pitch, float& roll)
+    {
+        float sinrCosp = 2.0f * ((w * x) + (y * z));
+        float cosrCosp = 1.0f - (2.0f * ((x * x) + (y * y)));
+        roll = atan2(sinrCosp, cosrCosp) * RAD_TO_DEG;
+
+        float sinp = 2.0f * ((w * y) - (z * x));
+        pitch = abs(sinp) >= 1.0f
+            ? (sinp < 0.0f ? -90.0f : 90.0f)
+            : asin(sinp) * RAD_TO_DEG;
+
+        float sinyCosp = 2.0f * ((w * z) + (x * y));
+        float cosyCosp = 1.0f - (2.0f * ((y * y) + (z * z)));
+        yaw = atan2(sinyCosp, cosyCosp) * RAD_TO_DEG;
     }
 
     void updateStillnessAndGyroBias(const ImuSample& sample, float deltaSeconds)
@@ -247,31 +283,92 @@ namespace
         gGyroBiasZDps += (sample.rawGyroZDps - gGyroBiasZDps) * biasBlend;
     }
 
-    void updateOrientation(const ImuSample& sample, float deltaSeconds)
+    void madgwickUpdateImu(const ImuSample& sample, float deltaSeconds)
     {
-        float integratedPitch = gPitchDegrees + (applyStillnessDeadband(sample.gyroYDps) * deltaSeconds);
-        float integratedRoll = gRollDegrees + (applyStillnessDeadband(sample.gyroXDps) * deltaSeconds);
+        float q0 = gQuatW;
+        float q1 = gQuatX;
+        float q2 = gQuatY;
+        float q3 = gQuatZ;
+        float gyroHold = gStillnessBlend >= 0.82f ? 0.0f : 1.0f;
+        float gx = applyStillnessDeadband(sample.gyroXDps) * gyroHold * DEG_TO_RAD;
+        float gy = applyStillnessDeadband(sample.gyroYDps) * gyroHold * DEG_TO_RAD;
+        float gz = applyStillnessDeadband(sample.gyroZDps) * gyroHold * DEG_TO_RAD;
+        float ax = sample.accelXG;
+        float ay = sample.accelYG;
+        float az = sample.accelZG;
 
-        float accelPitch = accelPitchDegrees(sample);
-        float accelRoll = accelRollDegrees(sample);
+        float qDot0 = 0.5f * ((-q1 * gx) - (q2 * gy) - (q3 * gz));
+        float qDot1 = 0.5f * ((q0 * gx) + (q2 * gz) - (q3 * gy));
+        float qDot2 = 0.5f * ((q0 * gy) - (q1 * gz) + (q3 * gx));
+        float qDot3 = 0.5f * ((q0 * gz) + (q1 * gy) - (q2 * gx));
 
-        if (!gHasOrientation)
+        if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
         {
-            gPitchDegrees = accelPitch;
-            gRollDegrees = accelRoll;
-            gHasOrientation = true;
-            return;
+            float recipNorm = invSqrt((ax * ax) + (ay * ay) + (az * az));
+            ax *= recipNorm;
+            ay *= recipNorm;
+            az *= recipNorm;
+
+            float twoQ0 = 2.0f * q0;
+            float twoQ1 = 2.0f * q1;
+            float twoQ2 = 2.0f * q2;
+            float twoQ3 = 2.0f * q3;
+            float fourQ0 = 4.0f * q0;
+            float fourQ1 = 4.0f * q1;
+            float fourQ2 = 4.0f * q2;
+            float eightQ1 = 8.0f * q1;
+            float eightQ2 = 8.0f * q2;
+            float q0q0 = q0 * q0;
+            float q1q1 = q1 * q1;
+            float q2q2 = q2 * q2;
+            float q3q3 = q3 * q3;
+
+            float s0 = (fourQ0 * q2q2) + (twoQ2 * ax) + (fourQ0 * q1q1) - (twoQ1 * ay);
+            float s1 = (fourQ1 * q3q3) - (twoQ3 * ax) + (4.0f * q0q0 * q1) - (twoQ0 * ay) - fourQ1 + (eightQ1 * q1q1) + (eightQ1 * q2q2) + (fourQ1 * az);
+            float s2 = (4.0f * q0q0 * q2) + (twoQ0 * ax) + (fourQ2 * q3q3) - (twoQ3 * ay) - fourQ2 + (eightQ2 * q1q1) + (eightQ2 * q2q2) + (fourQ2 * az);
+            float s3 = (4.0f * q1q1 * q3) - (twoQ1 * ax) + (4.0f * q2q2 * q3) - (twoQ2 * ay);
+            float gradientMagnitude = (s0 * s0) + (s1 * s1) + (s2 * s2) + (s3 * s3);
+            if (gradientMagnitude > 0.000001f)
+            {
+                recipNorm = invSqrt(gradientMagnitude);
+                s0 *= recipNorm;
+                s1 *= recipNorm;
+                s2 *= recipNorm;
+                s3 *= recipNorm;
+
+                qDot0 -= MadgwickBeta * s0;
+                qDot1 -= MadgwickBeta * s1;
+                qDot2 -= MadgwickBeta * s2;
+                qDot3 -= MadgwickBeta * s3;
+            }
         }
 
-        gPitchDegrees = (ComplementaryAlpha * integratedPitch) + ((1.0f - ComplementaryAlpha) * accelPitch);
-        gRollDegrees = (ComplementaryAlpha * integratedRoll) + ((1.0f - ComplementaryAlpha) * accelRoll);
+        q0 += qDot0 * deltaSeconds;
+        q1 += qDot1 * deltaSeconds;
+        q2 += qDot2 * deltaSeconds;
+        q3 += qDot3 * deltaSeconds;
+        normalizeQuaternion(q0, q1, q2, q3);
+        gQuatW = q0;
+        gQuatX = q1;
+        gQuatY = q2;
+        gQuatZ = q3;
+    }
+
+    void updateOrientation(const ImuSample& sample, float deltaSeconds)
+    {
+        madgwickUpdateImu(sample, deltaSeconds);
+        quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, gYawDegrees, gPitchDegrees, gRollDegrees);
+        gYawDegrees = wrapDegrees(gYawDegrees);
         gPitchDegrees = wrapDegrees(gPitchDegrees);
         gRollDegrees = wrapDegrees(gRollDegrees);
+        gHasOrientation = true;
     }
 
     void printTelemetry()
     {
-        Serial.print(F("hy=0,hp="));
+        Serial.print(F("hy="));
+        Serial.print(gYawDegrees, 2);
+        Serial.print(F(",hp="));
         Serial.print(gPitchDegrees, 2);
         Serial.print(F(",hr="));
         Serial.print(gRollDegrees, 2);
@@ -319,7 +416,7 @@ void setup()
     }
 
     gLastSampleMicros = micros();
-    Serial.println(F("[HeadMPU] streaming 6-axis pitch/roll"));
+    Serial.println(F("[HeadMPU] streaming 6-axis yaw/pitch/roll"));
 }
 
 void loop()

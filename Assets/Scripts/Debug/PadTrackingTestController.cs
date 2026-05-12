@@ -205,7 +205,7 @@ namespace BellRinger.Debug
                 + (cameraTransform.up * cameraSpace.y)
                 + (cameraTransform.forward * cameraSpace.z);
 
-            if (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
+            if (_padPoseProvider.HasResolvedRotation)
             {
                 _ghostTransform.rotation = cameraTransform.rotation * _padPoseProvider.RelativeRotation;
             }
@@ -219,7 +219,7 @@ namespace BellRinger.Debug
             if (_orientationMarkerTransform != null && _orientationMarkerRenderer != null)
             {
                 _orientationMarkerTransform.position = _ghostTransform.position + (_ghostTransform.forward * 0.11f);
-                _orientationMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw ? imuFreshColor : imuStaleColor;
+                _orientationMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw || _padPoseProvider.UsingHeldYaw ? imuFreshColor : imuStaleColor;
             }
         }
 
@@ -239,6 +239,7 @@ namespace BellRinger.Debug
             GUILayout.Label($"Approx camera-space meters: X {_receiver.ApproximateCameraSpacePosition.x:0.000}  Y {_receiver.ApproximateCameraSpacePosition.y:0.000}  Z {_receiver.ApproximateCameraSpacePosition.z:0.000}");
             GUILayout.Label($"Marker size px: {_receiver.MarkerSizePixels:0.0}  packet age: {_receiver.LastPacketAgeSeconds:0.000}s");
             GUILayout.Label($"Camera yaw: {(_receiver.HasFreshCameraYaw ? _receiver.CameraYawDegrees.ToString("0.00") : "--")}  yaw fresh: {_receiver.HasFreshCameraYaw}");
+            GUILayout.Label($"Camera pitch/roll: {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraPitchDegrees.ToString("0.00") : "--")} / {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraRollDegrees.ToString("0.00") : "--")}  fresh: {_receiver.HasFreshCameraPitchRoll}");
             GUILayout.Space(10f);
 
             if (_headTiltInputProvider != null)
@@ -253,8 +254,8 @@ namespace BellRinger.Debug
                     GUILayout.Label($"Head port: {_headImuReceiver.ActivePortName}  connected: {_headImuReceiver.IsConnected}  fresh: {_headImuReceiver.HasFreshSample}");
                 }
 
-                GUILayout.Label($"Head physical pitch/roll: {_headTiltInputProvider.PhysicalPitchDegrees:0.00} / {_headTiltInputProvider.PhysicalRollDegrees:0.00}");
-                GUILayout.Label($"Head neutral pitch/roll: {_headTiltInputProvider.NeutralPitchDegrees:0.00} / {_headTiltInputProvider.NeutralRollDegrees:0.00}");
+                GUILayout.Label($"Head physical yaw/pitch/roll: {_headTiltInputProvider.PhysicalYawDegrees:0.00} / {_headTiltInputProvider.PhysicalPitchDegrees:0.00} / {_headTiltInputProvider.PhysicalRollDegrees:0.00}");
+                GUILayout.Label($"Head neutral yaw/pitch/roll: {_headTiltInputProvider.NeutralYawDegrees:0.00} / {_headTiltInputProvider.NeutralPitchDegrees:0.00} / {_headTiltInputProvider.NeutralRollDegrees:0.00}");
                 GUILayout.Label($"Head virtual yaw/pitch/roll: {_headTiltInputProvider.VirtualYawDegrees:0.00} / {_headTiltInputProvider.VirtualPitchDegrees:0.00} / {_headTiltInputProvider.VirtualRollDegrees:0.00}");
                 if (_headImuReceiver != null && GUILayout.Button("Reconnect Head IMU", GUILayout.Height(26f)))
                 {
@@ -274,7 +275,8 @@ namespace BellRinger.Debug
                 GUILayout.Label("Pad Pose");
                 GUILayout.Label($"Pad yaw source: {BuildPadYawSourceLabel()}");
                 GUILayout.Label($"Pad resolved yaw/pitch/roll: {_padPoseProvider.ResolvedYawDegrees:0.00} / {_padPoseProvider.ResolvedPitchDegrees:0.00} / {_padPoseProvider.ResolvedRollDegrees:0.00}");
-                GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}");
+                GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}  cam pitch/roll: {_padPoseProvider.HasFreshCameraPitchRoll}");
+                GUILayout.Label($"Pad camera pitch/roll correction: {_padPoseProvider.UsingCameraPitchRollCorrection}");
                 GUILayout.Space(8f);
             }
 
@@ -428,7 +430,7 @@ namespace BellRinger.Debug
             GUILayout.Label($"Selected: {_padGamepadRumbleTester.DeviceName}");
             GUILayout.Label($"Current: {_padGamepadRumbleTester.CurrentDeviceName}");
             GUILayout.Label($"Available: {_padGamepadRumbleTester.AvailableGamepadsSummary}");
-            GUILayout.Label($"Rumble active: {_padGamepadRumbleTester.RumbleActive}");
+            GUILayout.Label($"Rumble active: {_padGamepadRumbleTester.RumbleActive}  continuous: {_padGamepadRumbleTester.ContinuousRumble}");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Select Next Gamepad", GUILayout.Height(24f)))
@@ -439,6 +441,18 @@ namespace BellRinger.Debug
             if (GUILayout.Button("Use Current Gamepad", GUILayout.Height(24f)))
             {
                 _padGamepadRumbleTester.UseCurrentGamepad();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Start Continuous", GUILayout.Height(26f)))
+            {
+                _padGamepadRumbleTester.StartContinuousRumble();
+            }
+
+            if (GUILayout.Button("Stop Rumble", GUILayout.Height(26f)))
+            {
+                _padGamepadRumbleTester.StopRumble();
             }
             GUILayout.EndHorizontal();
 
@@ -460,9 +474,10 @@ namespace BellRinger.Debug
                 _padGamepadRumbleTester.TriggerAllGamepads();
             }
 
-            if (GUILayout.Button("Stop Rumble", GUILayout.Height(24f)))
+            if (GUILayout.Button("Use Current + Continuous", GUILayout.Height(24f)))
             {
-                _padGamepadRumbleTester.StopRumble();
+                _padGamepadRumbleTester.UseCurrentGamepad();
+                _padGamepadRumbleTester.StartContinuousRumble();
             }
             GUILayout.EndHorizontal();
 
@@ -633,7 +648,7 @@ namespace BellRinger.Debug
 
             if (_imuPreviewPlateRenderer != null)
             {
-                _imuPreviewPlateRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw) ? imuPreviewColor : imuStaleColor;
+                _imuPreviewPlateRenderer.sharedMaterial.color = _padPoseProvider.HasResolvedRotation ? imuPreviewColor : imuStaleColor;
             }
 
             if (_imuPreviewReferencePlateRenderer != null)
@@ -646,7 +661,7 @@ namespace BellRinger.Debug
                 _imuPreviewMarkerTransform.localPosition = new Vector3(0f, 0.035f + (shake * 0.01f), 0.055f);
             }
 
-            Color axisColor = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw) ? Color.white : imuStaleColor;
+            Color axisColor = _padPoseProvider.HasResolvedRotation ? Color.white : imuStaleColor;
             if (_imuPreviewMarkerRenderer != null)
             {
                 _imuPreviewMarkerRenderer.sharedMaterial.color = axisColor;
@@ -654,14 +669,14 @@ namespace BellRinger.Debug
 
             if (_imuPreviewRightMarkerRenderer != null)
             {
-                _imuPreviewRightMarkerRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
+                _imuPreviewRightMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasResolvedRotation
                     ? new Color(1f, 0.28f, 0.22f, 1f)
                     : new Color(0.46f, 0.32f, 0.32f, 1f);
             }
 
             if (_imuPreviewUpMarkerRenderer != null)
             {
-                _imuPreviewUpMarkerRenderer.sharedMaterial.color = (_padPoseProvider.HasFreshImu || _padPoseProvider.HasFreshCameraYaw)
+                _imuPreviewUpMarkerRenderer.sharedMaterial.color = _padPoseProvider.HasResolvedRotation
                     ? new Color(0.28f, 1f, 0.36f, 1f)
                     : new Color(0.34f, 0.46f, 0.34f, 1f);
             }
