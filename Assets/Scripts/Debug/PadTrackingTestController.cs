@@ -239,7 +239,7 @@ namespace BellRinger.Debug
             GUILayout.Label($"Approx camera-space meters: X {_receiver.ApproximateCameraSpacePosition.x:0.000}  Y {_receiver.ApproximateCameraSpacePosition.y:0.000}  Z {_receiver.ApproximateCameraSpacePosition.z:0.000}");
             GUILayout.Label($"Marker size px: {_receiver.MarkerSizePixels:0.0}  packet age: {_receiver.LastPacketAgeSeconds:0.000}s");
             GUILayout.Label($"Camera yaw: {(_receiver.HasFreshCameraYaw ? _receiver.CameraYawDegrees.ToString("0.00") : "--")}  yaw fresh: {_receiver.HasFreshCameraYaw}");
-            GUILayout.Label($"Camera pitch/roll: {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraPitchDegrees.ToString("0.00") : "--")} / {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraRollDegrees.ToString("0.00") : "--")}  fresh: {_receiver.HasFreshCameraPitchRoll}");
+            GUILayout.Label($"Camera pitch/roll debug only: {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraPitchDegrees.ToString("0.00") : "--")} / {(_receiver.HasFreshCameraPitchRoll ? _receiver.CameraRollDegrees.ToString("0.00") : "--")}  ignored by pad pose");
             GUILayout.Space(10f);
 
             if (_headTiltInputProvider != null)
@@ -275,8 +275,8 @@ namespace BellRinger.Debug
                 GUILayout.Label("Pad Pose");
                 GUILayout.Label($"Pad yaw source: {BuildPadYawSourceLabel()}");
                 GUILayout.Label($"Pad resolved yaw/pitch/roll: {_padPoseProvider.ResolvedYawDegrees:0.00} / {_padPoseProvider.ResolvedPitchDegrees:0.00} / {_padPoseProvider.ResolvedRollDegrees:0.00}");
-                GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}  cam pitch/roll: {_padPoseProvider.HasFreshCameraPitchRoll}");
-                GUILayout.Label($"Pad camera pitch/roll correction: {_padPoseProvider.UsingCameraPitchRollCorrection}");
+                GUILayout.Label($"Pad fresh position: {_padPoseProvider.HasFreshPosition}  imu: {_padPoseProvider.HasFreshImu}  cam yaw: {_padPoseProvider.HasFreshCameraYaw}");
+                GUILayout.Label("Pad pitch/roll source: IMU only. Camera pitch/roll is not linked.");
                 GUILayout.Space(8f);
             }
 
