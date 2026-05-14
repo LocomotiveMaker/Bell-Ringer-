@@ -7,22 +7,26 @@ namespace BellRinger.Gameplay
     {
         [SerializeField] private PadPoseMatchEvaluator poseMatchEvaluator;
         [SerializeField] private Vector3 targetCenterCameraSpace = new Vector3(0f, 0f, 0.7f);
-        [SerializeField] private float stage1Seconds = 7f;
-        [SerializeField] private float stage2Seconds = 8f;
-        [SerializeField] private float stage3Seconds = 10f;
+        [SerializeField] private Vector3 moveOffsetCameraSpace = new Vector3(0.42f, 0.08f, 0.08f);
+        [SerializeField] private float holdSeconds = 2f;
+        [SerializeField] private float moveSeconds = 6f;
+        [SerializeField] private float holdPositionToleranceMeters = 0.16f;
+        [SerializeField] private float movePositionToleranceMeters = 0.38f;
+        [SerializeField] private float holdRotationToleranceDegrees = 24f;
+        [SerializeField] private float moveRotationToleranceDegrees = 46f;
 
-        private int _stageIndex = -1;
-        private float _stageStartRealtime;
         private bool _isRunning;
         private bool _isComplete;
+        private bool _wasInsideTolerance;
 
         public bool IsRunning => _isRunning;
         public bool IsComplete => _isComplete;
-        public int StageNumber => _stageIndex < 0 ? 0 : _stageIndex + 1;
         public float StageProgress01 => poseMatchEvaluator != null ? poseMatchEvaluator.Progress01 : 0f;
-        public float OverallProgress01 => _isComplete
-            ? 1f
-            : (_stageIndex < 0 ? 0f : Mathf.Clamp01((_stageIndex + StageProgress01) / 3f));
+        public float OverallProgress01 => _isComplete ? 1f : StageProgress01;
+        public float TotalSeconds => Mathf.Max(0.1f, holdSeconds + moveSeconds);
+        public float HoldProgress01 => poseMatchEvaluator == null ? 0f : Mathf.Clamp01(poseMatchEvaluator.ProgressSeconds / Mathf.Max(0.1f, holdSeconds));
+        public float MoveProgress01 => poseMatchEvaluator == null ? 0f : Mathf.Clamp01((poseMatchEvaluator.ProgressSeconds - holdSeconds) / Mathf.Max(0.1f, moveSeconds));
+        public string PhaseName => !IsRunning && !IsComplete ? "Idle" : IsComplete ? "Complete" : poseMatchEvaluator != null && poseMatchEvaluator.ProgressSeconds >= holdSeconds ? "Move" : "Hold";
         public Vector3 TargetCenterCameraSpace
         {
             get => targetCenterCameraSpace;
@@ -49,14 +53,18 @@ namespace BellRinger.Gameplay
 
             _isComplete = false;
             _isRunning = true;
-            BeginStage(0);
+            _wasInsideTolerance = false;
+            poseMatchEvaluator.TreatmentSeconds = TotalSeconds;
+            poseMatchEvaluator.MatchFeedbackRadiusMultiplier = 4f;
+            poseMatchEvaluator.ResetProgress();
+            UpdateTargetFromProgress();
         }
 
         public void StopEncounter()
         {
             _isRunning = false;
             _isComplete = false;
-            _stageIndex = -1;
+            _wasInsideTolerance = false;
         }
 
         public void Tick()
@@ -66,61 +74,55 @@ namespace BellRinger.Gameplay
                 return;
             }
 
-            UpdateMovingTarget();
+            UpdateTargetFromProgress();
             if (poseMatchEvaluator.IsResolved)
             {
-                if (_stageIndex >= 2)
-                {
-                    _isRunning = false;
-                    _isComplete = true;
-                    return;
-                }
-
-                BeginStage(_stageIndex + 1);
+                _isRunning = false;
+                _isComplete = true;
+                return;
             }
+
+            if (_wasInsideTolerance && !poseMatchEvaluator.IsInsideTolerance)
+            {
+                poseMatchEvaluator.ResetProgress();
+                UpdateTargetFromProgress();
+            }
+
+            _wasInsideTolerance = poseMatchEvaluator.IsInsideTolerance;
         }
 
-        private void BeginStage(int stageIndex)
+        private void UpdateTargetFromProgress()
         {
-            _stageIndex = Mathf.Clamp(stageIndex, 0, 2);
-            _stageStartRealtime = Time.unscaledTime;
-            poseMatchEvaluator.TreatmentSeconds = GetStageSeconds(_stageIndex);
-            poseMatchEvaluator.PositionToleranceMeters = Mathf.Lerp(0.15f, 0.09f, _stageIndex / 2f);
-            poseMatchEvaluator.YawToleranceDegrees = Mathf.Lerp(28f, 16f, _stageIndex / 2f);
-            poseMatchEvaluator.PitchToleranceDegrees = Mathf.Lerp(24f, 14f, _stageIndex / 2f);
-            poseMatchEvaluator.RollToleranceDegrees = Mathf.Lerp(24f, 14f, _stageIndex / 2f);
-            poseMatchEvaluator.MatchFeedbackRadiusMultiplier = Mathf.Lerp(3f, 2.2f, _stageIndex / 2f);
-            poseMatchEvaluator.ResetProgress();
-            UpdateMovingTarget();
-        }
+            float progressSeconds = poseMatchEvaluator.ProgressSeconds;
+            bool isMovePhase = progressSeconds >= holdSeconds;
+            float move01 = Mathf.Clamp01((progressSeconds - holdSeconds) / Mathf.Max(0.1f, moveSeconds));
+            float smoothMove01 = move01 * move01 * (3f - 2f * move01);
+            Vector3 arcedOffset = new Vector3(
+                moveOffsetCameraSpace.x * smoothMove01,
+                moveOffsetCameraSpace.y * smoothMove01 + Mathf.Sin(move01 * Mathf.PI) * 0.08f,
+                moveOffsetCameraSpace.z * smoothMove01);
+            Vector3 targetPosition = targetCenterCameraSpace + (isMovePhase ? arcedOffset : Vector3.zero);
 
-        private void UpdateMovingTarget()
-        {
-            float stage01 = _stageIndex / 2f;
-            float elapsed = Time.unscaledTime - _stageStartRealtime;
-            float speed = Mathf.Lerp(0.55f, 1.15f, stage01);
-            float positionAmplitude = Mathf.Lerp(0.035f, 0.095f, stage01);
-            float rotationAmplitude = Mathf.Lerp(8f, 22f, stage01);
-
-            Vector3 targetPosition = targetCenterCameraSpace + new Vector3(
-                Mathf.Sin(elapsed * speed * 1.17f) * positionAmplitude,
-                Mathf.Cos(elapsed * speed * 0.91f) * positionAmplitude * 0.55f,
-                Mathf.Sin(elapsed * speed * 0.63f) * positionAmplitude * 0.45f);
-
-            float yaw = Mathf.Sin(elapsed * speed * 0.83f) * rotationAmplitude;
-            float pitch = Mathf.Cos(elapsed * speed * 0.71f) * rotationAmplitude * 0.75f;
-            float roll = Mathf.Sin(elapsed * speed * 1.03f + 0.7f) * rotationAmplitude * 0.75f;
+            float yaw = Mathf.Lerp(0f, 14f, smoothMove01);
+            float pitch = Mathf.Lerp(0f, -8f, smoothMove01);
+            float roll = Mathf.Lerp(0f, 10f, smoothMove01);
+            poseMatchEvaluator.TreatmentSeconds = TotalSeconds;
+            poseMatchEvaluator.PositionToleranceMeters = isMovePhase ? movePositionToleranceMeters : holdPositionToleranceMeters;
+            poseMatchEvaluator.YawToleranceDegrees = isMovePhase ? moveRotationToleranceDegrees : holdRotationToleranceDegrees;
+            poseMatchEvaluator.PitchToleranceDegrees = isMovePhase ? moveRotationToleranceDegrees : holdRotationToleranceDegrees;
+            poseMatchEvaluator.RollToleranceDegrees = isMovePhase ? moveRotationToleranceDegrees : holdRotationToleranceDegrees;
+            poseMatchEvaluator.MatchFeedbackRadiusMultiplier = 4f;
             poseMatchEvaluator.SetTargetPose(targetPosition, yaw, pitch, roll);
         }
 
-        private float GetStageSeconds(int stageIndex)
+        private void OnValidate()
         {
-            return stageIndex switch
-            {
-                0 => stage1Seconds,
-                1 => stage2Seconds,
-                _ => stage3Seconds,
-            };
+            holdSeconds = Mathf.Max(0.1f, holdSeconds);
+            moveSeconds = Mathf.Max(0.1f, moveSeconds);
+            holdPositionToleranceMeters = Mathf.Max(0.01f, holdPositionToleranceMeters);
+            movePositionToleranceMeters = Mathf.Max(holdPositionToleranceMeters, movePositionToleranceMeters);
+            holdRotationToleranceDegrees = Mathf.Max(1f, holdRotationToleranceDegrees);
+            moveRotationToleranceDegrees = Mathf.Max(holdRotationToleranceDegrees, moveRotationToleranceDegrees);
         }
     }
 }

@@ -51,6 +51,7 @@ namespace BellRinger.Debug.Editor
             serializedObject.FindProperty("enableTreatmentHaptics").boolValue = true;
             serializedObject.FindProperty("enableGiantTinnitusPrototype").boolValue = enableGiant;
             serializedObject.FindProperty("enableBellGazeTutorialPrototype").boolValue = enableBell;
+            serializedObject.FindProperty("headImuPortName").stringValue = "COM40";
             serializedObject.FindProperty("previewBrightnessBoost").floatValue = 5f;
             serializedObject.FindProperty("treatmentSeconds").floatValue = 4f;
             serializedObject.FindProperty("treatmentLockPulseSeconds").floatValue = 0.16f;

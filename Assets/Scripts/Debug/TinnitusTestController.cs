@@ -27,6 +27,7 @@ namespace BellRinger.Debug
         [SerializeField] private bool enableTreatmentHaptics = true;
         [SerializeField] private bool enableGiantTinnitusPrototype = true;
         [SerializeField] private bool enableBellGazeTutorialPrototype = true;
+        [SerializeField] private string headImuPortName = "COM40";
         [SerializeField] private AudioClip bellClip;
         [SerializeField] private float previewBrightnessBoost = 5f;
         [SerializeField] private float treatmentSeconds = 4f;
@@ -50,6 +51,9 @@ namespace BellRinger.Debug
         private Renderer _currentPadGhostRenderer;
         private Renderer _targetPadGhostRenderer;
         private Renderer _tutorialBellRenderer;
+        private BellRingerSimpleMoveLookController _moveLookController;
+        private HeadImuReceiver _headImuReceiver;
+        private HeadTiltInputProvider _headTiltInputProvider;
         private bool _cameraInitialized;
         private bool _staticSceneCreated;
         private bool _sharedSettingsInitialized;
@@ -122,8 +126,8 @@ namespace BellRinger.Debug
             if (WantsBellGazeTutorial)
             {
                 DrawBellTutorialPanel(testMode == TinnitusTestMode.BellGazeTutorial
-                    ? new Rect(16f, 16f, 520f, 180f)
-                    : new Rect(1090f, 16f, 430f, 180f));
+                    ? new Rect(16f, 16f, 560f, 240f)
+                    : new Rect(1090f, 16f, 460f, 220f));
             }
         }
 
@@ -151,12 +155,18 @@ namespace BellRinger.Debug
                 camera.gameObject.AddComponent<AudioListener>();
             }
 
-            if (camera.GetComponent<BellRingerSimpleMoveLookController>() == null)
+            _moveLookController = camera.GetComponent<BellRingerSimpleMoveLookController>();
+            if (_moveLookController == null)
             {
-                camera.gameObject.AddComponent<BellRingerSimpleMoveLookController>();
+                _moveLookController = camera.gameObject.AddComponent<BellRingerSimpleMoveLookController>();
             }
 
             _listenerTransform = camera.transform;
+
+            if (WantsBellGazeTutorial)
+            {
+                EnsureHeadInput(camera.gameObject);
+            }
 
             if (!_staticSceneCreated)
             {
@@ -222,6 +232,25 @@ namespace BellRinger.Debug
             }
 
             _completionEffect.ResolveClip = resolveClip;
+        }
+
+        private void EnsureHeadInput(GameObject cameraObject)
+        {
+            _headImuReceiver = cameraObject.GetComponent<HeadImuReceiver>();
+            if (_headImuReceiver == null)
+            {
+                _headImuReceiver = cameraObject.AddComponent<HeadImuReceiver>();
+            }
+
+            _headImuReceiver.SetPreferredPortName(headImuPortName);
+
+            _headTiltInputProvider = cameraObject.GetComponent<HeadTiltInputProvider>();
+            if (_headTiltInputProvider == null)
+            {
+                _headTiltInputProvider = cameraObject.AddComponent<HeadTiltInputProvider>();
+            }
+
+            _headImuReceiver.InitializeNow();
         }
 
         private void EnsurePadTreatmentPrototype()
@@ -353,6 +382,13 @@ namespace BellRinger.Debug
                 _giantEncounter.Tick();
             }
 
+            bool giantRunning = WantsGiantTreatment && _giantEncounter != null && _giantEncounter.IsRunning;
+            SetPlayerMovementEnabled(!giantRunning);
+            if (giantRunning && _tinnitusTransform != null)
+            {
+                _tinnitusTransform.position = CameraSpaceToWorld(_poseMatchEvaluator.TargetCameraSpacePosition);
+            }
+
             if (!_treatmentResolved)
             {
                 _treatmentRestoreVolume = _audioController.Volume;
@@ -394,6 +430,7 @@ namespace BellRinger.Debug
         {
             _treatmentResolved = true;
             _completionEffect?.Complete(_tinnitusTransform, _audioController, _lightController);
+            SetPlayerMovementEnabled(true);
             StopTreatmentHaptics();
         }
 
@@ -415,6 +452,7 @@ namespace BellRinger.Debug
 
             _treatmentResolved = false;
             _giantEncounter?.StopEncounter();
+            SetPlayerMovementEnabled(true);
             _wasInsideTreatmentTolerance = false;
             _treatmentLockPulseUntilRealtime = 0f;
             StopTreatmentHaptics();
@@ -721,7 +759,8 @@ namespace BellRinger.Debug
                 }
 
                 GUILayout.EndHorizontal();
-                GUILayout.Label($"Giant: running {_giantEncounter.IsRunning}  complete {_giantEncounter.IsComplete}  stage {_giantEncounter.StageNumber}/3  stage progress {_giantEncounter.StageProgress01:0.00}  overall {_giantEncounter.OverallProgress01:0.00}");
+                GUILayout.Label($"Giant: running {_giantEncounter.IsRunning}  complete {_giantEncounter.IsComplete}  phase {_giantEncounter.PhaseName}  total {_giantEncounter.OverallProgress01:0.00}");
+                GUILayout.Label($"Hold 2s: {_giantEncounter.HoldProgress01:0.00}  Move 6s: {_giantEncounter.MoveProgress01:0.00}  player move locked: {(_moveLookController != null && !_moveLookController.MovementEnabled)}");
             }
 
             treatmentSeconds = TreatmentSlider("treatment seconds", treatmentSeconds, 0.5f, 10f);
@@ -756,10 +795,17 @@ namespace BellRinger.Debug
 
             GUILayout.BeginArea(rect, "Bell Gaze Tutorial", GUI.skin.window);
             GUILayout.Label("Head rotation is the main gaze input. Keep looking at the moving bell.");
+            GUILayout.Label($"Head IMU: {(_headImuReceiver != null && _headImuReceiver.IsConnected)} fresh: {(_headTiltInputProvider != null && _headTiltInputProvider.HasFreshSample)} port: {(_headImuReceiver != null ? _headImuReceiver.ActivePortName : "(none)")}");
+            GUILayout.Label($"Head virtual yaw/pitch: {(_headTiltInputProvider != null ? _headTiltInputProvider.VirtualYawDegrees : 0f):0.0} / {(_headTiltInputProvider != null ? _headTiltInputProvider.VirtualPitchDegrees : 0f):0.0}");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start Bell Tutorial", GUILayout.Height(28f)))
             {
                 _bellTutorial.StartTutorial();
+            }
+
+            if (GUILayout.Button("Recenter Head", GUILayout.Height(28f)) && _headTiltInputProvider != null)
+            {
+                _headTiltInputProvider.Recenter();
             }
 
             if (GUILayout.Button("Reset Bell Tutorial", GUILayout.Height(28f)))
@@ -768,7 +814,7 @@ namespace BellRinger.Debug
             }
 
             GUILayout.EndHorizontal();
-            GUILayout.Label($"Phase: {_bellTutorial.PhaseName}  complete: {_bellTutorial.IsComplete}");
+            GUILayout.Label($"Phase: {_bellTutorial.PhaseName}  cue: {_bellTutorial.CueNumber}/{_bellTutorial.CueCount}  complete: {_bellTutorial.IsComplete}");
             GUILayout.Label($"Gaze angle: {_bellTutorial.GazeAngleDegrees:0.0}  progress: {_bellTutorial.GazeProgress01:0.00}");
             GUILayout.EndArea();
         }
@@ -917,6 +963,14 @@ namespace BellRinger.Debug
             }
 
             return "None";
+        }
+
+        private void SetPlayerMovementEnabled(bool enabled)
+        {
+            if (_moveLookController != null)
+            {
+                _moveLookController.MovementEnabled = enabled;
+            }
         }
 
         private static Material CreateMaterial(Color color)

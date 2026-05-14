@@ -110,6 +110,21 @@ namespace BellRinger.Hardware
             _nextReconnectTime = Time.unscaledTime + reconnectIntervalSeconds;
         }
 
+        public void SetPreferredPortName(string portName)
+        {
+            string normalizedPortName = string.IsNullOrWhiteSpace(portName) ? string.Empty : portName.Trim();
+            if (string.Equals(preferredPortName, normalizedPortName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            preferredPortName = normalizedPortName;
+            if (_initialized && !IsConnected)
+            {
+                RefreshAndReconnect();
+            }
+        }
+
         private void ApplyEnvironmentOverrides()
         {
             string portOverride = Environment.GetEnvironmentVariable(SerialPortEnvName);

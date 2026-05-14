@@ -178,6 +178,7 @@ MonoBehaviour:
   enableTreatmentHaptics: 1
   enableGiantTinnitusPrototype: 0
   enableBellGazeTutorialPrototype: 0
+  headImuPortName: COM40
   bellClip: {fileID: 8300000, guid: 9292bbbff6009b844b2c6368d0e4bbdd, type: 3}
   previewBrightnessBoost: 5
   treatmentSeconds: 4

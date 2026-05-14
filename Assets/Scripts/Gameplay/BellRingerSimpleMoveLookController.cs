@@ -19,6 +19,8 @@ namespace BellRinger.Gameplay
         private float _pitchDegrees;
         private HeadTiltInputProvider _headTiltInputProvider;
 
+        public bool MovementEnabled { get; set; } = true;
+
         private void Start()
         {
             Vector3 eulerAngles = transform.rotation.eulerAngles;
@@ -66,6 +68,14 @@ namespace BellRinger.Gameplay
 
         private void UpdateMovement()
         {
+            if (!MovementEnabled)
+            {
+                Vector3 lockedPosition = transform.position;
+                lockedPosition.y = fixedHeight;
+                transform.position = lockedPosition;
+                return;
+            }
+
             Vector2 moveInput = Vector2.zero;
 
             if (Keyboard.current != null)
