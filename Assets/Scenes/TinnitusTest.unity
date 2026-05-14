@@ -168,8 +168,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc18ca05fd2142478aa42a47f61b5f2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  testMode: 0
   continuousGlitchClip: {fileID: 8300000, guid: 736eb723f085444d9bffb25471de9285, type: 3}
   shortGlitchClip: {fileID: 8300000, guid: f3f3831951904992a1440053316e1a9f, type: 3}
+  resolveClip: {fileID: 8300000, guid: 8fbdd4f126eb47149ac72857f48eae80, type: 3}
   outputToHardware: 1
   showRuntimeControls: 1
+  enablePadTreatmentPrototype: 1
+  enableTreatmentHaptics: 1
+  enableGiantTinnitusPrototype: 0
+  enableBellGazeTutorialPrototype: 0
+  bellClip: {fileID: 8300000, guid: 9292bbbff6009b844b2c6368d0e4bbdd, type: 3}
   previewBrightnessBoost: 5
+  treatmentSeconds: 4
+  treatmentLockPulseSeconds: 0.16
+  treatmentHealingPulseHz: 2.1

@@ -13,6 +13,7 @@ namespace BellRinger.Gameplay
         [SerializeField] private float fixedHeight = 1.6f;
         [SerializeField] private float maximumPitchDegrees = 60f;
         [SerializeField] private bool useHeadTiltProviderWhenFresh = true;
+        [SerializeField] private bool allowGamepadRightStickLook;
 
         private float _yawDegrees;
         private float _pitchDegrees;
@@ -47,7 +48,7 @@ namespace BellRinger.Gameplay
 
             Vector2 lookDelta = Vector2.zero;
 
-            if (Gamepad.current != null)
+            if (allowGamepadRightStickLook && Gamepad.current != null)
             {
                 lookDelta += Gamepad.current.rightStick.ReadValue() * (gamepadLookDegreesPerSecond * Time.unscaledDeltaTime);
             }

@@ -332,3 +332,135 @@ Best direction to test first:
 | 6 | `06_mixkit_crystal_chime_final.wav` | More crystalline alternate |
 | 7 | `07_mixkit_soft_clean_confirmation_final.wav` | Clean confirmation alternate; reject if too UI-like |
 | 8 | `08_mixkit_echo_chime_final.wav` | Echo chime alternate; reject if too UI-like |
+
+## Crystal / Dream / Open Ambience Cue Target
+
+Collected on 2026-05-14. These are candidates, not final selections.
+
+Analysis bundles:
+
+- `tools/audio-lab/output/batch/CrystalCandidates`
+- `tools/audio-lab/output/batch/AmbienceCandidates`
+
+Unity-ready converted files:
+
+- `Assets/Audio/Processed/Crystal`
+- `Assets/Audio/Processed/Ambience`
+
+First-listen shortlist:
+
+- `Assets/Audio/Curated/Crystal/Collision`
+- `Assets/Audio/Curated/Crystal/DreamTone`
+- `Assets/Audio/Curated/Ambience/OpenGround`
+- `Assets/Audio/Curated/Ambience/SubtleTexture`
+
+### Design Role
+
+These sounds are not assigned to fixed gameplay beats yet.
+
+Crystal and dream sounds are motif candidates. They may later support bell acquisition, cleanse resolution, hidden transitions, light shimmer, or unusual material contact. Keep them secondary to the bell and tinnitus identities.
+
+Open ambience is more important structurally. The game should feel like a huge empty land, but it should not use normal background music during progression. Use sparse environmental layers, very low wind/air beds, distant textural movements, and rare small ambient details instead.
+
+Reject anything that feels like:
+
+- obvious BGM
+- melodic loop
+- fantasy reward jingle
+- UI notification
+- indoor room tone
+- city/cafe/traffic
+- dense forest unless in the ending forest
+- too clear a real-world location
+
+### Open Ambience Mixing Notes
+
+Use two layer types:
+
+- `OpenGround`: long low-volume beds that create scale and emptiness.
+- `SubtleTexture`: small randomized environmental details placed around the player at low volume.
+
+The main field should remain sparse. A good baseline is one long `OpenGround` layer plus occasional `SubtleTexture` events. Do not fill every silence. Silence and near-silence are part of the game language.
+
+For a wide empty land feeling:
+
+- Keep most ambience non-directional or very wide.
+- Put rare texture events far away or at the floor plane.
+- Avoid constant tonal movement that reads as music.
+- Let the bell remain the most readable intentional sound.
+
+### Crystal Collision Candidates
+
+These are for small crystal-like contacts, shimmer hits, or material accents. Use them quietly unless the design later assigns them to a major object.
+
+| Listen Order | Asset | Intended Use |
+| --- | --- | --- |
+| 1 | `01_mixkit_crystal_chime_clean_hit.wav` | Clean crystal hit candidate |
+| 2 | `02_mixkit_soft_bell_chime_clean_hit.wav` | Softer bell-crystal hybrid hit |
+| 3 | `03_mixkit_resonating_metallic_hit.wav` | More physical resonant contact |
+| 4 | `04_mixkit_magic_twinkle_hit_b.wav` | Bright magical crystal accent |
+| 5 | `05_mixkit_magic_twinkle_hit_c.wav` | Short bright magical accent |
+| 6 | `06_mixkit_magic_crystal_hit_c.wav` | Crystal/magic collision alternate |
+| 7 | `07_mixkit_magic_sparkle_hit_b.wav` | Sparkle collision alternate |
+| 8 | `08_mixkit_small_magic_resonance_hit.wav` | Small resonant accent |
+| 9 | `09_mixkit_promise_bell_resonant_hit.wav` | Longer resonant bell/crystal tail |
+| 10 | `10_mixkit_magic_sparkle_hit_a_long.wav` | Longer sparkle accent |
+| 11 | `11_mixkit_bright_magic_collision_long.wav` | Longer bright collision; verify it is not too magical/cartoon-like |
+| 12 | `12_mixkit_small_echo_chime_hit_a_ui_risk.wav` | Possible chime hit; high UI risk |
+| 13 | `13_mixkit_small_echo_chime_hit_b_ui_risk.wav` | Possible chime hit; high UI risk |
+
+### Dream Tone Candidates
+
+These are transition or tail candidates, not background music. Prefer short appearances, fade-ins, or layered tails after meaningful actions.
+
+| Listen Order | Asset | Intended Use |
+| --- | --- | --- |
+| 1 | `01_mixkit_ambient_magic_tail_long.wav` | Long dreamlike tail candidate |
+| 2 | `02_mixkit_distant_magic_bell_tone.wav` | Distant bell/dream hybrid |
+| 3 | `03_mixkit_soft_spell_tone_a.wav` | Soft dream tone |
+| 4 | `04_mixkit_dream_magic_transition_a.wav` | Short transition shimmer |
+| 5 | `05_mixkit_soft_magic_whoosh_tone.wav` | Soft whoosh-tone transition |
+| 6 | `06_mixkit_mystic_rise_tone.wav` | Rising dream transition |
+| 7 | `07_mixkit_slow_magic_tone.wav` | Slower magic tone |
+| 8 | `08_mixkit_shimmering_magic_tail.wav` | Shimmer tail layer |
+| 9 | `09_mixkit_sparkle_tail_layer.wav` | Sparkle tail layer |
+| 10 | `10_mixkit_airy_magic_swell.wav` | Airy swell; overlaps with ending transition language |
+| 11 | `11_mixkit_dream_magic_transition_b.wav` | Alternate short dream transition |
+| 12 | `12_mixkit_ethereal_magic_swell_bright.wav` | Bright alternate; reject if too fantasy-like |
+| 13 | `13_mixkit_sci_fi_ambient_tone_alt.wav` | Sci-fi alternate; reject if it weakens the organic bell identity |
+
+### Open Ground Ambience Candidates
+
+These are broad environmental beds for scale. Listen very quietly first; if a candidate only works at high volume, it probably does not fit.
+
+| Listen Order | Asset | Intended Use |
+| --- | --- | --- |
+| 1 | `01_mixkit_wide_breeze_long.wav` | Primary open-air candidate |
+| 2 | `02_mixkit_open_air_wind_long.wav` | Alternate open-air wind candidate |
+| 3 | `03_mixkit_broad_environment_bed_a.wav` | Low broad environment bed |
+| 4 | `04_mixkit_broad_environment_bed_b.wav` | Low broad environment alternate |
+| 5 | `05_mixkit_open_ground_texture_b_very_low.wav` | Very low/quiet open ground candidate |
+| 6 | `06_mixkit_low_cinematic_space_a_music_risk.wav` | Large low space; reject if it feels like score |
+| 7 | `07_mixkit_open_ground_texture_a.wav` | Open texture alternate |
+| 8 | `08_mixkit_wide_nature_floor_texture_a.wav` | Floor/nature texture alternate |
+| 9 | `09_mixkit_wide_nature_floor_texture_b.wav` | Floor/nature texture alternate |
+| 10 | `10_mixkit_broad_environment_bed_c_bright.wav` | Brighter broad bed; likely too active unless mixed very low |
+
+### Subtle Ambience Texture Candidates
+
+Use these as rare small events or very low secondary layers. They should add air and scale without becoming gameplay instructions.
+
+| Listen Order | Asset | Intended Use |
+| --- | --- | --- |
+| 1 | `01_mixkit_small_environment_texture_f_long.wav` | Long subtle texture candidate |
+| 2 | `02_mixkit_small_environment_texture_e_long.wav` | Long alternate texture |
+| 3 | `03_mixkit_small_environment_texture_g.wav` | Low/mid texture candidate |
+| 4 | `04_mixkit_small_environment_texture_p.wav` | Subtle texture alternate |
+| 5 | `05_mixkit_small_environment_texture_l.wav` | Subtle texture alternate |
+| 6 | `06_mixkit_small_environment_texture_d.wav` | Shorter/cleaner texture |
+| 7 | `07_mixkit_small_environment_texture_b.wav` | Subtle texture alternate |
+| 8 | `08_mixkit_small_environment_texture_j.wav` | Moderate texture alternate |
+| 9 | `09_mixkit_small_environment_texture_m_short.wav` | Short ambient detail |
+| 10 | `10_mixkit_small_environment_texture_k_short.wav` | Short ambient detail |
+| 11 | `11_mixkit_small_environment_texture_i_bright.wav` | Brighter texture; reject if attention-grabbing |
+| 12 | `12_mixkit_small_environment_texture_n_bright.wav` | Brighter texture; reject if attention-grabbing |
