@@ -109,6 +109,42 @@ Generate a sound effect with ElevenLabs from a JSON spec.
 npm.cmd run eleven:sfx -- --spec presets\elevenlabs-tinnitus-burst.json
 ```
 
+List Korean-friendly Typecast voices after setting `TYPECAST_API_KEY`.
+
+```powershell
+npm.cmd run typecast:voices -- --model ssfm-v30 --gender female --age young_adult --output output\typecast-female-voices.json
+```
+
+Generate a Typecast narration sample after choosing a `voice_id`.
+
+```powershell
+npm.cmd run typecast:tts -- --voice-id tc_xxx --text "종소리를 따라, 천천히 이동하세요." --output ..\..\Assets\Audio\RawCandidates\Narration\ProviderTests\typecast-test.wav
+```
+
+List Korean female Supertone narration voices after setting `SUPERTONE_API_KEY`.
+
+```powershell
+npm.cmd run supertone:voices -- --language ko --gender female --use-case narration --output output\supertone-ko-female-voices.json
+```
+
+Generate a Supertone narration sample after choosing a `voice_id`.
+
+```powershell
+npm.cmd run supertone:tts -- --voice-id voice_xxx --text "종소리를 따라, 천천히 이동하세요." --output ..\..\Assets\Audio\RawCandidates\Narration\ProviderTests\supertone-test.wav
+```
+
+Generate NAVER CLOVA Voice narration samples after setting `NAVER_CLOVA_VOICE_API_KEY_ID` and `NAVER_CLOVA_VOICE_API_KEY`.
+
+```powershell
+npm.cmd run naver:tts -- --speaker vgoeun --text "종소리를 따라, 천천히 이동하세요." --output ..\..\Assets\Audio\RawCandidates\Narration\ProviderTests\naver-vgoeun-test.wav
+```
+
+Generate the Korean narration comparison batch. NAVER runs with NAVER keys. Typecast and Supertone also need selected voice IDs in `TYPECAST_VOICE_IDS` and `SUPERTONE_VOICE_IDS`.
+
+```powershell
+npm.cmd run narration:korean-test
+```
+
 ## Output layout
 
 - `output/analysis`: JSON feature reports

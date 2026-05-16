@@ -678,3 +678,78 @@ First-listen folder:
 - `Assets/Audio/Curated/Narration/Cue`
 
 Recommended first test: try no audible narration cue, only sidechain/ducking. If players miss narration entry or are startled, test `01` through `04` at very low volume.
+
+## Narration Voice Tone Samples
+
+Generated on 2026-05-17 with local Windows TTS for direction testing only.
+
+Voice:
+
+- `Microsoft Heami Desktop`
+- Korean female adult local TTS voice
+
+Source sentence:
+
+- `종의 소리를 따라 이동하세요.`
+
+Tone target:
+
+- female, but not character-like
+- small and comfortable, but not an exaggerated whisper
+- protective guide rather than command voice
+- low emotion, but not cold or machine-like
+- feels like it comes from inside the head or slightly in front of the player, not directly beside the ear
+- starts quiet, but remains intelligible over gameplay audio through mixing, EQ, compression, and ducking
+
+Generated files:
+
+- `Assets/Audio/RawCandidates/Narration/VoiceSamples`
+- `Assets/Audio/Processed/Narration/VoiceSamples`
+- `Assets/Audio/Curated/Narration/VoiceSamples`
+
+Analysis bundle:
+
+- `tools/audio-lab/output/batch/NarrationVoiceSamples`
+
+### Voice Sample Candidates
+
+These samples are for tone direction only. Verify Microsoft voice licensing before using any generated file in a shipped build. If the tone direction is approved but quality is not enough, regenerate the final lines with a higher-quality TTS provider using this section as the voice brief.
+
+Important update on 2026-05-17: the local `Microsoft Heami Desktop` samples were rejected. Do not use them as a quality target. They remain only as a record of the failed direction.
+
+| Listen Order | Asset | Intended Difference |
+| --- | --- | --- |
+| 1 | `01_heami_soft_guiding_neutral.wav` | Baseline soft guide tone |
+| 2 | `02_heami_soft_slower_comfort.wav` | Slower and more comfortable |
+| 3 | `03_heami_clear_low_volume.wav` | Lower volume but slightly clearer pacing |
+| 4 | `04_heami_front_mind_calm.wav` | Slight pause after `따라`; calmer front/head placement candidate |
+| 5 | `05_heami_gentle_but_audible.wav` | Same tone as baseline but more audible |
+| 6 | `06_heami_short_pause_soft.wav` | Stronger phrase separation; reject if too instructional |
+
+Initial listening priority:
+
+- Start with `01`, `02`, and `05`.
+- Use `03` to test how quiet the narration can be before intelligibility suffers.
+- Use `04` and `06` only if the phrase needs more separation for closed-eye play.
+
+### High-Quality Korean TTS Provider Tests
+
+Current replacement test sentence:
+
+- `종소리를 따라, 천천히 이동하세요.`
+
+Provider setup and commands:
+
+- `Docs/NarrationTtsProviderSetup.md`
+
+Target output folder:
+
+- `Assets/Audio/RawCandidates/Narration/ProviderTests`
+
+Preferred provider order for the next test:
+
+1. NAVER CLOVA Voice
+2. Typecast
+3. Supertone
+
+Selection rule: reject any voice that feels like a phone assistant, OS narrator, animated character, advertisement voice, or obvious synthetic TTS. The narration must be quiet and comfortable but still intelligible under game audio.

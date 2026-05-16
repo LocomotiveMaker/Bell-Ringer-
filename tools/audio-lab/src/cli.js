@@ -4,11 +4,17 @@ import { runAnalyzeCommand } from "./commands/analyze.js";
 import { runBatchCommand } from "./commands/batch.js";
 import { runDoctorCommand } from "./commands/doctor.js";
 import { runElevenSfxCommand } from "./commands/elevenSfx.js";
+import { runNarrationKoreanTestCommand } from "./commands/narrationKoreanTest.js";
+import { runNaverTtsCommand } from "./commands/naverTts.js";
 import { runOpenAiSttCommand } from "./commands/openaiStt.js";
 import { runOpenAiTtsCommand } from "./commands/openaiTts.js";
 import { runPrepareCommand } from "./commands/prepare.js";
 import { runScorecardCommand } from "./commands/scorecard.js";
 import { runSpectrogramCommand } from "./commands/spectrogram.js";
+import { runSupertoneTtsCommand } from "./commands/supertoneTts.js";
+import { runSupertoneVoicesCommand } from "./commands/supertoneVoices.js";
+import { runTypecastTtsCommand } from "./commands/typecastTts.js";
+import { runTypecastVoicesCommand } from "./commands/typecastVoices.js";
 import { runUnityImportCommand } from "./commands/unityImport.js";
 
 const commands = new Map([
@@ -21,7 +27,13 @@ const commands = new Map([
   ["unity-import", runUnityImportCommand],
   ["openai-tts", runOpenAiTtsCommand],
   ["openai-stt", runOpenAiSttCommand],
-  ["eleven-sfx", runElevenSfxCommand]
+  ["eleven-sfx", runElevenSfxCommand],
+  ["naver-tts", runNaverTtsCommand],
+  ["typecast-voices", runTypecastVoicesCommand],
+  ["typecast-tts", runTypecastTtsCommand],
+  ["supertone-voices", runSupertoneVoicesCommand],
+  ["supertone-tts", runSupertoneTtsCommand],
+  ["narration-korean-test", runNarrationKoreanTestCommand]
 ]);
 
 function printHelp() {
@@ -38,6 +50,12 @@ Commands:
   openai-tts
   openai-stt
   eleven-sfx
+  naver-tts
+  typecast-voices
+  typecast-tts
+  supertone-voices
+  supertone-tts
+  narration-korean-test
 `);
 }
 

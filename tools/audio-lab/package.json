@@ -13,7 +13,13 @@
     "unity:import": "node src/cli.js unity-import",
     "openai:tts": "node src/cli.js openai-tts",
     "openai:stt": "node src/cli.js openai-stt",
-    "eleven:sfx": "node src/cli.js eleven-sfx"
+    "eleven:sfx": "node src/cli.js eleven-sfx",
+    "naver:tts": "node src/cli.js naver-tts",
+    "typecast:voices": "node src/cli.js typecast-voices",
+    "typecast:tts": "node src/cli.js typecast-tts",
+    "supertone:voices": "node src/cli.js supertone-voices",
+    "supertone:tts": "node src/cli.js supertone-tts",
+    "narration:korean-test": "node src/cli.js narration-korean-test"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
