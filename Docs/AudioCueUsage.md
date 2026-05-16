@@ -464,3 +464,217 @@ Use these as rare small events or very low secondary layers. They should add air
 | 10 | `10_mixkit_small_environment_texture_k_short.wav` | Short ambient detail |
 | 11 | `11_mixkit_small_environment_texture_i_bright.wav` | Brighter texture; reject if attention-grabbing |
 | 12 | `12_mixkit_small_environment_texture_n_bright.wav` | Brighter texture; reject if attention-grabbing |
+
+## Interaction / Missing Cue Candidate Target
+
+Collected on 2026-05-16. These are candidates, not final selections.
+
+This section covers seven sound families that were identified as likely gaps after the main bell, rain, tinnitus, forest, wind, crystal, and ambience collections.
+
+Analysis bundles:
+
+- `tools/audio-lab/output/batch/InteractionFeedbackCandidates`
+- `tools/audio-lab/output/batch/BossTinnitusCandidates`
+- `tools/audio-lab/output/batch/MovementBodyCandidates`
+- `tools/audio-lab/output/batch/TransitionCutCandidates`
+- `tools/audio-lab/output/batch/NarrationCueCandidates`
+
+Unity-ready converted files:
+
+- `Assets/Audio/Processed/Interaction`
+- `Assets/Audio/Processed/Tinnitus/Boss`
+- `Assets/Audio/Processed/Movement`
+- `Assets/Audio/Processed/Transition`
+- `Assets/Audio/Processed/Narration/Cue`
+
+First-listen shortlist:
+
+- `Assets/Audio/Curated/Interaction/PadFeedback`
+- `Assets/Audio/Curated/Interaction/WallScan`
+- `Assets/Audio/Curated/Interaction/WallContactEscape`
+- `Assets/Audio/Curated/Tinnitus/Boss`
+- `Assets/Audio/Curated/Movement/Body`
+- `Assets/Audio/Curated/Transition/Cut`
+- `Assets/Audio/Curated/Narration/Cue`
+
+Files in these folders are numbered in intended listening order. Files with `risk` in the name are not rejected yet, but should be treated as likely failures unless they solve a specific implementation problem.
+
+### Pad Feedback Candidates
+
+Use these for controller-related tactile feedback outside tinnitus cleansing:
+
+- pad button press
+- pad shake detected
+- pad reconnecting with the sound world
+- positional lock beginning
+- failed or lost pad tracking, if needed
+
+The pad should not sound like a normal UI menu. Prefer physical, small, dry, tactile clicks over bright game sounds.
+
+Reject if the cue feels like:
+
+- phone or app UI
+- arcade selection
+- reward jingle
+- too futuristic for the bell world
+- too loud or attention-grabbing
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Interaction/PadFeedback`
+
+### Wall Scan Candidates
+
+Use these for the bell-wave scan response when the player shakes the bell and the world returns information about nearby walls.
+
+The scan response should feel like information coming back from space. It can be more abstract than a literal wall hit, but should still communicate distance, mass, and pressure.
+
+Suggested implementation:
+
+- Far wall: quieter, darker, longer tail.
+- Near wall: louder, shorter, more pressure.
+- Very close wall: add subtle distortion or noise layer.
+- Direction should come from spatial placement, not from a busy stereo file.
+
+Reject if the cue feels like:
+
+- explosion
+- weapon impact
+- cinematic trailer hit
+- obvious metal object unless the wall theme becomes metallic
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Interaction/WallScan`
+
+### Wall Contact / Escape Candidates
+
+Use these for touching, rubbing, scraping, or forcing through a wall-like surface.
+
+This family is important because it gives the player proof that their action is changing the world. It can be layered with wall noise and pad vibration.
+
+Suggested implementation:
+
+- Light contact: short grit/scrape.
+- Continuous rubbing: looping or repeated scrape grains.
+- Wall weakening: add stone movement or low shifting layer.
+- Escape moment: stop scrape, then use a short cut/air-release cue from `Transition/Cut`.
+
+Reject if the cue feels like:
+
+- normal door opening
+- realistic construction/rocks instead of abstract wall
+- too metallic unless the wall becomes explicitly metallic
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Interaction/WallContactEscape`
+
+### Boss Tinnitus Candidates
+
+Use these only for the boss tinnitus, not normal tinnitus.
+
+The boss should have a separate identity:
+
+- heartbeat-like low pulse
+- heavy unstable body
+- strong glitch/electric bursts
+- larger perceived size
+- movement while being cleansed
+
+Suggested layering:
+
+- Base: heartbeat or low pulse loop.
+- Instability: intermittent glitch/electric burst.
+- Cleansing: increase burst rate, pitch motion, and distortion while the pad stays aligned.
+- Final defeat: transition to the already collected boss-cleanse-to-forest transition.
+
+Reject if the cue feels like:
+
+- literal monster voice
+- cheesy horror sting
+- painful sustained high tone
+- normal small tinnitus asset just made louder
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Tinnitus/Boss`
+
+### Movement / Body Candidates
+
+Use these very carefully. The project is abstract and sensory-first, so realistic footsteps may make the world too literal.
+
+Best use cases:
+
+- extremely low-volume body movement while walking
+- cloth/controller handling near the player
+- subtle floor contact when movement starts or stops
+- controller motion gesture feedback, if pad-specific clicks are too UI-like
+
+Prefer cloth shift and low body texture first. Use footsteps only if they are mixed quietly enough to feel like body presence rather than a walking simulator.
+
+Reject if the cue feels like:
+
+- clear shoe footsteps
+- indoor floor
+- character animation sound
+- realistic scene that conflicts with the empty-land abstraction
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Movement/Body`
+
+### State Transition / Cut Candidates
+
+Use these for scene or state transitions where silence is part of the design:
+
+- rain to wall phase
+- wall phase to tinnitus obstruction
+- boss tinnitus cleanse to silence
+- silence to forest
+- narration entering after a major cue
+
+These are not background transitions. They should be short structural edits in the sound world.
+
+Suggested implementation:
+
+- Use one short cut or pressure cue.
+- Drop other layers sharply or with a very short duck.
+- Let silence or near-silence carry the moment.
+- Avoid stacking multiple cinematic risers unless the boss defeat explicitly needs scale.
+
+Reject if the cue feels like:
+
+- trailer transition
+- magic spell
+- horror jump scare
+- obvious UI page transition
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Transition/Cut`
+
+### Narration Cue Candidates
+
+Use only if narration needs an entry marker. Silence and ducking may be better than an audible cue.
+
+Best use case:
+
+- very quiet pre-narration tick or tone
+- environmental layers duck slightly
+- narration speaks
+- cue does not repeat after every line unless needed for accessibility
+
+Reject if the cue feels like:
+
+- notification
+- app assistant
+- subtitle beep
+- menu UI
+- reward confirmation
+
+First-listen folder:
+
+- `Assets/Audio/Curated/Narration/Cue`
+
+Recommended first test: try no audible narration cue, only sidechain/ducking. If players miss narration entry or are startled, test `01` through `04` at very low volume.
