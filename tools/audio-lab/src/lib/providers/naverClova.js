@@ -48,8 +48,8 @@ export async function createNaverClovaVoice({
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      "x-ncp-apigw-api-key-id": requireEnv("NAVER_CLOVA_VOICE_API_KEY_ID"),
-      "x-ncp-apigw-api-key": requireEnv("NAVER_CLOVA_VOICE_API_KEY")
+      "X-NCP-APIGW-API-KEY-ID": requireEnv("NAVER_CLOVA_VOICE_API_KEY_ID"),
+      "X-NCP-APIGW-API-KEY": requireEnv("NAVER_CLOVA_VOICE_API_KEY")
     },
     body
   });

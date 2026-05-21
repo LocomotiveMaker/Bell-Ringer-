@@ -753,3 +753,204 @@ Preferred provider order for the next test:
 3. Supertone
 
 Selection rule: reject any voice that feels like a phone assistant, OS narrator, animated character, advertisement voice, or obvious synthetic TTS. The narration must be quiet and comfortable but still intelligible under game audio.
+
+## Bell Similar Reference Search
+
+Collected on 2026-05-19 after adding:
+
+- `Assets/Audio/bell sound.wav`
+
+The file was copied as the reference clip:
+
+- `Assets/Audio/RawCandidates/BellSimilar/Reference/reference_bell_sound.wav`
+- `Assets/Audio/Processed/BellSimilar/Reference/reference_bell_sound.wav`
+- `Assets/Audio/Curated/BellSimilar/Closest/00_reference_bell_sound.wav`
+
+Analysis bundle:
+
+- `tools/audio-lab/output/analysis/bell-sound-new.json`
+- `tools/audio-lab/output/spectrograms/bell-sound-new.png`
+- `tools/audio-lab/output/batch/BellSimilarCandidates`
+
+### Reference Audio Analysis
+
+`bell sound.wav` is not a short single handbell. It behaves more like a long resonant bell/chime texture:
+
+- duration: about `10.73s`
+- format: `44.1kHz`, stereo, 16-bit PCM WAV
+- brightness: `0.3241`
+- noisiness: `0.0924`
+- harshness: `0.3813`
+- median RMS: `0.0029`
+- spectral centroid mean: about `169.8`
+- spectral rolloff mean: about `13477.6`
+
+Spectrogram reading:
+
+- several separated bell/chime attacks
+- long horizontal harmonic partials
+- soft noise/reverb bed under the partials
+- not aggressive, not UI-like, not a dry close handbell
+
+Design interpretation:
+
+- good direction for a softer, more dreamlike bell identity
+- likely better for final acquisition, distant calling, or transformation than for quick button feedback
+- use as a reference for "long tail, soft metallic body, gentle repeated chime"
+
+### Source Investigation
+
+No reliable original source was found from the file itself.
+
+Known facts:
+
+- file name in project: `bell sound.wav`
+- SHA256: `E9F705ABB8E83210A9818F002E5B4BB63D84EA787BC8B555FE282E76BB6A569F`
+- embedded metadata was effectively empty except an empty `TXXX:Software` field
+- web search for the exact SHA256 and file size did not identify a public source
+
+Treat this file as source-unknown until the original download/generation source is recovered. Do not ship it unless the license/source is clarified.
+
+### Similar Candidate Collection
+
+New source folder:
+
+- `Assets/Audio/RawCandidates/BellSimilar/BigSoundBank`
+
+Unity-ready converted folder:
+
+- `Assets/Audio/Processed/BellSimilar`
+
+First-listen folders:
+
+- `Assets/Audio/Curated/BellSimilar/Closest`
+- `Assets/Audio/Curated/BellSimilar/LongChime`
+- `Assets/Audio/Curated/BellSimilar/DreamChime`
+- `Assets/Audio/Curated/BellSimilar/ResonantBell`
+
+Use `Closest` first. It contains the reference file, the nearest BigSoundBank candidates by analysis distance, and the previously collected closest local bell candidates.
+
+### Closest Candidates
+
+Listen in order and compare against `00_reference_bell_sound.wav`.
+
+| Listen Order | Asset | Intended Check |
+| --- | --- | --- |
+| 0 | `00_reference_bell_sound.wav` | Source-unknown reference; do not ship until source is known |
+| 1 | `01_bigsoundbank_2554_tibetan_bowl_like.wav` | Closest long resonant body by analysis |
+| 2 | `02_bigsoundbank_2555_tibetan_bowl_like.wav` | Long resonant alternate |
+| 3 | `03_bigsoundbank_2553_tibetan_bowl_like.wav` | Long resonant alternate |
+| 4 | `04_bigsoundbank_3360_one_pendulum_chime.wav` | Pendulum chime, close duration/body |
+| 5 | `05_bigsoundbank_3361_two_pendulum_chimes.wav` | Two-chime alternate |
+| 6 | `06_bigsoundbank_2880_soft_bell_candidate.wav` | Soft bell candidate |
+| 7 | `07_bigsoundbank_2881_soft_bell_candidate.wav` | Soft bell alternate |
+| 8 | `08_bigsoundbank_2888_bronze_bell_candidate.wav` | Brighter bronze bell candidate |
+| 9 | `09_bigsoundbank_0920_glockenspiel.wav` | Dreamlike metallic note cluster |
+| 10 | `10_bigsoundbank_1569_grandfather_clock_hour.wav` | Clock-bell stack; reject if too clock-like |
+| 11 | `11_bigsoundbank_1110_tibetan_bowl_alt.wav` | Long bowl/chime alternate |
+| 12 | `12_bigsoundbank_1570_grandfather_clock_hour2.wav` | Clock-bell alternate; reject if too literal |
+| 13 | `13_existing_mixkit_930_bell_of_promise.wav` | Existing local candidate, still numerically close |
+| 14 | `14_existing_bigsoundbank_2117.wav` | Existing local candidate |
+| 15 | `15_existing_bigsoundbank_2116.wav` | Existing local candidate |
+
+### Listening Criteria
+
+Keep candidates that:
+
+- have a long, soft, emotionally clean decay
+- feel mysterious or dreamlike without becoming fantasy UI
+- can sit in quiet ambience without sounding like a notification
+- have a clear attack but not a harsh attack
+- feel like a guiding object, not a reward jingle
+
+Reject candidates that:
+
+- sound like a clock, hotel counter bell, phone alert, or UI confirmation
+- are too musical or recognizably melodic
+- are too bright to repeat often
+- are too dry and close
+- have unclear licensing or source
+
+### Gemini TTS Narration Processing
+
+Current best direction as of 2026-05-19:
+
+- Google AI Studio / Gemini 2.5 Pro Preview TTS
+- Voice: Despina
+- Tone: bright
+- Style: whisper
+- Speed: natural
+- Accent: unset
+
+Prompt direction:
+
+- adult Korean female guide
+- soft, calm, natural, grounded
+- protective guide, not a character
+- low and warm emotion
+- clear articulation
+- not a phone assistant, advertisement, audiobook, anime character, or tutorial voice
+
+Generated source:
+
+- `Assets/Audio/Generated Audio May 19, 2026 - 3_53AM.wav`
+
+Processed candidates:
+
+- `Assets/Audio/Curated/Narration/GeminiTts`
+
+Listening order:
+
+| Listen Order | Asset | Intended Use |
+| --- | --- | --- |
+| 1 | `01_gemini_353am_clear_warm_space.wav` | Primary processed candidate; warm and clear, no obvious echo |
+| 2 | `02_gemini_353am_mind_front_soft_echo.wav` | Slight head/front-space echo; use if it does not blur consonants |
+| 3 | `04_gemini_353am_dry_mix_reference.wav` | Dry reference for Unity-side mixer effects |
+| 4 | `03_gemini_353am_dream_hazy_test.wav` | Hazy/dreamlike test; reject if words become less immediate |
+
+Processing rule:
+
+- Keep narration mostly dry and intelligible.
+- Do not bake strong reverb into the file.
+- Prefer subtle EQ/compression in the WAV and handle final placement with Unity AudioMixer.
+- If the voice feels too close to the ear, use Unity-side spatial placement slightly in front of the listener before adding more echo.
+
+### Gemini TTS Working Candidate
+
+Added on 2026-05-19.
+
+Source file:
+
+- `Assets/Audio/Generated Audio May 19, 2026 - 3_53AM.wav`
+
+Generation settings that produced the first acceptable direction:
+
+- model: Gemini 2.5 Pro Preview TTS
+- voice: Despina
+- voice tone: bright
+- style: whisper
+- speed: natural
+- accent: unset
+
+Prompt structure:
+
+- scene: closed-eye player in a vast quiet acoustic space; bell ahead; narrator is a calm guide inside the head or slightly in front
+- sample context: sensory-first audio game; protective, intimate, calm, non-theatrical adult Korean woman
+- transcript: `종소리를 따라, 천천히 이동하세요.`
+
+Post-processed candidates:
+
+- `Assets/Audio/Processed/Narration/GeminiTts`
+- `Assets/Audio/Curated/Narration/GeminiTts`
+
+| Listen Order | Asset | Intended Difference |
+| --- | --- | --- |
+| 1 | `01_gemini_353am_clear_warm_space.wav` | Most conservative processing; clarity first, slight warmth/space |
+| 2 | `02_gemini_353am_mind_front_soft_echo.wav` | Slightly more front-of-mind echo and softness |
+| 3 | `03_gemini_353am_dream_hazy_test.wav` | Haziest test; reject if intelligibility drops |
+
+Processing note:
+
+- The original file was not overwritten.
+- Effects were applied with `ffmpeg-static`, not Audacity, because command-line batch processing is more reliable for repeatable variants.
+- Avoid heavy reverb. Narration must remain clearer than the ambient bed, rain, wall noise, and tinnitus layers.

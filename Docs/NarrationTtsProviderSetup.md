@@ -35,6 +35,8 @@ Assets/Audio/Curated/Narration/ProviderTests
 
 Use this as the first API-driven Korean TTS test because it has a Korean-specific voice list and direct WAV output.
 
+Important: this does not use the NAVER Cloud Platform account-level `Access key ID` and `Secret key` from `My Account > Account and security management`. CLOVA Voice uses the `Client ID` and `Client Secret` issued after registering an `AI·NAVER API` application and enabling/selecting the CLOVA Voice service for that application.
+
 Required `.env` values:
 
 ```text
@@ -57,6 +59,10 @@ Recommended first speakers:
 - `nkyunglee`
 - `nminyoung`
 - `njiwon`
+
+If you receive `401 Authentication Failed`, the values are usually not the AI·NAVER API application's Client ID/Client Secret, or the `.env` file was not loaded from `tools/audio-lab`.
+
+If you receive a quota-related error such as `429`, check whether the CLOVA Voice service is selected/enabled on the AI·NAVER API application.
 
 Default tuning in the scripts:
 
@@ -145,17 +151,57 @@ npm.cmd run narration:korean-test
 The batch command tries all configured providers:
 
 ```powershell
+cd "C:\Bell Ringer\tools\audio-lab"
 npm.cmd run narration:korean-test
 ```
 
 You can restrict providers:
 
 ```powershell
+cd "C:\Bell Ringer\tools\audio-lab"
 npm.cmd run narration:korean-test -- --providers naver
 npm.cmd run narration:korean-test -- --providers typecast,supertone
 ```
 
+If running from another folder, use `--prefix`:
+
+```powershell
+npm.cmd --prefix "C:\Bell Ringer\tools\audio-lab" run narration:korean-test -- --providers naver
+```
+
 Without provider keys, the command will skip generation and print the missing configuration.
+
+## Troubleshooting
+
+### `Could not read package.json`
+
+If npm prints an error like:
+
+```text
+Could not read package.json: ... C:\Users\skagu\package.json
+```
+
+the command was run from the wrong folder. Run it from:
+
+```text
+C:\Bell Ringer\tools\audio-lab
+```
+
+or use `npm.cmd --prefix "C:\Bell Ringer\tools\audio-lab" ...`.
+
+### NAVER `401 Authentication information are missing`
+
+This means the request reached NAVER, but NAVER did not accept the authentication information.
+
+Check these first:
+
+- `NAVER_CLOVA_VOICE_API_KEY_ID` must be the CLOVA Voice application Client ID from NAVER Cloud Platform, not an account access key.
+- `NAVER_CLOVA_VOICE_API_KEY` must be the matching CLOVA Voice application Client Secret.
+- The CLOVA Voice service must be subscribed/enabled in NAVER Cloud Platform.
+- The URL must match the platform:
+  - public NCP: `https://naveropenapi.apigw.ntruss.com/tts-premium/v1/tts`
+  - gov/public-sector NCP: `https://naveropenapi.apigw.gov-ntruss.com/tts-premium/v1/tts`
+- Do not paste surrounding quotes or hidden spaces into `.env`.
 
 ## Production Rule
 
