@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9a671f1803d496c9a2c63aa4ef8d531, type: 3}
+  m_Name: FinalDemoTuningProfile
+  m_EditorClassIdentifier: 
+  autoAdvancePlaceholderStages: 0
+  placeholderStageSeconds: 3
+  startWithMovementLocked: 1
+  defaultAssistLevel: 1
+  hardwareSerialPort: COM40
+  headImuSerialPort: COM40
+  padImuSerialPort: COM30
+  padTrackingUdpPort: 39051
+  playerFixedHeight: 1.6
+  playerStartPosition: {x: 0, y: 1.6, z: -1.5}
+  bellFollowTargetCount: 2
+  bellGazeRequiredSuccesses: 3
+  bellGazeHoldSeconds: 1.4
+  bellGazeConeDegrees: 14
+  generalTinnitusTreatmentSeconds: 4
+  generalTinnitusPositionToleranceMeters: 0.18
+  generalTinnitusRotationToleranceDegrees: 22
+  bossPatternOneSeconds: 7
+  bossPatternTwoSeconds: 8
+  bossPatternThreeSeconds: 10
+  bossOpeningHoldSeconds: 2
+  bossMovingToleranceMeters: 0.42
+  bossMovingToleranceDegrees: 38
