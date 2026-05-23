@@ -15,6 +15,9 @@ namespace BellRinger.FinalDemo
         [SerializeField] private PadTrackingReceiver padTrackingReceiver;
         [SerializeField] private PadImuReceiver padImuReceiver;
         [SerializeField] private PadPoseProvider padPoseProvider;
+        [SerializeField] private FinalDemoAudioRouter audioRouter;
+        [SerializeField] private FinalDemoLightRouter lightRouter;
+        [SerializeField] private FinalDemoHapticRouter hapticRouter;
 
         public HardwareBridge HardwareBridge => hardwareBridge;
         public HeadImuReceiver HeadImuReceiver => headImuReceiver;
@@ -22,6 +25,9 @@ namespace BellRinger.FinalDemo
         public PadTrackingReceiver PadTrackingReceiver => padTrackingReceiver;
         public PadImuReceiver PadImuReceiver => padImuReceiver;
         public PadPoseProvider PadPoseProvider => padPoseProvider;
+        public FinalDemoAudioRouter AudioRouter => audioRouter;
+        public FinalDemoLightRouter LightRouter => lightRouter;
+        public FinalDemoHapticRouter HapticRouter => hapticRouter;
         public bool HardwareConnected => hardwareBridge != null && hardwareBridge.IsConnected;
         public bool HeadFresh => headTiltInputProvider != null && headTiltInputProvider.HasFreshSample;
         public bool PadCameraFresh => padTrackingReceiver != null && padTrackingReceiver.HasFreshDetection;
@@ -47,6 +53,9 @@ namespace BellRinger.FinalDemo
             padTrackingReceiver = FindFirstObjectByType<PadTrackingReceiver>();
             padImuReceiver = FindFirstObjectByType<PadImuReceiver>();
             padPoseProvider = FindFirstObjectByType<PadPoseProvider>();
+            audioRouter = FindFirstObjectByType<FinalDemoAudioRouter>();
+            lightRouter = FindFirstObjectByType<FinalDemoLightRouter>();
+            hapticRouter = FindFirstObjectByType<FinalDemoHapticRouter>();
         }
 
         public string BuildStatusText(FinalDemoDirector director)
@@ -85,13 +94,17 @@ namespace BellRinger.FinalDemo
             }
 
             builder.AppendLine($"Gamepad: {(HasGamepad ? DescribeGamepad() : "(none)")}");
+            builder.AppendLine(audioRouter != null ? audioRouter.BuildStatusText() : "Audio router: missing");
+            builder.AppendLine(lightRouter != null ? $"Light last: {lightRouter.LastAction} priority={lightRouter.HeldPriority}" : "Light router: missing");
+            builder.AppendLine(hapticRouter != null ? $"Haptics active={Bool(hapticRouter.HapticsActive)} continuous={Bool(hapticRouter.Continuous)} last={hapticRouter.LastAction}" : "Haptic router: missing");
             return builder.ToString();
         }
 
         private void RefreshMissingReferences()
         {
             if (hardwareBridge == null || headImuReceiver == null || headTiltInputProvider == null ||
-                padTrackingReceiver == null || padImuReceiver == null || padPoseProvider == null)
+                padTrackingReceiver == null || padImuReceiver == null || padPoseProvider == null ||
+                audioRouter == null || lightRouter == null || hapticRouter == null)
             {
                 RefreshReferences();
             }

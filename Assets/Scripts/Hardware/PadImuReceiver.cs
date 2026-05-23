@@ -719,6 +719,7 @@ namespace BellRinger.Hardware
             {
                 if (IsConnected)
                 {
+                    PreparePortForClose(_serialPort);
                     InvokeMethod(_serialPort, "Close");
                 }
             }
@@ -964,6 +965,36 @@ namespace BellRinger.Hardware
         {
             PropertyInfo propertyInfo = target.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             propertyInfo?.SetValue(target, value);
+        }
+
+        private static void PreparePortForClose(object target)
+        {
+            TrySetProperty(target, "DtrEnable", false);
+            TrySetProperty(target, "RtsEnable", false);
+            TryInvokeMethod(target, "DiscardInBuffer");
+            TryInvokeMethod(target, "DiscardOutBuffer");
+        }
+
+        private static void TrySetProperty(object target, string propertyName, object value)
+        {
+            try
+            {
+                SetProperty(target, propertyName, value);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void TryInvokeMethod(object target, string methodName)
+        {
+            try
+            {
+                InvokeMethod(target, methodName);
+            }
+            catch
+            {
+            }
         }
 
         private static bool GetBooleanProperty(object target, string propertyName)

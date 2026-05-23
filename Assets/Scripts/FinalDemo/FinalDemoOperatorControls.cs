@@ -12,7 +12,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector2 operatorPanelPosition = new Vector2(10f, 10f);
         [SerializeField] private Vector2 statusPanelSize = new Vector2(455f, 430f);
 
-        private Rect _operatorRect = new Rect(10f, 10f, 430f, 420f);
+        private Rect _operatorRect = new Rect(10f, 10f, 520f, 720f);
         private Rect _statusRect = new Rect(0f, 10f, 455f, 430f);
         private Vector2 _statusScroll;
 
@@ -123,13 +123,147 @@ namespace BellRinger.FinalDemo
             }
 
             GUILayout.Space(8f);
-            GUILayout.Label("Bundle 1 QA:");
-            GUILayout.Label("1. Preflight -> Start Demo.");
-            GUILayout.Label("2. Force Next until Complete.");
-            GUILayout.Label("3. Lock/Unlock movement.");
-            GUILayout.Label("4. Recenter head/pad and check status freshness.");
+            DrawAudioTestSection();
+            DrawLightHapticTestSection();
 
             GUI.DragWindow();
+        }
+
+        private void DrawAudioTestSection()
+        {
+            GUILayout.Label("Bundle 2 Audio Tests");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Bell OneShot"))
+            {
+                director.AudioRouter?.PlayOneShot(FinalDemoCueId.BellDistantCall, ResolveFrontPosition(2.2f), 1f);
+            }
+
+            if (GUILayout.Button("Narr Duck"))
+            {
+                director.AudioRouter?.PlayOneShot(FinalDemoCueId.NarrFollowBell, ResolveFrontPosition(1.1f), 1f);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Start Rain Loop"))
+            {
+                director.AudioRouter?.StartLoop(FinalDemoCueId.RainLightBed, ResolveFrontPosition(4f), 0.65f);
+            }
+
+            if (GUILayout.Button("Stop Rain Loop"))
+            {
+                director.AudioRouter?.StopLoop(FinalDemoCueId.RainLightBed);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Start Tinnitus Loop"))
+            {
+                director.AudioRouter?.StartLoop(FinalDemoCueId.TinnitusLongGlitch, ResolveFrontPosition(2.6f), 0.55f);
+            }
+
+            if (GUILayout.Button("Stop Tinnitus Loop"))
+            {
+                director.AudioRouter?.StopLoop(FinalDemoCueId.TinnitusLongGlitch);
+            }
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Stop Audio"))
+            {
+                director.AudioRouter?.StopAllCues();
+            }
+        }
+
+        private void DrawLightHapticTestSection()
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("Bundle 3 Light / Haptic Tests");
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Bell LED"))
+            {
+                director.LightRouter?.ShowBellPoint(ResolveFrontPosition(2f), 1f);
+            }
+
+            if (GUILayout.Button("Rain LED"))
+            {
+                director.LightRouter?.ShowRainFloorBand(0.45f);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Tinnitus LED"))
+            {
+                director.LightRouter?.ShowTinnitusPoint(ResolveFrontPosition(2.4f), 0.75f);
+            }
+
+            if (GUILayout.Button("Boss LED"))
+            {
+                director.LightRouter?.ShowTinnitusPoint(ResolveFrontPosition(3f), 0.9f, true);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Rain Then Bell Priority"))
+            {
+                director.LightRouter?.ShowRainFloorBand(0.55f);
+                director.LightRouter?.ShowBellPoint(ResolveFrontPosition(2f), 1f);
+                director.LightRouter?.ShowRainFloorBand(0.55f);
+            }
+
+            if (GUILayout.Button("Clear LED"))
+            {
+                director.LightRouter?.Clear();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Bell Assist Vib"))
+            {
+                director.HapticRouter?.TriggerBellAssistPulse();
+            }
+
+            if (GUILayout.Button("Tinnitus Lock Vib"))
+            {
+                director.HapticRouter?.TriggerTinnitusLockPulse();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Cleanse Hum"))
+            {
+                director.HapticRouter?.StartTinnitusCleanseHum();
+            }
+
+            if (GUILayout.Button("Boss Hit Vib"))
+            {
+                director.HapticRouter?.TriggerBossHitPulse();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Boss Failure Vib"))
+            {
+                director.HapticRouter?.TriggerBossFailurePulse();
+            }
+
+            if (GUILayout.Button("Stop Haptics"))
+            {
+                director.HapticRouter?.StopAllHaptics();
+            }
+            GUILayout.EndHorizontal();
+        }
+
+        private Vector3 ResolveFrontPosition(float distance)
+        {
+            Transform playerRig = director.PlayerRig;
+            if (playerRig == null)
+            {
+                return new Vector3(0f, 1.5f, distance);
+            }
+
+            return playerRig.position + playerRig.forward * distance;
         }
 
         private void DrawStatusWindow(int windowId)

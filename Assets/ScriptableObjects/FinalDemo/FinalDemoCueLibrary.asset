@@ -14,74 +14,499 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cues:
   - id: 1
-    operatorLabel: Opening ambience
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
-    loop: 0
+    operatorLabel: Bell opening/orbit
+    audioClip: {fileID: 8300000, guid: 79f89c5fa8dd8324da4bc9dd35f7fd49, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.54
+    loop: 1
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.45
+    maxDistance: 14
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 0
     stopOnStageExit: 1
   - id: 2
-    operatorLabel: Close bell
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Bell movement texture
+    audioClip: {fileID: 8300000, guid: 589c0d6d5adda2f4aae22321308d8b02, type: 3}
+    alternateClips:
+    - {fileID: 8300000, guid: 0f7d8a344ac439341bda19784742f6fb, type: 3}
+    bus: 1
+    defaultVolume: 0.5
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.45
+    maxDistance: 14
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 0
     stopOnStageExit: 1
   - id: 3
-    operatorLabel: Bell orbit
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Bell distant call
+    audioClip: {fileID: 8300000, guid: 8644e9873098d3e4bbe92538a2c1ad79, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.65
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 16
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 1
     stopOnStageExit: 1
   - id: 4
-    operatorLabel: Bell follow cue
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Bell strong assist
+    audioClip: {fileID: 8300000, guid: f5decebc561acac4ca9058da21a5da66, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.72
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 16
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 1
     stopOnStageExit: 1
   - id: 5
-    operatorLabel: Rain and wind masking
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Bell pad shake response
+    audioClip: {fileID: 8300000, guid: 171470e9b0bafd94582a2cde89763632, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.58
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.35
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 1
     stopOnStageExit: 1
   - id: 6
-    operatorLabel: Bell gaze loop
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Bell gaze success
+    audioClip: {fileID: 8300000, guid: 7d7296f0147c7e2498d68bc02765a02c, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.6
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.45
+    maxDistance: 12
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 0
     stopOnStageExit: 1
   - id: 7
     operatorLabel: Bell acquisition
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    audioClip: {fileID: 8300000, guid: a8df82399c686cc4d8da7fe3b2b81517, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.62
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.35
+    maxDistance: 12
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 2
     stopOnStageExit: 1
   - id: 8
-    operatorLabel: General tinnitus
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
-    loop: 0
+    operatorLabel: Rain light bed
+    audioClip: {fileID: 8300000, guid: d845edaaa7907ca498f71f517b25c4ff, type: 3}
+    alternateClips: []
+    bus: 2
+    defaultVolume: 0.48
+    loop: 1
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 12500
+    highPassCutoff: 10
+    lightBinding: 2
+    hapticBinding: 9
     stopOnStageExit: 1
   - id: 9
-    operatorLabel: Tinnitus resolve
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Rain close drops
+    audioClip: {fileID: 8300000, guid: 78934559900277a409855fe858b53b2b, type: 3}
+    alternateClips: []
+    bus: 2
+    defaultVolume: 0.38
     loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 8
+    lowPassCutoff: 16000
+    highPassCutoff: 10
+    lightBinding: 2
+    hapticBinding: 9
     stopOnStageExit: 1
   - id: 10
-    operatorLabel: Boss tinnitus
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
-    loop: 0
+    operatorLabel: Rain strong bed
+    audioClip: {fileID: 8300000, guid: b1b14081e4332d84b916b2a3a357f391, type: 3}
+    alternateClips: []
+    bus: 2
+    defaultVolume: 0.5
+    loop: 1
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 12000
+    highPassCutoff: 10
+    lightBinding: 2
+    hapticBinding: 9
     stopOnStageExit: 1
   - id: 11
-    operatorLabel: Boss resolve
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Narration follow bell
+    audioClip: {fileID: 8300000, guid: 8c9ae5d731ce00e478a3ebc456d988b2, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
     loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
     stopOnStageExit: 1
   - id: 12
-    operatorLabel: Forest ending
-    audioClip: {fileID: 0}
-    defaultVolume: 0.55
+    operatorLabel: Narration look bell
+    audioClip: {fileID: 8300000, guid: 1e389b6aa405bc94c9317f6f3f8f0340, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
     loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 13
+    operatorLabel: Tinnitus long glitch
+    audioClip: {fileID: 8300000, guid: e62f0b53259ad284698d6d6e1e13a10a, type: 3}
+    alternateClips: []
+    bus: 3
+    defaultVolume: 0.34
+    loop: 1
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 12
+    lowPassCutoff: 18000
+    highPassCutoff: 1200
+    lightBinding: 3
+    hapticBinding: 3
+    stopOnStageExit: 1
+  - id: 14
+    operatorLabel: Tinnitus burst
+    audioClip: {fileID: 8300000, guid: 75b30e2df524a2d4ab9c384227594ea4, type: 3}
+    alternateClips: []
+    bus: 3
+    defaultVolume: 0.42
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.35
+    maxDistance: 12
+    lowPassCutoff: 18000
+    highPassCutoff: 800
+    lightBinding: 3
+    hapticBinding: 3
+    stopOnStageExit: 1
+  - id: 15
+    operatorLabel: Tinnitus pose lock
+    audioClip: {fileID: 8300000, guid: 8393e96fa4c3fc04687d98c6217ee65a, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.5
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 8
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 6
+    hapticBinding: 4
+    stopOnStageExit: 1
+  - id: 16
+    operatorLabel: Tinnitus pose lost
+    audioClip: {fileID: 8300000, guid: 6a9b23f3b1f51c842b60be5bfb22f6bc, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.36
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 8
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 6
+    hapticBinding: 8
+    stopOnStageExit: 1
+  - id: 17
+    operatorLabel: Tinnitus healing loop
+    audioClip: {fileID: 8300000, guid: ce09848597e0a6440b03a507cce28863, type: 3}
+    alternateClips: []
+    bus: 3
+    defaultVolume: 0.36
+    loop: 1
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.35
+    maxDistance: 10
+    lowPassCutoff: 18000
+    highPassCutoff: 700
+    lightBinding: 3
+    hapticBinding: 5
+    stopOnStageExit: 1
+  - id: 18
+    operatorLabel: Tinnitus resolve
+    audioClip: {fileID: 8300000, guid: c3359f320bb2d08459281bfe18e605b6, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.62
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.35
+    maxDistance: 12
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 3
+    hapticBinding: 8
+    stopOnStageExit: 1
+  - id: 19
+    operatorLabel: Boss base pulse
+    audioClip: {fileID: 8300000, guid: 479d601064e323b49b67daad2f7572aa, type: 3}
+    alternateClips: []
+    bus: 4
+    defaultVolume: 0.48
+    loop: 1
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 16
+    lowPassCutoff: 16000
+    highPassCutoff: 60
+    lightBinding: 4
+    hapticBinding: 6
+    stopOnStageExit: 1
+  - id: 20
+    operatorLabel: Boss glitch burst
+    audioClip: {fileID: 8300000, guid: 51113352cf42c5f4d98d548a7773527b, type: 3}
+    alternateClips: []
+    bus: 4
+    defaultVolume: 0.48
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 16
+    lowPassCutoff: 18000
+    highPassCutoff: 250
+    lightBinding: 4
+    hapticBinding: 7
+    stopOnStageExit: 1
+  - id: 21
+    operatorLabel: Boss weakpoint move
+    audioClip: {fileID: 8300000, guid: 23ab66f89c6036043a7e3f050f537a31, type: 3}
+    alternateClips: []
+    bus: 4
+    defaultVolume: 0.5
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 14
+    lowPassCutoff: 16000
+    highPassCutoff: 120
+    lightBinding: 4
+    hapticBinding: 6
+    stopOnStageExit: 1
+  - id: 22
+    operatorLabel: Boss hit
+    audioClip: {fileID: 8300000, guid: 8cfc7cbd149ed6648afabf680559b143, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.58
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 14
+    lowPassCutoff: 18000
+    highPassCutoff: 80
+    lightBinding: 4
+    hapticBinding: 8
+    stopOnStageExit: 1
+  - id: 23
+    operatorLabel: Boss defeat rise
+    audioClip: {fileID: 8300000, guid: 3b180d023dc77d548899b385666c5e27, type: 3}
+    alternateClips: []
+    bus: 4
+    defaultVolume: 0.58
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 4
+    hapticBinding: 8
+    stopOnStageExit: 1
+  - id: 24
+    operatorLabel: Boss defeat air
+    audioClip: {fileID: 8300000, guid: 052982b090a74054481378a3db3f184d, type: 3}
+    alternateClips: []
+    bus: 5
+    defaultVolume: 0.52
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 25
+    operatorLabel: Transition soft cut
+    audioClip: {fileID: 8300000, guid: 1cadd7b660420804bb50a4b36dcd65ab, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.48
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 26
+    operatorLabel: Forest bed
+    audioClip: {fileID: 8300000, guid: d2a0fbdf55ebe7c438739f22f06b8221, type: 3}
+    alternateClips: []
+    bus: 5
+    defaultVolume: 0.5
+    loop: 1
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 18000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 27
+    operatorLabel: Forest bell
+    audioClip: {fileID: 8300000, guid: 79f89c5fa8dd8324da4bc9dd35f7fd49, type: 3}
+    alternateClips: []
+    bus: 1
+    defaultVolume: 0.52
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.5
+    maxDistance: 16
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 1
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 28
+    operatorLabel: Narration pad shake assist
+    audioClip: {fileID: 8300000, guid: 0ebf0a1fa3e13fc4c89312e0be9846c3, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 29
+    operatorLabel: Narration find tinnitus pose
+    audioClip: {fileID: 8300000, guid: c3c7b3c8abb70a14a928d08b4a7b77fa, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 30
+    operatorLabel: Narration hold pose
+    audioClip: {fileID: 8300000, guid: d44a2340a34ddd546a19eba5dbf30ff1, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 31
+    operatorLabel: Narration boss track
+    audioClip: {fileID: 8300000, guid: 43cb2af4a5ec6334f909b5a6dfdd1540, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
     stopOnStageExit: 1

@@ -1,6 +1,10 @@
 #include <Adafruit_NeoPixel.h>
 #include <Wire.h>
 
+// Complete VR/head bridge for Geekble nano ESP32-S3.
+// One serial port handles both Unity LED commands and head MPU9250 telemetry.
+// Default wiring: WS2812B panels on header D6/D7, MPU9250 on SDA=11/SCL=12.
+
 const unsigned long kBaudRate = 115200;
 const unsigned long kTelemetryIntervalMs = 10;
 const int kPixelsPerMatrix = 64;
@@ -23,7 +27,7 @@ const uint8_t kRegisterAccelConfig2 = 0x1D;
 const uint8_t kRegisterAccelXoutH = 0x3B;
 
 #if defined(ARDUINO_ARCH_ESP32)
-const bool kEnablePadImu = true;
+const bool kEnableHeadImu = true;
 const bool kEnableTelemetry = true;
 const int kButtonPin = -1;
 const int kLeftMatrixPin = 9;    // Header D6 on the Geekble nano ESP32-S3
@@ -31,7 +35,7 @@ const int kRightMatrixPin = 10;  // Header D7 on the Geekble nano ESP32-S3
 const int kImuSdaPin = 11;       // Header A4
 const int kImuSclPin = 12;       // Header A5 / SCL
 #else
-const bool kEnablePadImu = false;
+const bool kEnableHeadImu = false;
 const bool kEnableTelemetry = false;
 const int kButtonPin = 2;
 const int kLeftMatrixPin = 6;
@@ -45,13 +49,13 @@ String incomingLine;
 unsigned long lastTelemetryAt = 0;
 unsigned long lastImuSampleAtUs = 0;
 uint8_t gMpuAddress = 0;
-bool gHasPadOrientation = false;
-float gPadYawDegrees = 0.0f;
-float gPadPitchDegrees = 0.0f;
-float gPadRollDegrees = 0.0f;
-float gPadYawZeroDegrees = 0.0f;
-float gPadPitchZeroDegrees = 0.0f;
-float gPadRollZeroDegrees = 0.0f;
+bool gHasHeadOrientation = false;
+float gHeadYawDegrees = 0.0f;
+float gHeadPitchDegrees = 0.0f;
+float gHeadRollDegrees = 0.0f;
+float gHeadYawZeroDegrees = 0.0f;
+float gHeadPitchZeroDegrees = 0.0f;
+float gHeadRollZeroDegrees = 0.0f;
 float gQuatW = 1.0f;
 float gQuatX = 0.0f;
 float gQuatY = 0.0f;
@@ -103,7 +107,7 @@ bool probeMpuDevice(uint8_t address, uint8_t& whoAmI) {
   return readRegisters(address, kRegisterWhoAmI, 1, &whoAmI);
 }
 
-bool detectPadMpuAddress() {
+bool detectHeadMpuAddress() {
   uint8_t whoAmI = 0;
   if (probeMpuDevice(kMpu9250AddressLow, whoAmI)) {
     gMpuAddress = kMpu9250AddressLow;
@@ -122,7 +126,7 @@ bool detectPadMpuAddress() {
   return false;
 }
 
-bool initializePadMpu() {
+bool initializeHeadMpu() {
   if (gMpuAddress == 0) {
     return false;
   }
@@ -164,7 +168,7 @@ bool initializePadMpu() {
   return true;
 }
 
-bool readPadImuSample(ImuSample& sample) {
+bool readHeadImuSample(ImuSample& sample) {
   if (gMpuAddress == 0) {
     return false;
   }
@@ -190,13 +194,13 @@ bool readPadImuSample(ImuSample& sample) {
   return true;
 }
 
-void recenterPadImu() {
-  gPadYawZeroDegrees = gPadYawDegrees;
-  gPadPitchZeroDegrees = gPadPitchDegrees;
-  gPadRollZeroDegrees = gPadRollDegrees;
+void recenterHeadImu() {
+  gHeadYawZeroDegrees = gHeadYawDegrees;
+  gHeadPitchZeroDegrees = gHeadPitchDegrees;
+  gHeadRollZeroDegrees = gHeadRollDegrees;
 }
 
-void calibratePadGyroBias() {
+void calibrateHeadGyroBias() {
   Serial.println("ACK imu_calibrating");
 
   float sumX = 0.0f;
@@ -206,7 +210,7 @@ void calibratePadGyroBias() {
 
   while (captured < kGyroCalibrationSamples) {
     ImuSample sample = {};
-    if (!readPadImuSample(sample)) {
+    if (!readHeadImuSample(sample)) {
       delay(10);
       continue;
     }
@@ -352,25 +356,25 @@ void madgwickUpdateImu(const ImuSample& sample, float deltaSeconds) {
   gQuatZ = q3;
 }
 
-void updatePadOrientation(const ImuSample& sample, float deltaSeconds) {
+void updateHeadOrientation(const ImuSample& sample, float deltaSeconds) {
   const float accelRollDegrees = atan2(sample.accelYG, sample.accelZG) * 180.0f / PI;
   const float accelPitchDegrees = atan2(-sample.accelXG, sqrt((sample.accelYG * sample.accelYG) + (sample.accelZG * sample.accelZG))) * 180.0f / PI;
 
-  if (!gHasPadOrientation) {
+  if (!gHasHeadOrientation) {
     setQuaternionFromYawPitchRoll(0.0f, accelPitchDegrees, accelRollDegrees);
-    gHasPadOrientation = true;
-    recenterPadImu();
+    gHasHeadOrientation = true;
+    recenterHeadImu();
   }
 
   madgwickUpdateImu(sample, deltaSeconds);
-  quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, gPadYawDegrees, gPadPitchDegrees, gPadRollDegrees);
-  gPadYawDegrees = wrapDegrees(gPadYawDegrees);
-  gPadPitchDegrees = wrapDegrees(gPadPitchDegrees);
-  gPadRollDegrees = wrapDegrees(gPadRollDegrees);
+  quaternionToYawPitchRollDegrees(gQuatW, gQuatX, gQuatY, gQuatZ, gHeadYawDegrees, gHeadPitchDegrees, gHeadRollDegrees);
+  gHeadYawDegrees = wrapDegrees(gHeadYawDegrees);
+  gHeadPitchDegrees = wrapDegrees(gHeadPitchDegrees);
+  gHeadRollDegrees = wrapDegrees(gHeadRollDegrees);
 }
 
-void servicePadImu() {
-  if (!kEnablePadImu || gMpuAddress == 0) {
+void serviceHeadImu() {
+  if (!kEnableHeadImu || gMpuAddress == 0) {
     return;
   }
 
@@ -382,11 +386,11 @@ void servicePadImu() {
 
   lastImuSampleAtUs = nowUs;
   ImuSample sample = {};
-  if (!readPadImuSample(sample)) {
+  if (!readHeadImuSample(sample)) {
     return;
   }
 
-  updatePadOrientation(sample, elapsedUs * 0.000001f);
+  updateHeadOrientation(sample, elapsedUs * 0.000001f);
 }
 
 void waitForSerialReady() {
@@ -421,12 +425,12 @@ void setup() {
 
   Serial.println("ACK boot");
 
-  if (kEnablePadImu) {
+  if (kEnableHeadImu) {
     startWireBus();
     Wire.setClock(400000UL);
 
-    if (detectPadMpuAddress() && initializePadMpu()) {
-      calibratePadGyroBias();
+    if (detectHeadMpuAddress() && initializeHeadMpu()) {
+      calibrateHeadGyroBias();
       lastImuSampleAtUs = micros();
     } else {
       Serial.println("ACK imu_missing");
@@ -436,8 +440,8 @@ void setup() {
 
 void loop() {
   readCommands();
-  if (kEnablePadImu) {
-    servicePadImu();
+  if (kEnableHeadImu) {
+    serviceHeadImu();
   }
   sendTelemetry();
 }
@@ -470,8 +474,8 @@ void handleCommand(const String& command) {
   if (command == "PING") {
     Serial.println("ACK ping");
   } else if (command == "IMU recenter" || command == "r" || command == "recenter") {
-    if (kEnablePadImu) {
-      recenterPadImu();
+    if (kEnableHeadImu) {
+      recenterHeadImu();
       Serial.println("ACK imu_recenter");
     } else {
       Serial.println("ACK imu_disabled");
@@ -519,9 +523,9 @@ void sendTelemetry() {
 
   lastTelemetryAt = now;
 
-  float headYaw = gHasPadOrientation ? wrapDegrees(gPadYawDegrees - gPadYawZeroDegrees) : 0.0f;
-  float headPitch = gHasPadOrientation ? wrapDegrees(gPadPitchDegrees - gPadPitchZeroDegrees) : 0.0f;
-  float headRoll = gHasPadOrientation ? wrapDegrees(gPadRollDegrees - gPadRollZeroDegrees) : 0.0f;
+  float headYaw = gHasHeadOrientation ? wrapDegrees(gHeadYawDegrees - gHeadYawZeroDegrees) : 0.0f;
+  float headPitch = gHasHeadOrientation ? wrapDegrees(gHeadPitchDegrees - gHeadPitchZeroDegrees) : 0.0f;
+  float headRoll = gHasHeadOrientation ? wrapDegrees(gHeadRollDegrees - gHeadRollZeroDegrees) : 0.0f;
   float handYaw = 0.0f;
   float handPitch = 0.0f;
   float handRoll = 0.0f;

@@ -27,6 +27,7 @@ namespace BellRinger.Hardware
         [SerializeField] private float smoothingStrength = 16f;
         [SerializeField] private float stillnessHoldThreshold = 0.84f;
         [SerializeField] private float inferredStillFrameDeltaDegrees = 0.18f;
+        [SerializeField] private float inferredStillMaxDegreesPerSecond = 8f;
         [SerializeField] private float stillnessPhysicalDriftToleranceDegrees = 0.7f;
         [SerializeField] private float snapToNeutralVirtualDegrees = 0.18f;
         [SerializeField] private bool invertYaw = true;
@@ -106,12 +107,15 @@ namespace BellRinger.Hardware
                 bool hasInferredStillness = false;
                 if (_hasPreviousPhysicalSample)
                 {
+                    float inferredStillnessThreshold = Mathf.Max(
+                        inferredStillFrameDeltaDegrees,
+                        Mathf.Max(0.0001f, Time.unscaledDeltaTime) * Mathf.Max(0f, inferredStillMaxDegreesPerSecond));
                     float yawFrameDelta = Mathf.Abs(NormalizeSignedAngle(_physicalYawDegrees - _previousPhysicalYawDegrees));
                     float pitchFrameDelta = Mathf.Abs(NormalizeSignedAngle(_physicalPitchDegrees - _previousPhysicalPitchDegrees));
                     float rollFrameDelta = Mathf.Abs(NormalizeSignedAngle(_physicalRollDegrees - _previousPhysicalRollDegrees));
-                    hasInferredStillness = yawFrameDelta <= inferredStillFrameDeltaDegrees &&
-                                           pitchFrameDelta <= inferredStillFrameDeltaDegrees &&
-                                           rollFrameDelta <= inferredStillFrameDeltaDegrees;
+                    hasInferredStillness = yawFrameDelta <= inferredStillnessThreshold &&
+                                           pitchFrameDelta <= inferredStillnessThreshold &&
+                                           rollFrameDelta <= inferredStillnessThreshold;
                 }
 
                 bool isStill = headImuReceiver.Stillness01 >= stillnessHoldThreshold || hasInferredStillness;

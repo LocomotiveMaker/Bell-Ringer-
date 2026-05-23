@@ -1,11 +1,18 @@
 # Arduino Setup
 
-- Default baud rate: `115200`
-- Unity can target a fixed port with `BELL_RINGER_SERIAL_PORT=COM9`
+- VR/head ESP32-S3 upload target: `arduino/HeadMpu9250LedBridge/HeadMpu9250LedBridge.ino`
+  - Combines WS2812B LED command handling and MPU9250 head telemetry on one COM port.
+  - LED data pins use header `D6` = `GPIO9`, `D7` = `GPIO10`.
+  - Do not use `HeadMpu9250Tilt.ino` for the VR/head final wiring; it is IMU-only and ignores LED commands.
+- Pad ESP32-S3 upload target: `arduino/PadMpu9250Orientation/PadMpu9250Orientation.ino`
+  - Sends pad IMU pose telemetry at `230400`. Gamepad vibration is handled by Unity through the connected PC gamepad, not by this Arduino sketch.
+- VR/head bridge baud rate: `115200`
+- Dedicated pad IMU baud rate: `230400`
+- Unity can target a fixed head/LED port with `BELL_RINGER_SERIAL_PORT=COM40`
 - Unity can override baud with `BELL_RINGER_SERIAL_BAUD=115200`
 - If no device is attached, Unity falls back to keyboard simulation by default
 - Current input philosophy:
-  - `head`: 6-axis `pitch/roll` only, Unity maps `roll -> virtual yaw`
+  - `head`: VR/head bridge sends `hy/hp/hr`; Unity decides which axes drive the virtual camera.
   - `pad`: camera owns `position + yaw`, IMU owns `pitch/roll`
 
 Expected telemetry line format:

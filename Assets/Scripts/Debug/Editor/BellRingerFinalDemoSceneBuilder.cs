@@ -31,6 +31,9 @@ namespace BellRinger.Debug.Editor
             GameObject playerRig = CreatePlayerRig(root.transform);
             GameObject hardwareRoot = CreateHardwareRoot(root.transform);
             GameObject padInputRoot = CreatePadInputRoot(root.transform);
+            GameObject audioRoot = CreateAudioRoot(root.transform, cueLibrary, playerRig.transform);
+            GameObject lightRoot = CreateLightRoot(root.transform, playerRig.transform, hardwareRoot.GetComponent<HardwareBridge>());
+            GameObject hapticRoot = CreateHapticRoot(root.transform);
             CreatePlaceholderWorld(root.transform);
 
             SerializedObject directorObject = new SerializedObject(director);
@@ -41,6 +44,9 @@ namespace BellRinger.Debug.Editor
             directorObject.FindProperty("movementController").objectReferenceValue = playerRig.GetComponent<BellRingerSimpleMoveLookController>();
             directorObject.FindProperty("inputStatus").objectReferenceValue = inputStatus;
             directorObject.FindProperty("operatorControls").objectReferenceValue = operatorControls;
+            directorObject.FindProperty("audioRouter").objectReferenceValue = audioRoot.GetComponent<FinalDemoAudioRouter>();
+            directorObject.FindProperty("lightRouter").objectReferenceValue = lightRoot.GetComponent<FinalDemoLightRouter>();
+            directorObject.FindProperty("hapticRouter").objectReferenceValue = hapticRoot.GetComponent<FinalDemoHapticRouter>();
             directorObject.ApplyModifiedPropertiesWithoutUndo();
 
             SerializedObject statusObject = new SerializedObject(inputStatus);
@@ -50,6 +56,9 @@ namespace BellRinger.Debug.Editor
             statusObject.FindProperty("padTrackingReceiver").objectReferenceValue = padInputRoot.GetComponent<PadTrackingReceiver>();
             statusObject.FindProperty("padImuReceiver").objectReferenceValue = padInputRoot.GetComponent<PadImuReceiver>();
             statusObject.FindProperty("padPoseProvider").objectReferenceValue = padInputRoot.GetComponent<PadPoseProvider>();
+            statusObject.FindProperty("audioRouter").objectReferenceValue = audioRoot.GetComponent<FinalDemoAudioRouter>();
+            statusObject.FindProperty("lightRouter").objectReferenceValue = lightRoot.GetComponent<FinalDemoLightRouter>();
+            statusObject.FindProperty("hapticRouter").objectReferenceValue = hapticRoot.GetComponent<FinalDemoHapticRouter>();
             statusObject.ApplyModifiedPropertiesWithoutUndo();
 
             SerializedObject controlsObject = new SerializedObject(operatorControls);
@@ -97,6 +106,32 @@ namespace BellRinger.Debug.Editor
             padInputRoot.AddComponent<PadImuReceiver>();
             padInputRoot.AddComponent<PadPoseProvider>();
             return padInputRoot;
+        }
+
+        private static GameObject CreateAudioRoot(Transform root, FinalDemoCueLibrary cueLibrary, Transform listener)
+        {
+            GameObject audioRoot = new GameObject("WorldAudio");
+            audioRoot.transform.SetParent(root);
+            FinalDemoAudioRouter router = audioRoot.AddComponent<FinalDemoAudioRouter>();
+            router.Initialize(cueLibrary, listener);
+            return audioRoot;
+        }
+
+        private static GameObject CreateLightRoot(Transform root, Transform listener, HardwareBridge hardwareBridge)
+        {
+            GameObject lightRoot = new GameObject("WorldLight");
+            lightRoot.transform.SetParent(root);
+            FinalDemoLightRouter router = lightRoot.AddComponent<FinalDemoLightRouter>();
+            router.Initialize(listener, hardwareBridge);
+            return lightRoot;
+        }
+
+        private static GameObject CreateHapticRoot(Transform root)
+        {
+            GameObject hapticRoot = new GameObject("WorldHaptics");
+            hapticRoot.transform.SetParent(root);
+            hapticRoot.AddComponent<FinalDemoHapticRouter>();
+            return hapticRoot;
         }
 
         private static void CreatePlaceholderWorld(Transform root)

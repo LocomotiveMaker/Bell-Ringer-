@@ -66,6 +66,11 @@ namespace BellRinger.Hardware
                 return;
             }
 
+            if (ShouldWaitForSharedHardwareBridge())
+            {
+                return;
+            }
+
             if (IsConnected)
             {
                 PollSerialInput();
@@ -190,8 +195,18 @@ namespace BellRinger.Hardware
             return true;
         }
 
+        private bool ShouldWaitForSharedHardwareBridge()
+        {
+            return useSharedHardwareBridgeTelemetry && string.IsNullOrWhiteSpace(preferredPortName);
+        }
+
         private void TryConnect()
         {
+            if (ShouldWaitForSharedHardwareBridge())
+            {
+                return;
+            }
+
             if (_usingSharedHardwareBridgeTelemetry)
             {
                 return;
@@ -270,6 +285,7 @@ namespace BellRinger.Hardware
             {
                 if (GetBooleanProperty(_serialPort, "IsOpen"))
                 {
+                    PreparePortForClose(_serialPort);
                     InvokeMethod(_serialPort, "Close");
                 }
             }
@@ -439,6 +455,36 @@ namespace BellRinger.Hardware
         private static void SetProperty(object target, string propertyName, object value)
         {
             target.GetType().InvokeMember(propertyName, BindingFlags.SetProperty | BindingFlags.Public | BindingFlags.Instance, null, target, new[] { value });
+        }
+
+        private static void PreparePortForClose(object target)
+        {
+            TrySetProperty(target, "DtrEnable", false);
+            TrySetProperty(target, "RtsEnable", false);
+            TryInvokeMethod(target, "DiscardInBuffer");
+            TryInvokeMethod(target, "DiscardOutBuffer");
+        }
+
+        private static void TrySetProperty(object target, string propertyName, object value)
+        {
+            try
+            {
+                SetProperty(target, propertyName, value);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void TryInvokeMethod(object target, string methodName)
+        {
+            try
+            {
+                InvokeMethod(target, methodName);
+            }
+            catch
+            {
+            }
         }
 
         private static string DescribeException(Exception exception)
