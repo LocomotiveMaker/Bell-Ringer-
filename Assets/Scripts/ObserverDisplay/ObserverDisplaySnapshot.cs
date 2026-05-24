@@ -16,6 +16,12 @@ namespace BellRinger.ObserverDisplay
         public string objectiveLabel;
         public float objectiveProgress01;
         public string activeSoundFocusLabel;
+        public float rainIntensity01;
+        public float bellGazeProgress01;
+        public float tinnitusProgress01;
+        public float tinnitusMatch01;
+        public float bossPatternProgress01;
+        public float bossPatternMatch01;
         public ObserverTrackingHealth headTracking;
         public ObserverTrackingHealth padCameraTracking;
         public ObserverTrackingHealth padImuTracking;

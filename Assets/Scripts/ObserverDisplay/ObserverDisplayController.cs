@@ -31,6 +31,11 @@ namespace BellRinger.ObserverDisplay
         private ObserverLedMatrixPreview _ledPreview;
         private ObserverPadView _padView;
         private ObserverBellView _bellView;
+        private ObserverRainView _rainView;
+        private ObserverTinnitusView _tinnitusView;
+        private ObserverBossTinnitusView _bossView;
+        private ObserverForestView _forestView;
+        private Transform _worldVisualRoot;
         private RectTransform _leftPanelRect;
         private RectTransform _centerPanelRect;
         private RectTransform _rightPanelRect;
@@ -64,6 +69,10 @@ namespace BellRinger.ObserverDisplay
             _ledPreview?.Bind(lightRouter);
             _padView?.ApplySnapshot(_snapshot, inputStatus, _snapshot.hasBell, _snapshot.bellWorldPosition);
             _bellView?.ApplySnapshot(_snapshot, director, _audioCueSnapshots, inputStatus != null && inputStatus.PadImuReceiver != null ? inputStatus.PadImuReceiver.MotionIntensity01 : 0f);
+            _rainView?.ApplySnapshot(_snapshot, director);
+            _tinnitusView?.ApplySnapshot(_snapshot, director);
+            _bossView?.ApplySnapshot(_snapshot, director);
+            _forestView?.ApplySnapshot(_snapshot, director);
         }
 
         private void EnsureReferences()
@@ -161,15 +170,24 @@ namespace BellRinger.ObserverDisplay
 
         private void EnsureWorldViews()
         {
-            if (_padView != null && _bellView != null)
+            if (_padView != null && _bellView != null && _rainView != null && _tinnitusView != null && _bossView != null && _forestView != null)
             {
                 return;
             }
 
-            GameObject worldVisualRoot = new GameObject("ObserverWorldViews");
-            worldVisualRoot.transform.SetParent(transform, false);
-            _padView = worldVisualRoot.AddComponent<ObserverPadView>();
-            _bellView = worldVisualRoot.AddComponent<ObserverBellView>();
+            if (_worldVisualRoot == null)
+            {
+                GameObject worldVisualRoot = new GameObject("ObserverWorldViews");
+                worldVisualRoot.transform.SetParent(transform, false);
+                _worldVisualRoot = worldVisualRoot.transform;
+            }
+
+            _padView ??= _worldVisualRoot.gameObject.AddComponent<ObserverPadView>();
+            _bellView ??= _worldVisualRoot.gameObject.AddComponent<ObserverBellView>();
+            _rainView ??= _worldVisualRoot.gameObject.AddComponent<ObserverRainView>();
+            _tinnitusView ??= _worldVisualRoot.gameObject.AddComponent<ObserverTinnitusView>();
+            _bossView ??= _worldVisualRoot.gameObject.AddComponent<ObserverBossTinnitusView>();
+            _forestView ??= _worldVisualRoot.gameObject.AddComponent<ObserverForestView>();
         }
 
         private void LayoutPanels()
@@ -222,6 +240,12 @@ namespace BellRinger.ObserverDisplay
             _snapshot.objectiveLabel = director.CurrentObjectiveLabel;
             _snapshot.objectiveProgress01 = director.CurrentObjectiveProgress01;
             _snapshot.activeSoundFocusLabel = ResolveFocusLabel();
+            _snapshot.rainIntensity01 = director.CurrentRainIntensity;
+            _snapshot.bellGazeProgress01 = director.BellGazeProgress01;
+            _snapshot.tinnitusProgress01 = director.GeneralTinnitusProgress01;
+            _snapshot.tinnitusMatch01 = director.GeneralTinnitusMatch01;
+            _snapshot.bossPatternProgress01 = director.CurrentBossPatternProgress01;
+            _snapshot.bossPatternMatch01 = director.CurrentBossPatternTargetMatch01;
             _snapshot.playerWorldPosition = director.PlayerRig != null ? director.PlayerRig.position : Vector3.zero;
             _snapshot.headTracking = ResolveHeadHealth();
             _snapshot.padCameraTracking = ResolvePadCameraHealth();

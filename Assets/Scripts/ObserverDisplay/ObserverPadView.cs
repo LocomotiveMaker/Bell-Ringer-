@@ -1,4 +1,5 @@
 using BellRinger.FinalDemo;
+using System.IO;
 using UnityEngine;
 
 namespace BellRinger.ObserverDisplay
@@ -15,6 +16,8 @@ namespace BellRinger.ObserverDisplay
         private Transform _topSurface;
         private LineRenderer _linkRenderer;
         private TintedRenderer[] _tintedRenderers;
+        private Renderer _sourcedCardRenderer;
+        private bool _usingSourcedCard;
         private bool _initialized;
         private bool _hasKnownPose;
         private Vector3 _lastKnownPosition;
@@ -128,6 +131,13 @@ namespace BellRinger.ObserverDisplay
             _topSurface.SetParent(_modelRoot, false);
             _topSurface.localPosition = new Vector3(0f, 0.036f, 0.02f);
 
+            Texture2D sourcedTexture = ObserverSourceTextureLoader.LoadColorKeyedJpeg("ThirdParty/ObserverSource/PolyPizza/controller-poly-pizza.jpg", 0.14f);
+            if (sourcedTexture != null)
+            {
+                _usingSourcedCard = true;
+                _sourcedCardRenderer = CreateSourcedCard("ControllerCard", sourcedTexture, new Vector3(0f, 0.045f, 0f), new Vector3(0.52f, 0.30f, 1f));
+            }
+
             GameObject linkObject = new GameObject("BellLink");
             linkObject.transform.SetParent(_modelRoot, false);
             _linkRenderer = linkObject.AddComponent<LineRenderer>();
@@ -164,6 +174,13 @@ namespace BellRinger.ObserverDisplay
 
         private void ApplyTint(float visible01)
         {
+            if (_usingSourcedCard && _sourcedCardRenderer != null)
+            {
+                _sourcedCardRenderer.enabled = visible01 > 0.02f;
+                Color tint = Color.Lerp(Color.black, Color.white, Mathf.Lerp(0.38f, 1f, Mathf.Clamp01(visible01)));
+                _sourcedCardRenderer.material.color = tint;
+            }
+
             if (_tintedRenderers == null)
             {
                 return;
@@ -178,7 +195,7 @@ namespace BellRinger.ObserverDisplay
                     continue;
                 }
 
-                renderer.enabled = visible01 > 0.02f;
+                renderer.enabled = !_usingSourcedCard && visible01 > 0.02f;
                 renderer.material.color = Color.Lerp(Color.black, _tintedRenderers[index].baseColor, brightness);
             }
         }
@@ -216,9 +233,13 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateStandardMaterial(Color color)
         {
-            Shader shader = Shader.Find("Standard") ?? Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
+                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
+                            Shader.Find("Standard") ??
+                            Shader.Find("Sprites/Default");
             Material material = new Material(shader);
             material.color = color;
+            material.SetFloat("_Surface", 0f);
             return material;
         }
 
@@ -226,6 +247,28 @@ namespace BellRinger.ObserverDisplay
         {
             Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
             return new Material(shader);
+        }
+
+        private Renderer CreateSourcedCard(string objectName, Texture2D texture, Vector3 localPosition, Vector3 localScale)
+        {
+            GameObject card = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            card.name = objectName;
+            card.transform.SetParent(_modelRoot, false);
+            card.transform.localPosition = localPosition;
+            card.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            card.transform.localScale = localScale;
+            Collider collider = card.GetComponent<Collider>();
+            if (collider != null)
+            {
+                Destroy(collider);
+            }
+
+            Material material = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Transparent") ?? Shader.Find("Unlit/Texture"));
+            material.mainTexture = texture;
+            material.color = Color.white;
+            Renderer renderer = card.GetComponent<Renderer>();
+            renderer.material = material;
+            return renderer;
         }
     }
 }

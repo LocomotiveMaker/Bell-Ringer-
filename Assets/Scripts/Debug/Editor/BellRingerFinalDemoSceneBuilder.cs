@@ -145,13 +145,13 @@ namespace BellRinger.Debug.Editor
 
         private static void CreatePlaceholderWorld(Transform root)
         {
-            CreatePlaceholder(root, "BellPlaceholder", PrimitiveType.Sphere, new Vector3(0f, 1.6f, 2.4f), new Vector3(0.22f, 0.22f, 0.22f), new Color(0.1f, 0.85f, 0.25f));
-            CreatePlaceholder(root, "GeneralTinnitusA", PrimitiveType.Sphere, new Vector3(-1.2f, 1.45f, 2.8f), new Vector3(0.18f, 0.18f, 0.18f), new Color(0.45f, 0.1f, 0.9f));
-            CreatePlaceholder(root, "GeneralTinnitusB", PrimitiveType.Sphere, new Vector3(1.25f, 1.35f, 3.1f), new Vector3(0.18f, 0.18f, 0.18f), new Color(0.45f, 0.1f, 0.9f));
-            CreatePlaceholder(root, "BossTinnitusPlaceholder", PrimitiveType.Sphere, new Vector3(0f, 1.6f, 4.2f), new Vector3(0.42f, 0.42f, 0.42f), new Color(0.7f, 0.05f, 0.95f));
-            CreatePlaceholder(root, "RainFloorPlaceholder", PrimitiveType.Cube, new Vector3(0f, -0.02f, 2f), new Vector3(5f, 0.02f, 5f), new Color(0.02f, 0.07f, 0.22f));
-            CreatePlaceholder(root, "WallNoisePlaceholder", PrimitiveType.Cube, new Vector3(0f, 1.25f, 5f), new Vector3(4.5f, 2.5f, 0.05f), new Color(0.18f, 0.36f, 0.38f));
-            CreatePlaceholder(root, "ForestEndingPlaceholder", PrimitiveType.Cube, new Vector3(0f, 1.2f, 6.2f), new Vector3(5f, 2.4f, 0.05f), new Color(0.05f, 0.2f, 0.08f));
+            CreatePlaceholder(root, "BellPlaceholder", PrimitiveType.Sphere, new Vector3(0f, 1.6f, 2.4f), new Vector3(0.22f, 0.22f, 0.22f), new Color(0.22f, 0.85f, 0.34f));
+            CreatePlaceholder(root, "GeneralTinnitusA", PrimitiveType.Sphere, new Vector3(-1.2f, 1.45f, 2.8f), new Vector3(0.18f, 0.18f, 0.18f), new Color(0.30f, 0.82f, 0.38f));
+            CreatePlaceholder(root, "GeneralTinnitusB", PrimitiveType.Sphere, new Vector3(1.25f, 1.35f, 3.1f), new Vector3(0.18f, 0.18f, 0.18f), new Color(0.30f, 0.82f, 0.38f));
+            CreatePlaceholder(root, "BossTinnitusPlaceholder", PrimitiveType.Sphere, new Vector3(0f, 1.6f, 4.2f), new Vector3(0.42f, 0.42f, 0.42f), new Color(0.24f, 0.78f, 0.33f));
+            CreatePlaceholder(root, "RainFloorPlaceholder", PrimitiveType.Cube, new Vector3(0f, -0.02f, 2f), new Vector3(12f, 0.02f, 12f), new Color(0.42f, 0.44f, 0.46f));
+            CreatePlaceholder(root, "WallNoisePlaceholder", PrimitiveType.Cube, new Vector3(0f, 1.25f, 5f), new Vector3(8f, 2.7f, 0.05f), new Color(0.92f, 0.94f, 0.95f));
+            CreatePlaceholder(root, "ForestEndingPlaceholder", PrimitiveType.Cube, new Vector3(0f, 1.2f, 6.2f), new Vector3(8f, 2.8f, 0.05f), new Color(0.92f, 0.94f, 0.95f));
         }
 
         private static void CreatePlaceholder(Transform root, string name, PrimitiveType type, Vector3 position, Vector3 scale, Color color)
@@ -165,11 +165,21 @@ namespace BellRinger.Debug.Editor
             Renderer renderer = placeholder.GetComponent<Renderer>();
             if (renderer != null)
             {
-                renderer.sharedMaterial = new Material(Shader.Find("Standard"))
-                {
-                    color = color,
-                };
+                renderer.sharedMaterial = CreateRuntimeMaterial(color);
             }
+        }
+
+        private static Material CreateRuntimeMaterial(Color color)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
+                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
+                            Shader.Find("Standard") ??
+                            Shader.Find("Sprites/Default");
+            Material material = new Material(shader)
+            {
+                color = color,
+            };
+            return material;
         }
 
         private static T GetOrCreateAsset<T>(string path) where T : ScriptableObject

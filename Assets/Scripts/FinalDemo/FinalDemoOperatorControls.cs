@@ -1,4 +1,5 @@
 using UnityEngine;
+using BellRinger.ObserverDisplay;
 
 namespace BellRinger.FinalDemo
 {
@@ -9,12 +10,19 @@ namespace BellRinger.FinalDemo
         [SerializeField] private FinalDemoInputStatus inputStatus;
         [SerializeField] private bool showOperatorControls = true;
         [SerializeField] private bool showInputStatus = true;
-        [SerializeField] private Vector2 operatorPanelPosition = new Vector2(10f, 10f);
-        [SerializeField] private Vector2 statusPanelSize = new Vector2(455f, 430f);
+        [SerializeField] private Vector2 preflightPanelSize = new Vector2(920f, 640f);
+        [SerializeField] private Vector2 runtimePanelSize = new Vector2(560f, 300f);
+        [SerializeField] private Vector2 ledPanelSize = new Vector2(430f, 300f);
+        [SerializeField] private float hudMarginPixels = 16f;
+        [SerializeField] private float hudGapPixels = 18f;
+        [SerializeField, Range(1f, 10f)] private float ledPreviewBrightness = 5f;
 
-        private Rect _operatorRect = new Rect(10f, 10f, 520f, 720f);
-        private Rect _statusRect = new Rect(0f, 10f, 455f, 430f);
-        private Vector2 _statusScroll;
+        private Rect _preflightRect = new Rect(0f, 0f, 920f, 640f);
+        private Rect _runtimeRect = new Rect(16f, 16f, 560f, 300f);
+        private Rect _ledRect = new Rect(0f, 16f, 430f, 300f);
+        private Vector2 _operatorScroll;
+        private Vector2 _runtimeScroll;
+        private Color[] _ledScratch;
 
         public void Initialize(FinalDemoDirector newDirector, FinalDemoInputStatus newInputStatus)
         {
@@ -35,65 +43,90 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            _operatorRect.x = operatorPanelPosition.x;
-            _operatorRect.y = operatorPanelPosition.y;
-            if (showOperatorControls)
+            bool preflight = director.CurrentStage == FinalDemoStage.Preflight;
+            if (preflight)
             {
-                _operatorRect = GUI.Window(7101, _operatorRect, DrawOperatorWindow, "Final Demo Operator");
+                if (showOperatorControls)
+                {
+                    LayoutPreflightWindow();
+                    _preflightRect = GUI.Window(7101, _preflightRect, DrawPreflightWindow, "Final Demo Preflight");
+                }
+                return;
             }
 
-            if (showInputStatus)
+            LayoutRuntimeWindows();
+            if (showOperatorControls || showInputStatus)
             {
-                _statusRect.width = statusPanelSize.x;
-                _statusRect.height = statusPanelSize.y;
-                _statusRect.x = Mathf.Max(10f, Screen.width - _statusRect.width - 10f);
-                _statusRect.y = 10f;
-                _statusRect = GUI.Window(7102, _statusRect, DrawStatusWindow, "Final Demo Input Status");
+                _runtimeRect = GUI.Window(7101, _runtimeRect, DrawRuntimeWindow, "Final Demo Runtime");
             }
+
+            _ledRect = GUI.Window(7103, _ledRect, DrawLedWindow, "16x8 LED Preview");
         }
 
-        private void DrawOperatorWindow(int windowId)
+        private void LayoutPreflightWindow()
         {
+            float width = Mathf.Min(preflightPanelSize.x, Screen.width - hudMarginPixels * 2f);
+            float height = Mathf.Min(preflightPanelSize.y, Screen.height - hudMarginPixels * 2f);
+            _preflightRect.width = width;
+            _preflightRect.height = height;
+            _preflightRect.x = (Screen.width - width) * 0.5f;
+            _preflightRect.y = (Screen.height - height) * 0.5f;
+        }
+
+        private void LayoutRuntimeWindows()
+        {
+            float margin = Mathf.Max(8f, hudMarginPixels);
+            float gap = Mathf.Max(8f, hudGapPixels);
+            float runtimeWidth = Mathf.Min(runtimePanelSize.x, Screen.width * 0.33f);
+            float runtimeHeight = Mathf.Min(runtimePanelSize.y, Screen.height * 0.28f);
+            float ledWidth = Mathf.Min(ledPanelSize.x, Screen.width * 0.26f);
+            float ledHeight = runtimeHeight;
+            _runtimeRect = new Rect(margin, Screen.height - runtimeHeight - margin, runtimeWidth, runtimeHeight);
+            _ledRect = new Rect(Screen.width - ledWidth - margin, Screen.height - ledHeight - margin, ledWidth, ledHeight);
+        }
+
+        private void DrawPreflightWindow(int windowId)
+        {
+            _operatorScroll = GUILayout.BeginScrollView(_operatorScroll);
             GUILayout.Label(director.BuildStageSummary());
             GUILayout.Label($"Elapsed {director.StageElapsedSeconds:0.00}s");
+            GUILayout.Space(6f);
 
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Start Demo"))
+            if (GUILayout.Button("Start Demo", GUILayout.Height(38f)))
             {
                 director.StartDemo();
             }
 
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Force Next"))
             {
                 director.ForceNextStage();
             }
-            GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Force Complete Current"))
             {
                 director.ForceCompleteCurrentObjective();
             }
+            GUILayout.EndHorizontal();
 
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Reset Stage"))
             {
                 director.ResetCurrentStage();
             }
-            GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Reset To Preflight"))
             {
                 director.ResetToPreflight();
             }
+            GUILayout.EndHorizontal();
 
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button(director.PlayerMovementLocked ? "Unlock Movement" : "Lock Movement"))
             {
                 director.ToggleMovementLock();
             }
-            GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Recenter Head"))
             {
                 director.RecenterHead();
@@ -126,7 +159,87 @@ namespace BellRinger.FinalDemo
             DrawAudioTestSection();
             DrawLightHapticTestSection();
 
-            GUI.DragWindow();
+            if (showInputStatus)
+            {
+                GUILayout.Space(10f);
+                GUILayout.Label("Preflight Status");
+                GUILayout.TextArea(BuildRuntimeStatusText(), GUILayout.MinHeight(170f));
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawRuntimeWindow(int windowId)
+        {
+            _runtimeScroll = GUILayout.BeginScrollView(_runtimeScroll);
+            GUILayout.Label(director.BuildStageSummary());
+            GUILayout.Label(director.CurrentObjectiveLabel);
+            DrawProgressBar(director.CurrentObjectiveProgress01);
+            GUILayout.Space(6f);
+            GUILayout.Label(BuildTrackingSummary());
+            if (showInputStatus)
+            {
+                GUILayout.TextArea(BuildRuntimeStatusText(), GUILayout.ExpandHeight(true));
+            }
+
+            GUILayout.Space(6f);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Force Next"))
+            {
+                director.ForceNextStage();
+            }
+
+            if (GUILayout.Button("Reset Stage"))
+            {
+                director.ResetCurrentStage();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Preflight"))
+            {
+                director.ResetToPreflight();
+            }
+
+            if (GUILayout.Button(director.PlayerMovementLocked ? "Unlock Move" : "Lock Move"))
+            {
+                director.ToggleMovementLock();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Head Center"))
+            {
+                director.RecenterHead();
+            }
+
+            if (GUILayout.Button("Pad Center"))
+            {
+                director.RecenterPad();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Assist: {director.AssistLevel}"))
+            {
+                director.CycleAssistLevel();
+            }
+
+            if (GUILayout.Button("Stop Outputs"))
+            {
+                director.StopAllOutputs();
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawLedWindow(int windowId)
+        {
+            FinalDemoLightRouter router = ResolveLightRouter();
+            GUILayout.Label($"Preview brightness x{ledPreviewBrightness:0.0}");
+            Rect gridRect = GUILayoutUtility.GetRect(10f, 220f, GUILayout.ExpandWidth(true));
+            DrawLedPreviewGrid(gridRect, router);
+            GUILayout.Label("Bottom row here matches the physical board bottom row.");
         }
 
         private void DrawAudioTestSection()
@@ -266,14 +379,119 @@ namespace BellRinger.FinalDemo
             return playerRig.position + playerRig.forward * distance;
         }
 
-        private void DrawStatusWindow(int windowId)
+        private void DrawProgressBar(float progress01)
+        {
+            Rect rect = GUILayoutUtility.GetRect(12f, 18f, GUILayout.ExpandWidth(true));
+            Color previous = GUI.color;
+            GUI.color = new Color(0.11f, 0.12f, 0.14f, 1f);
+            GUI.Box(rect, GUIContent.none);
+            Rect fillRect = new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * Mathf.Clamp01(progress01), rect.height - 4f);
+            GUI.color = new Color(0.18f, 0.82f, 0.38f, 1f);
+            GUI.Box(fillRect, GUIContent.none);
+            GUI.color = previous;
+        }
+
+        private string BuildTrackingSummary()
         {
             inputStatus ??= FindFirstObjectByType<FinalDemoInputStatus>();
-            string statusText = inputStatus != null ? inputStatus.BuildStatusText(director) : "No FinalDemoInputStatus found.";
-            _statusScroll = GUILayout.BeginScrollView(_statusScroll);
-            GUILayout.TextArea(statusText, GUILayout.ExpandHeight(true));
-            GUILayout.EndScrollView();
-            GUI.DragWindow();
+            if (inputStatus == null)
+            {
+                return "HEAD OFF   ARUCO OFF   PAD IMU OFF   LED OFF   VIB OFF";
+            }
+
+            return
+                $"HEAD {BuildFreshLabel(inputStatus.HeadFresh)}   " +
+                $"ARUCO {BuildFreshLabel(inputStatus.PadCameraFresh)}   " +
+                $"PAD IMU {BuildFreshLabel(inputStatus.PadImuFresh)}   " +
+                $"LED {BuildFreshLabel(inputStatus.HardwareConnected)}   " +
+                $"VIB {BuildFreshLabel(inputStatus.HasGamepad)}";
+        }
+
+        private string BuildRuntimeStatusText()
+        {
+            inputStatus ??= FindFirstObjectByType<FinalDemoInputStatus>();
+            return inputStatus != null ? inputStatus.BuildStatusText(director) : "No FinalDemoInputStatus found.";
+        }
+
+        private FinalDemoLightRouter ResolveLightRouter()
+        {
+            if (director != null && director.LightRouter != null)
+            {
+                return director.LightRouter;
+            }
+
+            inputStatus ??= FindFirstObjectByType<FinalDemoInputStatus>();
+            return inputStatus != null ? inputStatus.LightRouter : null;
+        }
+
+        private void DrawLedPreviewGrid(Rect rect, FinalDemoLightRouter router)
+        {
+            Color previous = GUI.color;
+            GUI.color = new Color(0.05f, 0.05f, 0.07f, 1f);
+            GUI.Box(rect, GUIContent.none);
+            GUI.color = previous;
+
+            if (router == null)
+            {
+                GUI.Label(new Rect(rect.x + 12f, rect.y + 12f, rect.width - 24f, 24f), "Light router missing.");
+                return;
+            }
+
+            _ledScratch ??= new Color[16 * 8];
+            if (_ledScratch.Length != router.LogicalFrameWidth * router.LogicalFrameHeight)
+            {
+                _ledScratch = new Color[router.LogicalFrameWidth * router.LogicalFrameHeight];
+            }
+
+            router.CopyLogicalLedFrame(_ledScratch);
+            float padding = 14f;
+            float gap = 3f;
+            float gridWidth = rect.width - padding * 2f;
+            float gridHeight = rect.height - padding * 2f;
+            float cellWidth = (gridWidth - gap * 15f) / 16f;
+            float cellHeight = (gridHeight - gap * 7f) / 8f;
+            float cellSize = Mathf.Max(4f, Mathf.Min(cellWidth, cellHeight));
+            float usedWidth = cellSize * 16f + gap * 15f;
+            float usedHeight = cellSize * 8f + gap * 7f;
+            float startX = rect.x + (rect.width - usedWidth) * 0.5f;
+            float startY = rect.y + (rect.height - usedHeight) * 0.5f;
+
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 16; x++)
+                {
+                    int index = y * 16 + x;
+                    Color cellColor = index < _ledScratch.Length ? _ledScratch[index] : Color.black;
+                    if (cellColor.maxColorComponent > 0.0001f)
+                    {
+                        cellColor *= ledPreviewBrightness;
+                        cellColor.r = Mathf.Clamp01(cellColor.r);
+                        cellColor.g = Mathf.Clamp01(cellColor.g);
+                        cellColor.b = Mathf.Clamp01(cellColor.b);
+                        cellColor.a = 1f;
+                    }
+                    else
+                    {
+                        cellColor = new Color(0.02f, 0.02f, 0.025f, 1f);
+                    }
+
+                    float drawX = startX + x * (cellSize + gap);
+                    float drawY = startY + (7 - y) * (cellSize + gap);
+                    Rect cellRect = new Rect(drawX, drawY, cellSize, cellSize);
+                    GUI.color = cellColor;
+                    GUI.DrawTexture(cellRect, Texture2D.whiteTexture);
+                }
+            }
+
+            GUI.color = new Color(0.26f, 0.28f, 0.34f, 0.75f);
+            float dividerX = startX + 8f * cellSize + 7.5f * gap;
+            GUI.DrawTexture(new Rect(dividerX, startY, 1f, usedHeight), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
+
+        private static string BuildFreshLabel(bool value)
+        {
+            return value ? "OK" : "OFF";
         }
     }
 }

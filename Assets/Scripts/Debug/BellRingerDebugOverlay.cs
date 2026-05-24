@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using BellRinger.Hardware;
 using BellRinger.Gameplay;
+using BellRinger.FinalDemo;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,7 +22,7 @@ namespace BellRinger.Debug
 
         private void Start()
         {
-            _isVisible = visibleByDefault && !OverlayDisabledByEnvironment();
+            _isVisible = visibleByDefault && !OverlayDisabledByEnvironment() && FindFirstObjectByType<FinalDemoDirector>() == null;
         }
 
         private void Update()
