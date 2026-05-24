@@ -43,6 +43,17 @@ namespace BellRinger.FinalDemo
         private readonly Dictionary<FinalDemoCueId, ActiveLoop> _loops = new Dictionary<FinalDemoCueId, ActiveLoop>();
         private float _duckUntilRealtime;
         private string _lastAction = "(idle)";
+        private FinalDemoCueSnapshotRecord _recentOneShot;
+
+        private struct FinalDemoCueSnapshotRecord
+        {
+            public bool valid;
+            public FinalDemoCueId cueId;
+            public FinalDemoAudioBus bus;
+            public Vector3 worldPosition;
+            public float volume01;
+            public float startedAtRealtime;
+        }
 
         public string LastAction => _lastAction;
         public int ActiveLoopCount => _loops.Count;
@@ -106,6 +117,16 @@ namespace BellRinger.FinalDemo
             {
                 BeginNarrationDuck(clip.length);
             }
+
+            _recentOneShot = new FinalDemoCueSnapshotRecord
+            {
+                valid = true,
+                cueId = cueId,
+                bus = cue.Bus,
+                worldPosition = worldPosition,
+                volume01 = source.volume,
+                startedAtRealtime = Time.realtimeSinceStartup,
+            };
 
             _lastAction = $"One-shot {cueId} on {cue.Bus}.";
             return source;
@@ -180,12 +201,54 @@ namespace BellRinger.FinalDemo
             }
 
             _loops.Clear();
+            _recentOneShot.valid = false;
             _lastAction = "Stopped all audio cues.";
         }
 
         public string BuildStatusText()
         {
             return $"Audio loops={ActiveLoopCount} ducking={IsNarrationDucking} hrtf={SpatializerEnabled} last={LastAction}";
+        }
+
+        public void FillActiveCueSnapshots(List<FinalDemoAudioCueSnapshot> destination, float recentOneShotLifetimeSeconds = 1.25f)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            foreach (KeyValuePair<FinalDemoCueId, ActiveLoop> pair in _loops)
+            {
+                ActiveLoop activeLoop = pair.Value;
+                if (activeLoop.source == null || activeLoop.cue == null)
+                {
+                    continue;
+                }
+
+                destination.Add(new FinalDemoAudioCueSnapshot(
+                    pair.Key,
+                    activeLoop.cue.Bus,
+                    activeLoop.source.transform.position,
+                    activeLoop.source.volume,
+                    true,
+                    0f));
+            }
+
+            if (_recentOneShot.valid)
+            {
+                float ageSeconds = Time.realtimeSinceStartup - _recentOneShot.startedAtRealtime;
+                if (ageSeconds <= Mathf.Max(0.05f, recentOneShotLifetimeSeconds))
+                {
+                    destination.Add(new FinalDemoAudioCueSnapshot(
+                        _recentOneShot.cueId,
+                        _recentOneShot.bus,
+                        _recentOneShot.worldPosition,
+                        _recentOneShot.volume01,
+                        false,
+                        ageSeconds));
+                }
+            }
         }
 
         private void UpdateLoopVolumes()

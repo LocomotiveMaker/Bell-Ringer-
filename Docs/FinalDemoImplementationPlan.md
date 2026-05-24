@@ -6,6 +6,7 @@ This plan is based on:
 
 - `Docs/FinalDemoDecisionLock.md`
 - `Docs/FinalDemoFlowAudioIntegration.md`
+- `Docs/ObserverDisplayPlan.md`
 - current test scenes and components under `Assets/Scripts`
 
 If this document conflicts with older notes, use `FinalDemoDecisionLock.md` first,
@@ -91,6 +92,7 @@ The test scenes remain validation tools. They should not be destructively merged
 - `WorldLight`
 - `WorldHaptics`
 - `ObserverView`
+- `ObserverDisplayRoot`
 - `DebugOperatorPanel`
 
 Minimum components:
@@ -362,6 +364,15 @@ Required display:
 The operator panel is allowed to be visible on the monitor. The player should not
 use it.
 
+Observer presentation is defined separately in `Docs/ObserverDisplayPlan.md`.
+Do not treat the monitor as raw debug only. It must include a presentable
+spectator world view, bottom-left state/sound-map panel, bottom-center
+camera-safe empty area, and bottom-right 16x8 LED preview.
+
+Observer display code should be read-only relative to gameplay systems. It may
+read stage, tracking, cue, and light-buffer state, but it must not own player
+movement, audio routing, haptics, hardware LEDs, or stage progression.
+
 ## Implementation Order
 
 The safest order is below. Do not start with boss polish, advanced visuals, or
@@ -580,6 +591,32 @@ Acceptance:
 - forest appears after silence
 - final bell can end the demo
 - demo auto-ends if player does not move
+
+### Bundle 9.5: Observer Display Pass
+
+Goal: make the monitor useful and presentable without touching the player-facing
+hardware loop.
+
+Implement:
+
+- `ObserverDisplayRoot`
+- bottom layout from `Docs/DISPLAY_EX.png`
+- bottom-center camera-safe empty area
+- bottom-left spectator state / sound map panel
+- bottom-right 16x8 LED matrix preview
+- pad view from tracked pad pose
+- bell view and pad-shake-synced bell shake
+- rain floor particles and wind bend
+- normal tinnitus and boss tinnitus views
+- forest ending view
+- stage-based post-processing profiles
+
+Rules:
+
+- follow `Docs/ObserverDisplayPlan.md`
+- observer scripts are read-only consumers of final demo state
+- do not modify hardware, input, audio, haptic, or LED systems from observer code
+- keep monitor polish secondary to player sensory correctness
 
 ### Bundle 10: Full-Flow QA + Tuning
 

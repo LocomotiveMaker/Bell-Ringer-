@@ -21,10 +21,15 @@ namespace BellRinger.FinalDemo
         private float _holdUntilRealtime;
         private int _seed;
         private string _lastAction = "(idle)";
+        private readonly Color[] _logicalFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
+        private int _logicalFrameVersion;
 
         public bool OutputToHardware => outputToHardware;
         public string LastAction => _lastAction;
         public FinalDemoFeedbackPriority HeldPriority => Time.realtimeSinceStartup <= _holdUntilRealtime ? _heldPriority : FinalDemoFeedbackPriority.Rain;
+        public int LogicalFrameWidth => BellRingerAudioLedMapper.DisplayWidth;
+        public int LogicalFrameHeight => BellRingerAudioLedMapper.DisplayHeight;
+        public int LogicalFrameVersion => _logicalFrameVersion;
 
         public void Initialize(Transform listener, HardwareBridge bridge)
         {
@@ -57,6 +62,7 @@ namespace BellRinger.FinalDemo
                 }
             }
 
+            RenderBellLogicalFrame(frame, miniRipple, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
         }
@@ -75,6 +81,7 @@ namespace BellRinger.FinalDemo
                 bridge.SendLedRain(rainColor, Mathf.Clamp01(intensity), ++_seed, 7.5f, 0.65f, 16f, 2.4f, Time.realtimeSinceStartup, 0.9f, 1.75f);
             }
 
+            RenderRainLogicalFrame(Mathf.Clamp01(intensity));
             _lastAction = $"Rain floor band b={Mathf.Clamp01(intensity):0.00}";
         }
 
@@ -109,6 +116,7 @@ namespace BellRinger.FinalDemo
                     boss ? 1.85f : 1.35f);
             }
 
+            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
             HoldPriority(priority);
             _lastAction = $"{(boss ? "Boss" : "Tinnitus")} light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
         }
@@ -126,6 +134,7 @@ namespace BellRinger.FinalDemo
                 bridge.SendLedWallNoise(7.5f, 3.2f, 15.5f, 5.8f, wallNoiseColor, Mathf.Clamp01(intensity), ++_seed, 0.55f, 1.6f);
             }
 
+            RenderWallNoiseLogicalFrame(Mathf.Clamp01(intensity));
             _lastAction = $"Wall noise b={Mathf.Clamp01(intensity):0.00}";
         }
 
@@ -138,7 +147,32 @@ namespace BellRinger.FinalDemo
             }
 
             _holdUntilRealtime = 0f;
+            ClearLogicalFrame();
             _lastAction = "LED clear.";
+        }
+
+        public void CopyLogicalLedFrame(Color[] destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            int copyLength = Mathf.Min(destination.Length, _logicalFrame.Length);
+            for (int i = 0; i < copyLength; i++)
+            {
+                destination[i] = _logicalFrame[i];
+            }
+        }
+
+        public Color GetLogicalLedPixel(int x, int y)
+        {
+            if (x < 0 || x >= LogicalFrameWidth || y < 0 || y >= LogicalFrameHeight)
+            {
+                return Color.black;
+            }
+
+            return _logicalFrame[(y * LogicalFrameWidth) + x];
         }
 
         private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame)
@@ -167,6 +201,123 @@ namespace BellRinger.FinalDemo
         {
             _heldPriority = priority;
             _holdUntilRealtime = Time.realtimeSinceStartup + highPriorityHoldSeconds;
+        }
+
+        private void ClearLogicalFrame()
+        {
+            for (int i = 0; i < _logicalFrame.Length; i++)
+            {
+                _logicalFrame[i] = Color.black;
+            }
+
+            _logicalFrameVersion++;
+        }
+
+        private void RenderBellLogicalFrame(BellRingerLedDotFrame frame, bool miniRipple, Color color)
+        {
+            ClearLogicalFrame();
+            SetPixel(frame.x, frame.y, color, frame.brightnessNormalized);
+            if (!miniRipple)
+            {
+                AddPixel(frame.x, frame.y + 1, color, frame.brightnessNormalized * 0.45f);
+                AddPixel(frame.x, frame.y - 1, color, frame.brightnessNormalized * 0.25f);
+                return;
+            }
+
+            AddPixel(frame.x - 1, frame.y, color, frame.brightnessNormalized * 0.38f);
+            AddPixel(frame.x + 1, frame.y, color, frame.brightnessNormalized * 0.38f);
+            AddPixel(frame.x, frame.y - 1, color, frame.brightnessNormalized * 0.24f);
+            AddPixel(frame.x, frame.y + 1, color, frame.brightnessNormalized * 0.24f);
+        }
+
+        private void RenderRainLogicalFrame(float intensity)
+        {
+            ClearLogicalFrame();
+            for (int y = 0; y < LogicalFrameHeight; y++)
+            {
+                float rowWeight = y switch
+                {
+                    0 => 1f,
+                    1 => 0.9f,
+                    2 => 0.62f,
+                    3 => 0.35f,
+                    _ => 0f,
+                };
+                if (rowWeight <= 0f)
+                {
+                    continue;
+                }
+
+                for (int x = 0; x < LogicalFrameWidth; x++)
+                {
+                    float streak = 0.7f + Mathf.Abs(Mathf.Sin((_seed * 0.37f) + x * 0.75f + y * 1.2f)) * 0.3f;
+                    SetPixel(x, y, rainColor, intensity * rowWeight * streak);
+                }
+            }
+        }
+
+        private void RenderTinnitusLogicalFrame(BellRingerLedDotFrame frame, bool boss, Color color)
+        {
+            ClearLogicalFrame();
+            float center = frame.brightnessNormalized;
+            SetPixel(frame.x, frame.y, color, center);
+            AddPixel(frame.x - 1, frame.y, color, center * (boss ? 0.55f : 0.35f));
+            AddPixel(frame.x + 1, frame.y, color, center * (boss ? 0.55f : 0.35f));
+            AddPixel(frame.x, frame.y - 1, color, center * (boss ? 0.45f : 0.25f));
+            AddPixel(frame.x, frame.y + 1, color, center * (boss ? 0.45f : 0.25f));
+            if (!boss)
+            {
+                return;
+            }
+
+            AddPixel(frame.x - 2, frame.y + 1, color, center * 0.32f);
+            AddPixel(frame.x + 2, frame.y - 1, color, center * 0.32f);
+            AddPixel(frame.x, frame.y + 2, color, center * 0.24f);
+        }
+
+        private void RenderWallNoiseLogicalFrame(float intensity)
+        {
+            ClearLogicalFrame();
+            for (int y = 2; y < LogicalFrameHeight; y++)
+            {
+                for (int x = 0; x < LogicalFrameWidth; x++)
+                {
+                    float noise = Mathf.Abs(Mathf.Sin((_seed * 0.61f) + x * 1.37f + y * 2.21f));
+                    if (noise < 0.48f)
+                    {
+                        continue;
+                    }
+
+                    SetPixel(x, y, wallNoiseColor, intensity * noise * 0.75f);
+                }
+            }
+        }
+
+        private void SetPixel(int x, int y, Color color, float brightness)
+        {
+            if (x < 0 || x >= LogicalFrameWidth || y < 0 || y >= LogicalFrameHeight)
+            {
+                return;
+            }
+
+            Color pixel = color * Mathf.Clamp01(brightness);
+            pixel.a = 1f;
+            _logicalFrame[(y * LogicalFrameWidth) + x] = pixel;
+        }
+
+        private void AddPixel(int x, int y, Color color, float brightness)
+        {
+            if (x < 0 || x >= LogicalFrameWidth || y < 0 || y >= LogicalFrameHeight)
+            {
+                return;
+            }
+
+            int index = (y * LogicalFrameWidth) + x;
+            _logicalFrame[index] += color * Mathf.Clamp01(brightness);
+            _logicalFrame[index].r = Mathf.Clamp01(_logicalFrame[index].r);
+            _logicalFrame[index].g = Mathf.Clamp01(_logicalFrame[index].g);
+            _logicalFrame[index].b = Mathf.Clamp01(_logicalFrame[index].b);
+            _logicalFrame[index].a = 1f;
         }
 
         private HardwareBridge ResolveBridge()

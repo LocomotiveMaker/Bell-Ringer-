@@ -1,6 +1,7 @@
 using BellRinger.FinalDemo;
 using BellRinger.Gameplay;
 using BellRinger.Hardware;
+using BellRinger.ObserverDisplay;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace BellRinger.Debug.Editor
             GameObject audioRoot = CreateAudioRoot(root.transform, cueLibrary, playerRig.transform);
             GameObject lightRoot = CreateLightRoot(root.transform, playerRig.transform, hardwareRoot.GetComponent<HardwareBridge>());
             GameObject hapticRoot = CreateHapticRoot(root.transform);
+            CreateObserverDisplayRoot();
             CreatePlaceholderWorld(root.transform);
 
             SerializedObject directorObject = new SerializedObject(director);
@@ -132,6 +134,13 @@ namespace BellRinger.Debug.Editor
             hapticRoot.transform.SetParent(root);
             hapticRoot.AddComponent<FinalDemoHapticRouter>();
             return hapticRoot;
+        }
+
+        private static void CreateObserverDisplayRoot()
+        {
+            GameObject observerRoot = new GameObject("ObserverDisplayRoot");
+            observerRoot.AddComponent<ObserverDisplayLayout>();
+            observerRoot.AddComponent<ObserverDisplayController>();
         }
 
         private static void CreatePlaceholderWorld(Transform root)

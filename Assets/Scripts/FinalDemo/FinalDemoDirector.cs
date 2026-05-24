@@ -101,6 +101,7 @@ namespace BellRinger.FinalDemo
         public FinalDemoLightRouter LightRouter => lightRouter;
         public FinalDemoHapticRouter HapticRouter => hapticRouter;
         public Transform PlayerRig => playerRig;
+        public string CurrentObjectiveLabel => BuildObjectiveLabel(_currentStage);
         public float CurrentBellFollowDistance => _currentBellFollowDistance;
         public float CurrentRainIntensity => _currentRainIntensity;
         public bool RainLoopStarted => _rainLoopStarted;
@@ -116,6 +117,7 @@ namespace BellRinger.FinalDemo
         public float CurrentBossPatternTargetMatch01 => _currentBossPatternTargetMatch01;
         public int BossPatternFailureCount => _bossPatternFailureCount;
         public float CurrentForestDistance => _currentForestDistance;
+        public float CurrentObjectiveProgress01 => ResolveCurrentObjectiveProgress01();
 
         private void Awake()
         {
@@ -286,6 +288,48 @@ namespace BellRinger.FinalDemo
             return summary;
         }
 
+        public bool TryGetBellWorldPosition(out Vector3 worldPosition)
+        {
+            Transform bell = FindNamedTransform("FinalDemo_BellPlaceholder");
+            if (bell != null)
+            {
+                worldPosition = bell.position;
+                return true;
+            }
+
+            worldPosition = default;
+            return false;
+        }
+
+        public bool TryGetBossWorldPosition(out Vector3 worldPosition)
+        {
+            Transform boss = FindNamedTransform("FinalDemo_BossTinnitus");
+            if (boss != null)
+            {
+                worldPosition = boss.position;
+                return true;
+            }
+
+            worldPosition = ResolveBossPosition();
+            return _currentStage == FinalDemoStage.BossApproach ||
+                   _currentStage == FinalDemoStage.BossPatternOne ||
+                   _currentStage == FinalDemoStage.BossPatternTwo ||
+                   _currentStage == FinalDemoStage.BossPatternThree ||
+                   _currentStage == FinalDemoStage.BossDefeat;
+        }
+
+        public bool TryGetCurrentTinnitusWorldPosition(out Vector3 worldPosition)
+        {
+            if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
+            {
+                worldPosition = ResolveGeneralTinnitusWorldPosition(_currentStage);
+                return true;
+            }
+
+            worldPosition = default;
+            return false;
+        }
+
         private void EnterStage(FinalDemoStage nextStage)
         {
             _currentStage = nextStage;
@@ -421,6 +465,39 @@ namespace BellRinger.FinalDemo
             {
                 ForceNextStage();
             }
+        }
+
+        private float ResolveCurrentObjectiveProgress01()
+        {
+            if (tuningProfile == null)
+            {
+                return 0f;
+            }
+
+            return _currentStage switch
+            {
+                FinalDemoStage.Preflight => 0f,
+                FinalDemoStage.OpeningAmbience => Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningAmbienceSeconds),
+                FinalDemoStage.OpeningSilence => Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningSilenceSeconds),
+                FinalDemoStage.OpeningCloseBell => Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningCloseBellSeconds),
+                FinalDemoStage.BellOrbit => Mathf.Clamp01(StageElapsedSeconds / tuningProfile.BellOrbitSeconds),
+                FinalDemoStage.BellFollowOne => 1f - Mathf.Clamp01(_currentBellFollowDistance / Mathf.Max(tuningProfile.BellArrivalRadius * 4f, 0.1f)),
+                FinalDemoStage.BellFollowRain => 1f - Mathf.Clamp01(_currentBellFollowDistance / Mathf.Max(tuningProfile.BellArrivalRadius * 4f, 0.1f)),
+                FinalDemoStage.BellGaze => Mathf.Clamp01((_bellGazeSuccessCount + BellGazeProgress01) / Mathf.Max(1f, tuningProfile.BellGazeRequiredSuccesses)),
+                FinalDemoStage.BellAcquisition => Mathf.Clamp01(StageElapsedSeconds / Mathf.Max(0.1f, tuningProfile.BellAcquisitionEffectSeconds + tuningProfile.BellAcquisitionTransitionSilenceSeconds)),
+                FinalDemoStage.GeneralTinnitusOne => GeneralTinnitusProgress01,
+                FinalDemoStage.GeneralTinnitusTwo => GeneralTinnitusProgress01,
+                FinalDemoStage.BossApproach => 1f - Mathf.Clamp01(_currentBossApproachDistance / Mathf.Max(tuningProfile.BossApproachRadius * 4f, 0.1f)),
+                FinalDemoStage.BossPatternOne => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
+                FinalDemoStage.BossPatternTwo => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
+                FinalDemoStage.BossPatternThree => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
+                FinalDemoStage.BossDefeat => Mathf.Clamp01(StageElapsedSeconds / Mathf.Max(0.1f, tuningProfile.BossDefeatEffectSeconds + tuningProfile.BossDefeatSilenceSeconds)),
+                FinalDemoStage.ForestEnding => Mathf.Max(
+                    1f - Mathf.Clamp01(_currentForestDistance / Mathf.Max(tuningProfile.ForestBellArrivalRadius * 4f, 0.1f)),
+                    Mathf.Clamp01(StageElapsedSeconds / tuningProfile.ForestAutoEndSeconds)),
+                FinalDemoStage.Complete => 1f,
+                _ => 0f,
+            };
         }
 
         private void TickOpeningSilence()
