@@ -176,7 +176,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 11
     operatorLabel: Narration follow bell
-    audioClip: {fileID: 8300000, guid: 8c9ae5d731ce00e478a3ebc456d988b2, type: 3}
+    audioClip: {fileID: 8300000, guid: 3bb2a3d3bac25dc4a9adb30f6aeb0ddd, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.72
@@ -192,7 +192,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 12
     operatorLabel: Narration look bell
-    audioClip: {fileID: 8300000, guid: 1e389b6aa405bc94c9317f6f3f8f0340, type: 3}
+    audioClip: {fileID: 8300000, guid: 49a19baa0d3cae34c8d3e416b5a229dc, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.72
@@ -448,7 +448,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 28
     operatorLabel: Narration pad shake assist
-    audioClip: {fileID: 8300000, guid: 0ebf0a1fa3e13fc4c89312e0be9846c3, type: 3}
+    audioClip: {fileID: 8300000, guid: a0fedff13c40b334ba3d9b61098af1ef, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.7
@@ -464,7 +464,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 29
     operatorLabel: Narration find tinnitus pose
-    audioClip: {fileID: 8300000, guid: c3c7b3c8abb70a14a928d08b4a7b77fa, type: 3}
+    audioClip: {fileID: 8300000, guid: dc65c65b093a74a4b8021fa38c5b59ba, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.7
@@ -480,7 +480,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 30
     operatorLabel: Narration hold pose
-    audioClip: {fileID: 8300000, guid: d44a2340a34ddd546a19eba5dbf30ff1, type: 3}
+    audioClip: {fileID: 8300000, guid: 6287d2c46672b4745bcbc2eaa080dc32, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.7
@@ -496,7 +496,87 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 31
     operatorLabel: Narration boss track
-    audioClip: {fileID: 8300000, guid: 43cb2af4a5ec6334f909b5a6dfdd1540, type: 3}
+    audioClip: {fileID: 8300000, guid: 845b03a8317bedd4b8ed3cbf2f477270, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 32
+    operatorLabel: Narration face forward wait
+    audioClip: {fileID: 8300000, guid: 5bc97a3e5c3260b4c975eb77ff638612, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 33
+    operatorLabel: Narration rain focus bell
+    audioClip: {fileID: 8300000, guid: 8fc5cc637ed63a44abc402a3c3120866, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 34
+    operatorLabel: Narration bell in hand
+    audioClip: {fileID: 8300000, guid: b843e709e37f54049b0bd2434ddc27ae, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 35
+    operatorLabel: Narration approach tinnitus
+    audioClip: {fileID: 8300000, guid: 8aae7f586824c7042ae5bf1d999313e5, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.7
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 36
+    operatorLabel: Narration find sound origin
+    audioClip: {fileID: 8300000, guid: 4df0b0d1bf5d18a45a0b3ae827980dcf, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.7

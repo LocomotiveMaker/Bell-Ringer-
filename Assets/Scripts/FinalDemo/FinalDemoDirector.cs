@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BellRinger.Audio;
 using BellRinger.Gameplay;
 using BellRinger.Hardware;
@@ -90,6 +91,19 @@ namespace BellRinger.FinalDemo
         private int _currentBossPatternIndex = -1;
         private float _nextForestBellAtRealtime;
         private float _currentForestDistance = float.PositiveInfinity;
+        private readonly Queue<NarrationRequest> _narrationQueue = new Queue<NarrationRequest>();
+        private readonly HashSet<FinalDemoCueId> _queuedNarrationCueIds = new HashSet<FinalDemoCueId>();
+        private readonly HashSet<FinalDemoCueId> _playedNarrationCueIds = new HashSet<FinalDemoCueId>();
+        private FinalDemoCueId _activeNarrationCueId = FinalDemoCueId.None;
+        private float _activeNarrationUntilRealtime;
+
+        private struct NarrationRequest
+        {
+            public FinalDemoCueId cueId;
+            public FinalDemoStage stage;
+            public bool requireCurrentStage;
+            public bool oncePerRun;
+        }
 
         public FinalDemoStage CurrentStage => _currentStage;
         public int StageCount => _stageOrder.Length;
@@ -156,6 +170,7 @@ namespace BellRinger.FinalDemo
             }
 
             TickCurrentStage();
+            TickNarrationQueue();
 
             if (tuningProfile != null &&
                 tuningProfile.AutoAdvancePlaceholderStages &&
@@ -172,12 +187,15 @@ namespace BellRinger.FinalDemo
         {
             if (_currentStage == FinalDemoStage.Preflight)
             {
+                QueueNarration(FinalDemoCueId.NarrFaceForwardWait, FinalDemoStage.Preflight, false, true);
+                TickNarrationQueue();
                 EnterStage(FinalDemoStage.OpeningAmbience);
             }
         }
 
         public void ForceNextStage()
         {
+            ClearQueuedNarration();
             int currentIndex = Mathf.Max(0, StageIndex);
             int nextIndex = Mathf.Min(currentIndex + 1, _stageOrder.Length - 1);
             EnterStage(_stageOrder[nextIndex]);
@@ -190,17 +208,20 @@ namespace BellRinger.FinalDemo
 
         public void ForceStage(FinalDemoStage stage)
         {
+            ClearQueuedNarration();
             _hasStarted = stage != FinalDemoStage.Preflight;
             EnterStage(stage);
         }
 
         public void ResetCurrentStage()
         {
+            ClearQueuedNarration();
             EnterStage(_currentStage);
         }
 
         public void ResetToPreflight()
         {
+            ClearAllNarrationState();
             _hasStarted = false;
             EnterStage(FinalDemoStage.Preflight);
         }
@@ -263,6 +284,99 @@ namespace BellRinger.FinalDemo
             audioRouter?.StopAllCues();
             hapticRouter?.StopAllHaptics();
             lightRouter?.Clear();
+            ClearQueuedNarration();
+        }
+
+        private void QueueNarration(FinalDemoCueId cueId, FinalDemoStage stage, bool requireCurrentStage = true, bool oncePerRun = true)
+        {
+            if (cueId == FinalDemoCueId.None)
+            {
+                return;
+            }
+
+            if (oncePerRun && _playedNarrationCueIds.Contains(cueId))
+            {
+                return;
+            }
+
+            if (_activeNarrationCueId == cueId || _queuedNarrationCueIds.Contains(cueId))
+            {
+                return;
+            }
+
+            _narrationQueue.Enqueue(new NarrationRequest
+            {
+                cueId = cueId,
+                stage = stage,
+                requireCurrentStage = requireCurrentStage,
+                oncePerRun = oncePerRun,
+            });
+            _queuedNarrationCueIds.Add(cueId);
+        }
+
+        private void TickNarrationQueue()
+        {
+            if (_activeNarrationCueId != FinalDemoCueId.None)
+            {
+                if (Time.realtimeSinceStartup < _activeNarrationUntilRealtime)
+                {
+                    return;
+                }
+
+                _activeNarrationCueId = FinalDemoCueId.None;
+            }
+
+            while (_narrationQueue.Count > 0)
+            {
+                NarrationRequest request = _narrationQueue.Dequeue();
+                _queuedNarrationCueIds.Remove(request.cueId);
+                if (!IsNarrationRequestStillValid(request))
+                {
+                    continue;
+                }
+
+                AudioSource source = audioRouter != null
+                    ? audioRouter.PlayOneShot(request.cueId, ResolvePlayerRelativePosition(Vector3.forward * 1.1f), 1f)
+                    : null;
+                if (source == null)
+                {
+                    continue;
+                }
+
+                _activeNarrationCueId = request.cueId;
+                float cueLength = audioRouter != null ? audioRouter.GetCueLengthSeconds(request.cueId) : 0f;
+                _activeNarrationUntilRealtime = Time.realtimeSinceStartup + Mathf.Max(0.1f, cueLength);
+                if (request.oncePerRun)
+                {
+                    _playedNarrationCueIds.Add(request.cueId);
+                }
+
+                return;
+            }
+        }
+
+        private bool IsNarrationRequestStillValid(NarrationRequest request)
+        {
+            if (request.oncePerRun && _playedNarrationCueIds.Contains(request.cueId))
+            {
+                return false;
+            }
+
+            return !request.requireCurrentStage || _currentStage == request.stage;
+        }
+
+        private void ClearQueuedNarration()
+        {
+            _narrationQueue.Clear();
+            _queuedNarrationCueIds.Clear();
+        }
+
+        private void ClearAllNarrationState()
+        {
+            ClearQueuedNarration();
+            _playedNarrationCueIds.Clear();
+            _activeNarrationCueId = FinalDemoCueId.None;
+            _activeNarrationUntilRealtime = 0f;
         }
 
         public string BuildStageSummary()
@@ -613,12 +727,6 @@ namespace BellRinger.FinalDemo
             MoveBellPlaceholder(targetPosition);
             _currentBellFollowDistance = ResolvePlanarDistanceToPlayer(targetPosition);
 
-            if (!_stageNarrationPlayed && !rainStage)
-            {
-                audioRouter?.PlayOneShot(FinalDemoCueId.NarrFollowBell, ResolvePlayerRelativePosition(Vector3.forward * 1.1f), 1f);
-                _stageNarrationPlayed = true;
-            }
-
             if (rainStage)
             {
                 TickRainLayer();
@@ -628,12 +736,19 @@ namespace BellRinger.FinalDemo
             if (Time.realtimeSinceStartup >= _nextBellCallAtRealtime)
             {
                 PlayBellFollowCall(targetPosition, assistOverdue);
+                if (!_stageNarrationPlayed && !rainStage)
+                {
+                    QueueNarration(FinalDemoCueId.NarrFollowBell, FinalDemoStage.BellFollowOne);
+                    _stageNarrationPlayed = true;
+                }
+
                 ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, tuningProfile.BellFollowCallIntervalSeconds);
             }
 
             if (assistOverdue && Time.realtimeSinceStartup - _lastBellAssistAtRealtime >= tuningProfile.BellAssistRepeatSeconds)
             {
                 TriggerBellAssist(targetPosition, FinalDemoCueId.BellStrongAssist);
+                QueueNarration(FinalDemoCueId.NarrPadShakeAssist, _currentStage, true, false);
             }
 
             TryPadShakeBellAssist(targetPosition);
@@ -667,6 +782,7 @@ namespace BellRinger.FinalDemo
                 _nextRainLightAtRealtime = Time.realtimeSinceStartup;
                 audioRouter?.StartLoop(FinalDemoCueId.RainLightBed, playerRig.position, 0f);
                 audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
+                QueueNarration(FinalDemoCueId.NarrRainFocusBell, FinalDemoStage.BellFollowRain);
             }
 
             if (!_rainLoopStarted)
@@ -753,7 +869,7 @@ namespace BellRinger.FinalDemo
             _bellGazeSuccessCount = 0;
             _bellGazeProgressSeconds = 0f;
             _nextBellCallAtRealtime = Time.realtimeSinceStartup;
-            audioRouter?.PlayOneShot(FinalDemoCueId.NarrLookBell, ResolvePlayerRelativePosition(Vector3.forward * 1.1f), 1f);
+            QueueNarration(FinalDemoCueId.NarrLookBell, FinalDemoStage.BellGaze);
             BeginBellGazeCue(0, false);
         }
 
@@ -868,6 +984,7 @@ namespace BellRinger.FinalDemo
             {
                 PlayReactiveBellCue(FinalDemoCueId.BellAcquisition, bellPosition, 1f, 1f);
                 hapticRouter?.TriggerBellAcquisitionPulse();
+                QueueNarration(FinalDemoCueId.NarrBellInHand, FinalDemoStage.BellAcquisition);
                 _stageOneShotPlayed = true;
             }
 
@@ -894,6 +1011,7 @@ namespace BellRinger.FinalDemo
             EnsurePoseMatchEvaluator();
             if (_poseMatchEvaluator != null)
             {
+                _poseMatchEvaluator.RequireRotation = true;
                 _poseMatchEvaluator.PositionToleranceMeters = tuningProfile.GeneralTinnitusPositionToleranceMeters;
                 _poseMatchEvaluator.YawToleranceDegrees = tuningProfile.GeneralTinnitusRotationToleranceDegrees;
                 _poseMatchEvaluator.PitchToleranceDegrees = tuningProfile.GeneralTinnitusRotationToleranceDegrees;
@@ -921,7 +1039,7 @@ namespace BellRinger.FinalDemo
 
             if (stage == FinalDemoStage.GeneralTinnitusOne)
             {
-                audioRouter?.PlayOneShot(FinalDemoCueId.NarrFindTinnitusPose, ResolvePlayerRelativePosition(Vector3.forward * 1.1f), 1f);
+                QueueNarration(FinalDemoCueId.NarrApproachTinnitus, FinalDemoStage.GeneralTinnitusOne);
             }
         }
 
@@ -964,6 +1082,10 @@ namespace BellRinger.FinalDemo
                 audioRouter?.PlayOneShot(FinalDemoCueId.TinnitusPoseLock, targetWorldPosition, 1f);
                 _tinnitusAudioController?.TriggerBurst(0.45f);
                 hapticRouter?.TriggerTinnitusLockPulse();
+                if (_currentStage == FinalDemoStage.GeneralTinnitusOne)
+                {
+                    QueueNarration(FinalDemoCueId.NarrHoldPose, FinalDemoStage.GeneralTinnitusOne);
+                }
             }
             else if (!isInsideTolerance && _wasTinnitusInsideTolerance)
             {
@@ -971,6 +1093,14 @@ namespace BellRinger.FinalDemo
             }
 
             _wasTinnitusInsideTolerance = isInsideTolerance;
+            if (_currentStage == FinalDemoStage.GeneralTinnitusOne &&
+                isLooking &&
+                cleanseProgress <= 0.001f &&
+                StageElapsedSeconds >= tuningProfile.BellAssistTimeoutSeconds)
+            {
+                QueueNarration(FinalDemoCueId.NarrFindTinnitusPose, FinalDemoStage.GeneralTinnitusOne);
+            }
+
             if (isInsideTolerance && Time.realtimeSinceStartup >= _nextTinnitusHapticAtRealtime)
             {
                 float intensity = Mathf.Lerp(0.3f, 0.75f, cleanseProgress);
@@ -1068,6 +1198,7 @@ namespace BellRinger.FinalDemo
             EnsurePoseMatchEvaluator();
             if (_poseMatchEvaluator != null)
             {
+                _poseMatchEvaluator.RequireRotation = false;
                 _poseMatchEvaluator.TreatmentSeconds = ResolveBossPatternSeconds(_currentBossPatternIndex);
                 _poseMatchEvaluator.MatchFeedbackRadiusMultiplier = 4f;
                 _poseMatchEvaluator.ResetProgress();
@@ -1080,7 +1211,7 @@ namespace BellRinger.FinalDemo
             _bossReactiveLight = AttachReactiveLight(bossSource, bossPosition, FinalDemoAudioReactiveLight.ReactiveLightKind.BossTinnitus, tuningProfile.BossMassLedIntensity);
             if (stage == FinalDemoStage.BossPatternOne)
             {
-                audioRouter?.PlayOneShot(FinalDemoCueId.NarrBossTrack, ResolvePlayerRelativePosition(Vector3.forward * 1.1f), 1f);
+                QueueNarration(FinalDemoCueId.NarrFindSoundOrigin, FinalDemoStage.BossPatternOne);
             }
             else
             {
@@ -1147,6 +1278,12 @@ namespace BellRinger.FinalDemo
             bool moving = progressSeconds >= holdSeconds;
             float move01 = moving ? Mathf.Clamp01((progressSeconds - holdSeconds) / Mathf.Max(0.1f, totalSeconds - holdSeconds)) : 0f;
             float smoothMove01 = Smooth01(move01);
+            _poseMatchEvaluator.RequireRotation = false;
+            if (_currentBossPatternIndex == 0 && moving)
+            {
+                QueueNarration(FinalDemoCueId.NarrBossTrack, FinalDemoStage.BossPatternOne);
+            }
+
             Vector3 center = ResolveVectorAt(tuningProfile.BossWeakPointCentersCameraSpace, _currentBossPatternIndex, new Vector3(0f, 0f, 0.72f));
             Vector3 offset = ResolveVectorAt(tuningProfile.BossWeakPointMoveOffsetsCameraSpace, _currentBossPatternIndex, new Vector3(0.32f, 0.06f, 0.06f));
             Vector3 targetPosition = center + new Vector3(

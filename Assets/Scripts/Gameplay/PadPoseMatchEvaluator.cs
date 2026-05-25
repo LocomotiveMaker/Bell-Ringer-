@@ -16,6 +16,7 @@ namespace BellRinger.Gameplay
         [SerializeField] private float rollToleranceDegrees = 18f;
         [SerializeField] private float matchFeedbackRadiusMultiplier = 2.5f;
         [SerializeField] private float treatmentSeconds = 4f;
+        [SerializeField] private bool requireRotation = true;
 
         private bool _initialized;
         private float _progressSeconds;
@@ -61,10 +62,15 @@ namespace BellRinger.Gameplay
             set => matchFeedbackRadiusMultiplier = Mathf.Max(1f, value);
         }
 
+        public bool RequireRotation
+        {
+            get => requireRotation;
+            set => requireRotation = value;
+        }
+
         public bool HasCurrentPose => padPoseProvider != null &&
                                       padPoseProvider.HasFreshPosition &&
-                                      padPoseProvider.HasFreshImu &&
-                                      padPoseProvider.HasResolvedRotation;
+                                      (!requireRotation || (padPoseProvider.HasFreshImu && padPoseProvider.HasResolvedRotation));
         public Vector3 CurrentCameraSpacePosition => padPoseProvider != null ? padPoseProvider.CameraSpacePosition : Vector3.zero;
         public float CurrentYawDegrees => padPoseProvider != null ? padPoseProvider.ResolvedYawDegrees : 0f;
         public float CurrentPitchDegrees => padPoseProvider != null ? padPoseProvider.ResolvedPitchDegrees : 0f;
@@ -164,9 +170,9 @@ namespace BellRinger.Gameplay
             }
 
             PositionErrorMeters = Vector3.Distance(CurrentCameraSpacePosition, targetCameraSpacePosition);
-            YawErrorDegrees = Mathf.Abs(Mathf.DeltaAngle(CurrentYawDegrees, targetYawDegrees));
-            PitchErrorDegrees = Mathf.Abs(Mathf.DeltaAngle(CurrentPitchDegrees, targetPitchDegrees));
-            RollErrorDegrees = Mathf.Abs(Mathf.DeltaAngle(CurrentRollDegrees, targetRollDegrees));
+            YawErrorDegrees = requireRotation ? Mathf.Abs(Mathf.DeltaAngle(CurrentYawDegrees, targetYawDegrees)) : 0f;
+            PitchErrorDegrees = requireRotation ? Mathf.Abs(Mathf.DeltaAngle(CurrentPitchDegrees, targetPitchDegrees)) : 0f;
+            RollErrorDegrees = requireRotation ? Mathf.Abs(Mathf.DeltaAngle(CurrentRollDegrees, targetRollDegrees)) : 0f;
 
             float feedbackScale = Mathf.Max(1f, matchFeedbackRadiusMultiplier);
             PositionMatch01 = 1f - Mathf.Clamp01(PositionErrorMeters / (positionToleranceMeters * feedbackScale));
@@ -176,9 +182,10 @@ namespace BellRinger.Gameplay
             RotationMatch01 = Mathf.Min(yawMatch, Mathf.Min(pitchMatch, rollMatch));
             TotalMatch01 = Mathf.Min(PositionMatch01, RotationMatch01);
             IsInsideTolerance = PositionErrorMeters <= positionToleranceMeters &&
-                                YawErrorDegrees <= yawToleranceDegrees &&
-                                PitchErrorDegrees <= pitchToleranceDegrees &&
-                                RollErrorDegrees <= rollToleranceDegrees;
+                                (!requireRotation ||
+                                 (YawErrorDegrees <= yawToleranceDegrees &&
+                                  PitchErrorDegrees <= pitchToleranceDegrees &&
+                                  RollErrorDegrees <= rollToleranceDegrees));
         }
 
         private static float NormalizeSignedAngle(float degrees)

@@ -10,6 +10,9 @@ Use `Docs/FinalDemoDecisionLock.md` together with this document. The decision
 lock records the latest questionnaire answers for scope, implementation priority,
 assist rules, HRTF testing, observer screen, and final demo assembly.
 
+For the current 11-line narration set and the latest pad pose correction notes,
+use `Docs/FinalDemoNarrationCueTimingAndPadCorrections.md`.
+
 ## Core Rule
 
 The player is assumed to have closed or blocked vision. The primary feedback
@@ -617,6 +620,11 @@ Notes:
   clear use.
 
 ## Temporary Narration Plan
+
+This section is historical only for the old placeholder narration direction.
+For the current 11-line curated narration set in `Assets/Audio/Curated/Narration`
+and its exact FinalDemo timing/queue rules, use
+`Docs/FinalDemoNarrationCueTimingAndPadCorrections.md`.
 
 The final narration should not use rejected low-quality Windows TTS. However,
 for demo assembly it is acceptable to generate temporary Windows narration and

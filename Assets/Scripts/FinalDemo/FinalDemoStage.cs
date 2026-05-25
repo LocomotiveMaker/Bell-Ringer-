@@ -63,6 +63,11 @@ namespace BellRinger.FinalDemo
         NarrFindTinnitusPose = 29,
         NarrHoldPose = 30,
         NarrBossTrack = 31,
+        NarrFaceForwardWait = 32,
+        NarrRainFocusBell = 33,
+        NarrBellInHand = 34,
+        NarrApproachTinnitus = 35,
+        NarrFindSoundOrigin = 36,
     }
 
     public enum FinalDemoAudioBus

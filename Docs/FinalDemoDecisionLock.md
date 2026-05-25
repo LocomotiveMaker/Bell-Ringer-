@@ -281,6 +281,9 @@ Implementation supplement:
 - Do not bind narration clips directly in scene objects.
 - Use narration cue IDs so Gemini or another final TTS can replace Windows files
   without code or scene changes.
+- For the active 11-line curated narration set, the stage timing map, the
+  no-interrupt queue rule, and the current pad pose correction notes, use
+  `Docs/FinalDemoNarrationCueTimingAndPadCorrections.md`.
 
 ## Audio Implementation
 

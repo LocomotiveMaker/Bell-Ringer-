@@ -19,6 +19,11 @@ namespace BellRinger.Gameplay
         [SerializeField] private float maximumCameraYawReacquireJumpDegrees = 35f;
         [SerializeField] private int cameraYawReacquireStableFrames = 4;
         [SerializeField] private float cameraYawReacquireStableToleranceDegrees = 8f;
+        [Header("Camera-Space Corrections")]
+        [SerializeField] private bool invertPitch = true;
+        [SerializeField] private bool invertCameraSpacePositionX = true;
+        [SerializeField] private bool invertCameraSpacePositionZ = true;
+        [SerializeField] private Vector3 cameraSpacePositionAxisScale = new Vector3(1.5f, 1.25f, 1.5f);
 
         private bool _initialized;
         private bool _hasRelativeRotation;
@@ -44,11 +49,18 @@ namespace BellRinger.Gameplay
         public bool UsingImuYawFallback { get; private set; }
         public bool UsingHeldYaw { get; private set; }
         public bool HasResolvedRotation => _hasRelativeRotation;
-        public Vector3 CameraSpacePosition => trackingReceiver != null ? trackingReceiver.ApproximateCameraSpacePosition : Vector3.zero;
+        public Vector3 CameraSpacePosition => ResolveCorrectedCameraSpacePosition();
         public Quaternion RelativeRotation => _relativeRotation;
         public float ResolvedYawDegrees => _resolvedYawDegrees;
         public float ResolvedPitchDegrees => _resolvedPitchDegrees;
         public float ResolvedRollDegrees => _resolvedRollDegrees;
+
+        private void OnValidate()
+        {
+            cameraSpacePositionAxisScale.x = Mathf.Max(0.01f, cameraSpacePositionAxisScale.x);
+            cameraSpacePositionAxisScale.y = Mathf.Max(0.01f, cameraSpacePositionAxisScale.y);
+            cameraSpacePositionAxisScale.z = Mathf.Max(0.01f, cameraSpacePositionAxisScale.z);
+        }
 
         private void Start()
         {
@@ -155,7 +167,7 @@ namespace BellRinger.Gameplay
 
         private void ResolveStableImuAngles(out float pitchDegrees, out float rollDegrees)
         {
-            float candidatePitch = NormalizeSignedAngle(padImuReceiver.MappedPitchDegrees);
+            float candidatePitch = NormalizeSignedAngle(invertPitch ? -padImuReceiver.MappedPitchDegrees : padImuReceiver.MappedPitchDegrees);
             float candidateRoll = NormalizeSignedAngle(padImuReceiver.MappedRollDegrees);
             if (!_hasStableImuAngles)
             {
@@ -179,6 +191,30 @@ namespace BellRinger.Gameplay
 
             pitchDegrees = _stablePitchDegrees;
             rollDegrees = _stableRollDegrees;
+        }
+
+        private Vector3 ResolveCorrectedCameraSpacePosition()
+        {
+            if (trackingReceiver == null)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 corrected = trackingReceiver.ApproximateCameraSpacePosition;
+            if (invertCameraSpacePositionX)
+            {
+                corrected.x = -corrected.x;
+            }
+
+            if (invertCameraSpacePositionZ)
+            {
+                corrected.z = -corrected.z;
+            }
+
+            corrected.x *= cameraSpacePositionAxisScale.x;
+            corrected.y *= cameraSpacePositionAxisScale.y;
+            corrected.z *= cameraSpacePositionAxisScale.z;
+            return corrected;
         }
 
         private void ApplyPitchRollDiagonalBoost(ref float pitchDegrees, ref float rollDegrees)

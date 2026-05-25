@@ -39,6 +39,11 @@ namespace BellRinger.FinalDemo
             new FinalDemoCueEntry(FinalDemoCueId.NarrFindTinnitusPose, "Narration find tinnitus pose", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrHoldPose, "Narration hold pose", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrBossTrack, "Narration boss track", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrFaceForwardWait, "Narration face forward wait", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrRainFocusBell, "Narration rain focus bell", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrBellInHand, "Narration bell in hand", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrApproachTinnitus, "Narration approach tinnitus", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrFindSoundOrigin, "Narration find sound origin", FinalDemoAudioBus.Narration, false, false),
         };
 
         public FinalDemoCueEntry[] Cues => cues;
