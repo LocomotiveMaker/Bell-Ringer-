@@ -124,7 +124,35 @@ namespace BellRinger.Hardware
             }
 
             preferredPortName = normalizedPortName;
-            if (_initialized && !IsConnected)
+            if (_initialized)
+            {
+                RefreshAndReconnect();
+            }
+        }
+
+        public void SetBaudRate(int serialBaudRate)
+        {
+            if (serialBaudRate <= 0 || baudRate == serialBaudRate)
+            {
+                return;
+            }
+
+            baudRate = serialBaudRate;
+            if (_initialized)
+            {
+                RefreshAndReconnect();
+            }
+        }
+
+        public void SetUseSharedHardwareBridgeTelemetry(bool useSharedTelemetry)
+        {
+            if (useSharedHardwareBridgeTelemetry == useSharedTelemetry)
+            {
+                return;
+            }
+
+            useSharedHardwareBridgeTelemetry = useSharedTelemetry;
+            if (_initialized)
             {
                 RefreshAndReconnect();
             }

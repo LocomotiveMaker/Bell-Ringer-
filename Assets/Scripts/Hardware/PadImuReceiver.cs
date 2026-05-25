@@ -205,6 +205,35 @@ namespace BellRinger.Hardware
             _nextReconnectTime = Time.unscaledTime + reconnectIntervalSeconds;
         }
 
+        public void SetPreferredPortName(string portName)
+        {
+            string normalizedPortName = string.IsNullOrWhiteSpace(portName) ? string.Empty : portName.Trim();
+            if (string.Equals(preferredPortName, normalizedPortName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            preferredPortName = normalizedPortName;
+            if (_initialized)
+            {
+                RefreshAndReconnect();
+            }
+        }
+
+        public void SetBaudRate(int serialBaudRate)
+        {
+            if (serialBaudRate <= 0 || baudRate == serialBaudRate)
+            {
+                return;
+            }
+
+            baudRate = serialBaudRate;
+            if (_initialized)
+            {
+                RefreshAndReconnect();
+            }
+        }
+
         public void CycleYawAxis()
         {
             yawAxis = NextAxis(yawAxis);

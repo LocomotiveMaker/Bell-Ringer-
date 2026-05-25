@@ -137,6 +137,7 @@ namespace BellRinger.FinalDemo
             playerCamera ??= sceneReferences != null ? sceneReferences.PlayerCamera : null;
             operatorControls ??= GetComponent<FinalDemoOperatorControls>();
             inputStatus ??= GetComponent<FinalDemoInputStatus>() ?? FindFirstObjectByType<FinalDemoInputStatus>();
+            ApplyTuningSerialSettings();
             operatorControls?.Initialize(this, inputStatus);
             inputStatus?.RefreshReferences();
         }
@@ -1381,6 +1382,87 @@ namespace BellRinger.FinalDemo
             EnsureRouters();
             EnsurePadInputRoot();
             EnsurePlaceholderWorld();
+        }
+
+        private void ApplyTuningSerialSettings()
+        {
+            if (tuningProfile == null)
+            {
+                return;
+            }
+
+            HardwareBridge hardwareBridge = HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>();
+            if (hardwareBridge != null)
+            {
+                ApplySerialPortSetting(
+                    HardwareBridge.SerialPortEnvName,
+                    tuningProfile.HardwareSerialPort,
+                    hardwareBridge.SetPreferredPortName);
+                ApplySerialBaudSetting(HardwareBridge.SerialBaudEnvName, 115200, hardwareBridge.SetBaudRate);
+            }
+
+            HeadImuReceiver headImuReceiver = FindFirstObjectByType<HeadImuReceiver>();
+            if (headImuReceiver != null)
+            {
+                if (!HasEnvironmentOverride(HeadImuReceiver.SerialPortEnvName))
+                {
+                    headImuReceiver.SetUseSharedHardwareBridgeTelemetry(true);
+                    headImuReceiver.SetPreferredPortName(string.Empty);
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[FinalDemoDirector] {HeadImuReceiver.SerialPortEnvName} is set. Head IMU can fall back to that dedicated override if shared HardwareBridge telemetry is unavailable.");
+                }
+
+                ApplySerialBaudSetting(HeadImuReceiver.SerialBaudEnvName, 230400, headImuReceiver.SetBaudRate);
+            }
+
+            PadImuReceiver padImuReceiver = FindFirstObjectByType<PadImuReceiver>();
+            if (padImuReceiver != null)
+            {
+                ApplySerialPortSetting(
+                    PadImuReceiver.SerialPortEnvName,
+                    tuningProfile.PadImuSerialPort,
+                    padImuReceiver.SetPreferredPortName);
+                ApplySerialBaudSetting(PadImuReceiver.SerialBaudEnvName, 230400, padImuReceiver.SetBaudRate);
+            }
+        }
+
+        private static void ApplySerialPortSetting(string environmentVariableName, string profilePortName, Action<string> apply)
+        {
+            string overrideValue = Environment.GetEnvironmentVariable(environmentVariableName);
+            if (!string.IsNullOrWhiteSpace(overrideValue))
+            {
+                if (!string.IsNullOrWhiteSpace(profilePortName) &&
+                    !string.Equals(overrideValue.Trim(), profilePortName.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[FinalDemoDirector] {environmentVariableName}={overrideValue.Trim()} overrides tuning profile port {profilePortName.Trim()}.");
+                }
+
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(profilePortName))
+            {
+                apply(profilePortName);
+            }
+        }
+
+        private static void ApplySerialBaudSetting(string environmentVariableName, int profileBaudRate, Action<int> apply)
+        {
+            if (HasEnvironmentOverride(environmentVariableName))
+            {
+                return;
+            }
+
+            apply(profileBaudRate);
+        }
+
+        private static bool HasEnvironmentOverride(string environmentVariableName)
+        {
+            return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(environmentVariableName));
         }
 
         private Transform CreatePlayerRig()

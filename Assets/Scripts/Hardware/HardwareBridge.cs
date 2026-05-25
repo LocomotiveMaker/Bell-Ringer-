@@ -63,6 +63,29 @@ namespace BellRinger.Hardware
             _lastUpdateRealtime = Time.realtimeSinceStartup;
         }
 
+        public void SetPreferredPortName(string portName)
+        {
+            string normalizedPortName = string.IsNullOrWhiteSpace(portName) ? string.Empty : portName.Trim();
+            if (string.Equals(preferredPortName, normalizedPortName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            preferredPortName = normalizedPortName;
+            ReconnectIfInitialized();
+        }
+
+        public void SetBaudRate(int serialBaudRate)
+        {
+            if (serialBaudRate <= 0 || baudRate == serialBaudRate)
+            {
+                return;
+            }
+
+            baudRate = serialBaudRate;
+            ReconnectIfInitialized();
+        }
+
         public HardwareStatusSnapshot GetStatusSnapshot()
         {
             return new HardwareStatusSnapshot
@@ -402,6 +425,23 @@ namespace BellRinger.Hardware
             }
         }
 
+        private void ReconnectIfInitialized()
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            Disconnect();
+            RefreshAvailablePorts();
+            if (autoConnectOnStart)
+            {
+                ConnectOrFallback();
+            }
+
+            _nextReconnectTime = Time.unscaledTime + reconnectIntervalSeconds;
+        }
+
         private void ApplyEnvironmentOverrides()
         {
             string portOverride = Environment.GetEnvironmentVariable(SerialPortEnvName);
@@ -443,7 +483,7 @@ namespace BellRinger.Hardware
             string selectedPort = ResolvePortName();
             if (string.IsNullOrEmpty(selectedPort))
             {
-                if (allowSimulationFallback)
+                if (_availablePorts.Length == 0 && allowSimulationFallback)
                 {
                     _simulateHardware = true;
                     _lastError = "No serial ports found. Falling back to simulation.";
@@ -471,6 +511,9 @@ namespace BellRinger.Hardware
                         return candidate;
                     }
                 }
+
+                _lastError = $"Preferred hardware port {preferredPortName} is not currently available.";
+                return string.Empty;
             }
 
             return _availablePorts[0];

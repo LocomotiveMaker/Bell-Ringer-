@@ -17,3 +17,6 @@ Convention:
   - exact commands / settings used
   - any rollback steps
 
+## Entries
+
+- `2026-05-26-notebook-runtime-com40-com30-fix.md`: FinalDemo serial routing fix for notebook `COM40`/`COM30`, plus current `COM40` runtime diagnosis.
