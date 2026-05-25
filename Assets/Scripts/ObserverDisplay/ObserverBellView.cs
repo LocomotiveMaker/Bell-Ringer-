@@ -18,11 +18,10 @@ namespace BellRinger.ObserverDisplay
         private Color[] _shellBaseColors;
         private Renderer _coreRenderer;
         private Renderer _clapperRenderer;
-        private Renderer _sourcedCardRenderer;
         private LineRenderer _ringA;
         private LineRenderer _ringB;
-        private bool _usingSourcedCard;
         private bool _initialized;
+        private bool _hasAppliedSnapshot;
         private float _ringStartedAtRealtime = -99f;
         private float _ringStrength01;
         private float _lastPadShakePulseAtRealtime = -99f;
@@ -42,7 +41,15 @@ namespace BellRinger.ObserverDisplay
 
             Vector3 targetPosition = snapshot.hasBell ? snapshot.bellWorldPosition : _modelRoot.position;
             float follow01 = 1f - Mathf.Exp(-Mathf.Max(0.01f, positionLerp) * Time.unscaledDeltaTime);
-            _modelRoot.position = Vector3.Lerp(_modelRoot.position, targetPosition, follow01);
+            if (!_hasAppliedSnapshot)
+            {
+                _modelRoot.position = targetPosition;
+                _hasAppliedSnapshot = true;
+            }
+            else
+            {
+                _modelRoot.position = Vector3.Lerp(_modelRoot.position, targetPosition, follow01);
+            }
 
             float bellImpulse01 = ResolveBellImpulse(cueSnapshots);
             if (bellImpulse01 > 0.01f)
@@ -89,6 +96,7 @@ namespace BellRinger.ObserverDisplay
             _initialized = true;
             _modelRoot = new GameObject("ObserverBellModel").transform;
             _modelRoot.SetParent(transform, false);
+            _modelRoot.localScale = Vector3.one * 2.25f;
 
             Material shellMaterial = CreateStandardMaterial(new Color(0.26f, 0.22f, 0.16f), 0f);
             Material patinaMaterial = CreateStandardMaterial(new Color(0.24f, 0.39f, 0.31f), 0f);
@@ -128,12 +136,6 @@ namespace BellRinger.ObserverDisplay
             _ringRootB.localPosition = new Vector3(0f, 0.04f, 0f);
             _ringB = CreateRingRenderer(_ringRootB, new Color(0.21f, 0.88f, 0.42f, 0f));
 
-            Texture2D sourcedTexture = ObserverSourceTextureLoader.LoadColorKeyedJpeg("ThirdParty/ObserverSource/PolyPizza/bell-poly-pizza.jpg", 0.18f);
-            if (sourcedTexture != null)
-            {
-                _usingSourcedCard = true;
-                _sourcedCardRenderer = CreateSourcedCard("BellCard", sourcedTexture, new Vector3(0f, 0.02f, 0f), new Vector3(0.34f, 0.42f, 1f));
-            }
         }
 
         private Renderer CreatePart(string objectName, PrimitiveType primitiveType, Vector3 localPosition, Vector3 localScale, Material material)
@@ -193,7 +195,7 @@ namespace BellRinger.ObserverDisplay
 
                 Color baseColor = _shellBaseColors[index];
                 float brightness = index <= 2 ? shellBrightness : patinaBoost;
-                _shellRenderers[index].enabled = !_usingSourcedCard;
+                _shellRenderers[index].enabled = true;
                 _shellRenderers[index].material.color = Color.Lerp(Color.black, baseColor, brightness);
             }
 
@@ -208,15 +210,6 @@ namespace BellRinger.ObserverDisplay
                 _coreRenderer.material.EnableKeyword("_EMISSION");
             }
 
-            if (_usingSourcedCard && _sourcedCardRenderer != null)
-            {
-                Color cardTint = stage == FinalDemoStage.ForestEnding
-                    ? new Color(0.88f, 1f, 0.92f, 1f)
-                    : new Color(1f, 0.96f, 0.92f, 1f);
-                float brightness = 0.78f + gazeBoost * 0.12f + ringPulse01 * 0.24f;
-                _sourcedCardRenderer.enabled = true;
-                _sourcedCardRenderer.material.color = Color.Lerp(Color.black, cardTint, brightness);
-            }
         }
 
         private void UpdateRings(float ringPulse01)
@@ -267,11 +260,6 @@ namespace BellRinger.ObserverDisplay
             if (_coreRenderer != null)
             {
                 _coreRenderer.enabled = visible;
-            }
-
-            if (_sourcedCardRenderer != null)
-            {
-                _sourcedCardRenderer.enabled = visible;
             }
 
             if (_ringA != null)
@@ -332,10 +320,10 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateStandardMaterial(Color color, float emission)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
-                            Shader.Find("Standard") ??
-                            Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Unlit/Color") ??
+                            Shader.Find("Sprites/Default") ??
+                            Shader.Find("Universal Render Pipeline/Unlit") ??
+                            Shader.Find("Standard");
             Material material = new Material(shader);
             material.color = color;
             if (emission > 0f)
@@ -349,30 +337,8 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateLineMaterial()
         {
-            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            Shader shader = Shader.Find("Unlit/Color") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
             return new Material(shader);
-        }
-
-        private Renderer CreateSourcedCard(string objectName, Texture2D texture, Vector3 localPosition, Vector3 localScale)
-        {
-            GameObject card = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            card.name = objectName;
-            card.transform.SetParent(_modelRoot, false);
-            card.transform.localPosition = localPosition;
-            card.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            card.transform.localScale = localScale;
-            Collider collider = card.GetComponent<Collider>();
-            if (collider != null)
-            {
-                Destroy(collider);
-            }
-
-            Material material = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Transparent") ?? Shader.Find("Unlit/Texture"));
-            material.mainTexture = texture;
-            material.color = Color.white;
-            Renderer renderer = card.GetComponent<Renderer>();
-            renderer.material = material;
-            return renderer;
         }
     }
 }

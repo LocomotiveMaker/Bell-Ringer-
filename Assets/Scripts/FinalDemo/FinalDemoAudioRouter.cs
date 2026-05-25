@@ -110,7 +110,9 @@ namespace BellRinger.FinalDemo
             AudioSource source = sourceObject.AddComponent<AudioSource>();
             ConfigureSource(source, cue, worldPosition);
             source.volume = ResolveVolume(cue, volumeScale);
-            source.PlayOneShot(clip, 1f);
+            source.clip = clip;
+            source.loop = false;
+            source.Play();
             Destroy(sourceObject, Mathf.Max(0.25f, clip.length / Mathf.Max(0.1f, cue.Pitch)) + 0.5f);
 
             if (cue.Bus == FinalDemoAudioBus.Narration)
@@ -132,12 +134,12 @@ namespace BellRinger.FinalDemo
             return source;
         }
 
-        public void StartLoop(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale = 1f)
+        public AudioSource StartLoop(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale = 1f)
         {
             if (!TryResolveCue(cueId, out FinalDemoCueEntry cue, out AudioClip clip))
             {
                 _lastAction = $"No loop clip assigned for {cueId}.";
-                return;
+                return null;
             }
 
             if (_loops.TryGetValue(cueId, out ActiveLoop existingLoop) && existingLoop.source != null)
@@ -146,7 +148,7 @@ namespace BellRinger.FinalDemo
                 existingLoop.targetScale = Mathf.Clamp01(volumeScale);
                 existingLoop.stopping = false;
                 _lastAction = $"Updated loop {cueId}.";
-                return;
+                return existingLoop.source;
             }
 
             GameObject sourceObject = new GameObject($"FinalDemoLoop_{cueId}");
@@ -169,6 +171,7 @@ namespace BellRinger.FinalDemo
             };
 
             _lastAction = $"Started loop {cueId} on {cue.Bus}.";
+            return source;
         }
 
         public void StopLoop(FinalDemoCueId cueId)
@@ -208,6 +211,13 @@ namespace BellRinger.FinalDemo
         public string BuildStatusText()
         {
             return $"Audio loops={ActiveLoopCount} ducking={IsNarrationDucking} hrtf={SpatializerEnabled} last={LastAction}";
+        }
+
+        public float GetCueLengthSeconds(FinalDemoCueId cueId)
+        {
+            return TryResolveCue(cueId, out FinalDemoCueEntry cue, out AudioClip clip) && clip != null
+                ? clip.length / Mathf.Max(0.1f, cue.Pitch)
+                : 0f;
         }
 
         public void FillActiveCueSnapshots(List<FinalDemoAudioCueSnapshot> destination, float recentOneShotLifetimeSeconds = 1.25f)

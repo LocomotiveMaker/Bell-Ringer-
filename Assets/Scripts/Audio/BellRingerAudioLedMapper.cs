@@ -86,17 +86,12 @@ namespace BellRinger.Audio
             float normalizedX = Mathf.Clamp(horizontalAngle / Mathf.Max(1f, horizontalAngleLimitDegrees), -1f, 1f);
             float normalizedY = Mathf.Clamp(verticalAngle / Mathf.Max(1f, verticalAngleLimitDegrees), -1f, 1f);
 
-            int mappedX = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Lerp(0f, DisplayWidth - 1, (normalizedX * 0.5f) + 0.5f)),
-                0,
-                DisplayWidth - 1);
+            float mappedXFloat = Mathf.Clamp(Mathf.Lerp(0f, DisplayWidth - 1, (normalizedX * 0.5f) + 0.5f), 0f, DisplayWidth - 1);
+            float mappedYFloat = Mathf.Clamp(Mathf.Lerp(0f, DisplayHeight - 1, (normalizedY * 0.5f) + 0.5f), 0f, DisplayHeight - 1);
+            int mappedX = Mathf.Clamp(Mathf.RoundToInt(mappedXFloat), 0, DisplayWidth - 1);
+            int mappedY = Mathf.Clamp(Mathf.RoundToInt(mappedYFloat), 0, DisplayHeight - 1);
 
-            int mappedY = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Lerp(0f, DisplayHeight - 1, (normalizedY * 0.5f) + 0.5f)),
-                0,
-                DisplayHeight - 1);
-
-            dotFrame = new BellRingerLedDotFrame(mappedX, mappedY, brightness);
+            dotFrame = new BellRingerLedDotFrame(mappedX, mappedY, mappedXFloat, mappedYFloat, brightness);
             return true;
         }
     }

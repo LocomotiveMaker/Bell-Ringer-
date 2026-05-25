@@ -9,6 +9,18 @@ namespace BellRinger.ObserverDisplay
     [DisallowMultipleComponent]
     public sealed class ObserverDisplayController : MonoBehaviour
     {
+        private const int ObserverWorldLayer = 0;
+
+        private static readonly string[] HiddenGameplayPlaceholderNames =
+        {
+            "FinalDemo_BellPlaceholder",
+            "FinalDemo_TinnitusA",
+            "FinalDemo_TinnitusB",
+            "FinalDemo_BossTinnitus",
+            "FinalDemo_RainFloor",
+            "FinalDemo_WallNoisePlane",
+        };
+
         [SerializeField] private FinalDemoDirector director;
         [SerializeField] private FinalDemoInputStatus inputStatus;
         [SerializeField] private FinalDemoLightRouter lightRouter;
@@ -17,8 +29,8 @@ namespace BellRinger.ObserverDisplay
         [SerializeField] private Color bottomPanelColor = new Color(0.06f, 0.06f, 0.09f, 0.94f);
         [SerializeField] private Color centerSafeColor = new Color(0.015f, 0.015f, 0.02f, 0.98f);
         [SerializeField] private Color worldBackgroundColor = new Color(0.015f, 0.015f, 0.03f, 1f);
-        [SerializeField] private Vector3 observerCameraOffset = new Vector3(0f, 5.1f, -6.8f);
-        [SerializeField] private Vector3 observerLookOffset = new Vector3(0f, 0.7f, 3.4f);
+        [SerializeField] private Vector3 observerCameraOffset = new Vector3(0f, 3.7f, -5.0f);
+        [SerializeField] private Vector3 observerLookOffset = new Vector3(0f, 0.65f, 2.45f);
         [SerializeField] private float observerCameraFollowLerp = 6f;
 
         private readonly ObserverDisplaySnapshot _snapshot = new ObserverDisplaySnapshot();
@@ -26,6 +38,7 @@ namespace BellRinger.ObserverDisplay
 
         private Camera _observerCamera;
         private Camera _playerViewCamera;
+        private Light _observerKeyLight;
         private Canvas _canvas;
         private ObserverStagePanel _stagePanel;
         private ObserverLedMatrixPreview _ledPreview;
@@ -36,6 +49,9 @@ namespace BellRinger.ObserverDisplay
         private ObserverBossTinnitusView _bossView;
         private ObserverForestView _forestView;
         private Transform _worldVisualRoot;
+        private Transform _worldEnvironmentRoot;
+        private Renderer _environmentFloorRenderer;
+        private Renderer _environmentWallRenderer;
         private RectTransform _leftPanelRect;
         private RectTransform _centerPanelRect;
         private RectTransform _rightPanelRect;
@@ -43,6 +59,11 @@ namespace BellRinger.ObserverDisplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoBootstrap()
         {
+            if (!IsAutoBootstrapEnabled())
+            {
+                return;
+            }
+
             if (FindFirstObjectByType<FinalDemoDirector>() == null || FindFirstObjectByType<ObserverDisplayController>() != null)
             {
                 return;
@@ -51,6 +72,11 @@ namespace BellRinger.ObserverDisplay
             GameObject root = new GameObject("ObserverDisplayRoot");
             root.AddComponent<ObserverDisplayLayout>();
             root.AddComponent<ObserverDisplayController>();
+        }
+
+        private static bool IsAutoBootstrapEnabled()
+        {
+            return false;
         }
 
         private void Awake()
@@ -73,6 +99,9 @@ namespace BellRinger.ObserverDisplay
             _tinnitusView?.ApplySnapshot(_snapshot, director);
             _bossView?.ApplySnapshot(_snapshot, director);
             _forestView?.ApplySnapshot(_snapshot, director);
+            UpdateWorldEnvironment();
+            ApplyObserverWorldLayer();
+            HideGameplayPlaceholderRenderers();
         }
 
         private void EnsureReferences()
@@ -100,8 +129,10 @@ namespace BellRinger.ObserverDisplay
         private void EnsureRuntimeObjects()
         {
             EnsureObserverCamera();
+            EnsureObserverLight();
             EnsureCanvas();
             EnsureWorldViews();
+            EnsureWorldEnvironment();
             LayoutPanels();
         }
 
@@ -122,6 +153,25 @@ namespace BellRinger.ObserverDisplay
             _observerCamera.nearClipPlane = 0.03f;
             _observerCamera.farClipPlane = 100f;
             _observerCamera.useOcclusionCulling = false;
+            _observerCamera.cullingMask = 1 << ObserverWorldLayer;
+        }
+
+        private void EnsureObserverLight()
+        {
+            if (_observerKeyLight != null)
+            {
+                return;
+            }
+
+            GameObject lightObject = new GameObject("ObserverKeyLight");
+            lightObject.transform.SetParent(transform, false);
+            lightObject.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
+            _observerKeyLight = lightObject.AddComponent<Light>();
+            _observerKeyLight.type = LightType.Directional;
+            _observerKeyLight.color = new Color(0.94f, 0.97f, 1f);
+            _observerKeyLight.intensity = 1.35f;
+            _observerKeyLight.shadows = LightShadows.None;
+            _observerKeyLight.cullingMask = 1 << ObserverWorldLayer;
         }
 
         private void EnsureCanvas()
@@ -190,6 +240,33 @@ namespace BellRinger.ObserverDisplay
             _forestView ??= _worldVisualRoot.gameObject.AddComponent<ObserverForestView>();
         }
 
+        private void EnsureWorldEnvironment()
+        {
+            if (_worldEnvironmentRoot != null)
+            {
+                return;
+            }
+
+            _worldEnvironmentRoot = new GameObject("ObserverWorldEnvironment").transform;
+            _worldEnvironmentRoot.SetParent(transform, false);
+
+            _environmentFloorRenderer = CreateEnvironmentPart(
+                _worldEnvironmentRoot,
+                "ObserverFloor",
+                PrimitiveType.Cube,
+                new Vector3(0f, -0.03f, 3.1f),
+                new Vector3(18f, 0.04f, 16f),
+                new Color(0.28f, 0.29f, 0.31f));
+
+            _environmentWallRenderer = CreateEnvironmentPart(
+                _worldEnvironmentRoot,
+                "ObserverWall",
+                PrimitiveType.Cube,
+                new Vector3(0f, 2.1f, 8f),
+                new Vector3(18f, 4.4f, 0.08f),
+                new Color(0.90f, 0.92f, 0.94f));
+        }
+
         private void LayoutPanels()
         {
             if (_observerCamera == null || _canvas == null || layout == null)
@@ -227,6 +304,71 @@ namespace BellRinger.ObserverDisplay
             float lerp01 = 1f - Mathf.Exp(-Mathf.Max(0f, observerCameraFollowLerp) * Time.unscaledDeltaTime);
             _observerCamera.transform.position = Vector3.Lerp(_observerCamera.transform.position, desiredPosition, lerp01);
             _observerCamera.transform.LookAt(targetAnchor + observerLookOffset);
+        }
+
+        private void UpdateWorldEnvironment()
+        {
+            if (_worldEnvironmentRoot == null)
+            {
+                return;
+            }
+
+            Vector3 anchor = director != null && director.PlayerRig != null
+                ? director.PlayerRig.position
+                : Vector3.zero;
+            _worldEnvironmentRoot.position = new Vector3(anchor.x, 0f, anchor.z);
+
+            if (_environmentFloorRenderer != null)
+            {
+                Color floorColor = _snapshot.stage == FinalDemoStage.ForestEnding || _snapshot.stage == FinalDemoStage.Complete
+                    ? new Color(0.18f, 0.21f, 0.19f)
+                    : _snapshot.stage == FinalDemoStage.BellFollowRain
+                        ? new Color(0.16f, 0.18f, 0.20f)
+                        : new Color(0.28f, 0.29f, 0.31f);
+                _environmentFloorRenderer.material.color = floorColor;
+            }
+
+            if (_environmentWallRenderer != null)
+            {
+                Color wallColor = _snapshot.stage == FinalDemoStage.ForestEnding || _snapshot.stage == FinalDemoStage.Complete
+                    ? new Color(0.22f, 0.28f, 0.24f)
+                    : new Color(0.90f, 0.92f, 0.94f);
+                _environmentWallRenderer.material.color = wallColor;
+            }
+        }
+
+        private void ApplyObserverWorldLayer()
+        {
+            if (_worldVisualRoot != null)
+            {
+                SetLayerRecursively(_worldVisualRoot.gameObject, ObserverWorldLayer);
+            }
+
+            if (_worldEnvironmentRoot != null)
+            {
+                SetLayerRecursively(_worldEnvironmentRoot.gameObject, ObserverWorldLayer);
+            }
+        }
+
+        private static void HideGameplayPlaceholderRenderers()
+        {
+            for (int nameIndex = 0; nameIndex < HiddenGameplayPlaceholderNames.Length; nameIndex++)
+            {
+                GameObject placeholder = GameObject.Find(HiddenGameplayPlaceholderNames[nameIndex]);
+                if (placeholder == null)
+                {
+                    continue;
+                }
+
+                Renderer[] renderers = placeholder.GetComponentsInChildren<Renderer>(true);
+                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                {
+                    if (renderers[rendererIndex] != null)
+                    {
+                        renderers[rendererIndex].enabled = false;
+                    }
+                }
+            }
         }
 
         private void BuildSnapshot()
@@ -387,6 +529,46 @@ namespace BellRinger.ObserverDisplay
             Image image = panelObject.GetComponent<Image>();
             image.color = color;
             return panelObject.GetComponent<RectTransform>();
+        }
+
+        private static Renderer CreateEnvironmentPart(Transform parent, string objectName, PrimitiveType primitiveType, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            GameObject part = GameObject.CreatePrimitive(primitiveType);
+            part.name = objectName;
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = localPosition;
+            part.transform.localScale = localScale;
+            Collider collider = part.GetComponent<Collider>();
+            if (collider != null)
+            {
+                Destroy(collider);
+            }
+
+            Renderer renderer = part.GetComponent<Renderer>();
+            Shader shader = Shader.Find("Unlit/Color") ??
+                            Shader.Find("Sprites/Default") ??
+                            Shader.Find("Universal Render Pipeline/Unlit") ??
+                            Shader.Find("Standard");
+            renderer.material = new Material(shader)
+            {
+                color = color,
+            };
+            return renderer;
+        }
+
+        private static void SetLayerRecursively(GameObject root, int layer)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            root.layer = layer;
+            Transform rootTransform = root.transform;
+            for (int index = 0; index < rootTransform.childCount; index++)
+            {
+                SetLayerRecursively(rootTransform.GetChild(index).gameObject, layer);
+            }
         }
 
         private static void SetPanelRect(RectTransform rectTransform, float x, float y, float width, float height)

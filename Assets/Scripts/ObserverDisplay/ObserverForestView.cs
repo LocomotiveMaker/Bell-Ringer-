@@ -6,11 +6,31 @@ namespace BellRinger.ObserverDisplay
     [DisallowMultipleComponent]
     public sealed class ObserverForestView : MonoBehaviour
     {
+        private static readonly string[] TreeResourcePaths =
+        {
+            "ObserverAssets/Forest/Models/Pine_1",
+            "ObserverAssets/Forest/Models/Pine_2",
+            "ObserverAssets/Forest/Models/Pine_4",
+            "ObserverAssets/Forest/Models/CommonTree_1",
+            "ObserverAssets/Forest/Models/CommonTree_3",
+            "ObserverAssets/Forest/Models/DeadTree_1",
+            "ObserverAssets/Forest/Models/DeadTree_4",
+            "ObserverAssets/Forest/Models/TwistedTree_2",
+        };
+
+        private static readonly string[] GroundResourcePaths =
+        {
+            "ObserverAssets/Forest/Models/Rock_Medium_1",
+            "ObserverAssets/Forest/Models/Rock_Medium_2",
+            "ObserverAssets/Forest/Models/Bush_Common",
+            "ObserverAssets/Forest/Models/Grass_Common_Tall",
+        };
+
         private Transform _root;
-        private Renderer[] _trunks;
-        private Renderer[] _canopies;
+        private Transform[] _treeInstances;
+        private Transform[] _groundInstances;
         private Renderer _fogRenderer;
-        private Renderer[] _motes;
+        private ParticleSystem _motes;
         private bool _initialized;
         private bool _wasVisible;
         private float _visibleStartedAtRealtime;
@@ -36,61 +56,20 @@ namespace BellRinger.ObserverDisplay
             SetVisible(true);
 
             Vector3 bellPosition = snapshot.hasForestBell ? snapshot.forestBellWorldPosition : snapshot.playerWorldPosition + new Vector3(0f, 0f, 3.2f);
-            float fade01 = Mathf.Clamp01((Time.realtimeSinceStartup - _visibleStartedAtRealtime) / 2.6f);
-            _root.position = new Vector3(bellPosition.x, 0f, bellPosition.z + 0.8f);
+            float fade01 = Mathf.Clamp01((Time.realtimeSinceStartup - _visibleStartedAtRealtime) / 2.8f);
+            float time = Time.realtimeSinceStartup;
+            _root.position = new Vector3(bellPosition.x, 0f, bellPosition.z + 1.1f);
 
             if (_fogRenderer != null)
             {
-                _fogRenderer.transform.localScale = new Vector3(9.5f, 0.06f, 6.5f);
-                Color fogColor = Color.Lerp(new Color(0.04f, 0.05f, 0.06f), new Color(0.18f, 0.28f, 0.24f), fade01);
-                _fogRenderer.material.color = fogColor;
-                ApplyEmission(_fogRenderer.material, fogColor * 0.05f);
+                _fogRenderer.transform.localScale = new Vector3(12f, 0.08f, 8.5f);
+                _fogRenderer.material.color = Color.Lerp(new Color(0.02f, 0.03f, 0.03f), new Color(0.18f, 0.24f, 0.20f), fade01);
+                ApplyEmission(_fogRenderer.material, new Color(0.08f, 0.12f, 0.10f) * fade01 * 0.12f);
             }
 
-            for (int index = 0; index < _trunks.Length; index++)
-            {
-                Renderer trunk = _trunks[index];
-                Renderer canopy = _canopies[index];
-                if (trunk == null || canopy == null)
-                {
-                    continue;
-                }
-
-                float side = index < 4 ? -1f : 1f;
-                float lane = (index % 4) / 3f;
-                float z = Mathf.Lerp(-2.2f, 2.4f, lane);
-                float x = side * (1.8f + (index % 2) * 0.95f);
-                float sway = Mathf.Sin(Time.realtimeSinceStartup * (0.75f + index * 0.09f)) * 0.06f;
-                trunk.transform.localPosition = new Vector3(x + sway, 0.95f, z);
-                trunk.transform.localScale = new Vector3(0.18f + (index % 3) * 0.03f, 1.9f + lane * 0.7f, 0.18f + (index % 2) * 0.02f);
-                canopy.transform.localPosition = trunk.transform.localPosition + new Vector3(0f, 1.1f + lane * 0.32f, 0f);
-                canopy.transform.localScale = new Vector3(0.82f + lane * 0.26f, 0.62f + lane * 0.14f, 0.82f + lane * 0.26f);
-                Color trunkColor = Color.Lerp(new Color(0.06f, 0.07f, 0.06f), new Color(0.16f, 0.18f, 0.14f), fade01);
-                Color canopyColor = Color.Lerp(new Color(0.04f, 0.06f, 0.05f), new Color(0.20f, 0.34f, 0.24f), fade01);
-                trunk.material.color = trunkColor;
-                canopy.material.color = canopyColor;
-                ApplyEmission(canopy.material, canopyColor * 0.08f);
-            }
-
-            for (int index = 0; index < _motes.Length; index++)
-            {
-                Renderer mote = _motes[index];
-                if (mote == null)
-                {
-                    continue;
-                }
-
-                float seed = index * 0.71f;
-                float time = Time.realtimeSinceStartup * (0.55f + index * 0.03f);
-                mote.transform.localPosition = new Vector3(
-                    Mathf.Sin(time + seed) * 2.4f,
-                    0.55f + Mathf.Abs(Mathf.Cos(time * 1.4f + seed)) * 1.25f,
-                    Mathf.Cos(time * 0.9f + seed) * 1.8f);
-                mote.transform.localScale = Vector3.one * (0.035f + (index % 3) * 0.012f);
-                Color moteColor = Color.Lerp(new Color(0.18f, 0.28f, 0.22f), new Color(0.46f, 0.78f, 0.56f), fade01);
-                mote.material.color = moteColor;
-                ApplyEmission(mote.material, moteColor * (0.15f + fade01 * 0.25f));
-            }
+            PositionTrees(time, fade01);
+            PositionGroundClutter(time, fade01);
+            ConfigureMotes(fade01);
         }
 
         private void EnsureVisuals()
@@ -114,39 +93,210 @@ namespace BellRinger.ObserverDisplay
             }
 
             _fogRenderer = fogObject.GetComponent<Renderer>();
-            _fogRenderer.material = CreateMaterial(new Color(0.18f, 0.28f, 0.24f));
+            _fogRenderer.material = CreateSurfaceMaterial(new Color(0.16f, 0.22f, 0.18f));
 
-            _trunks = new Renderer[8];
-            _canopies = new Renderer[8];
-            for (int index = 0; index < _trunks.Length; index++)
+            _treeInstances = new Transform[TreeResourcePaths.Length];
+            for (int index = 0; index < _treeInstances.Length; index++)
             {
-                _trunks[index] = CreatePart($"TreeTrunk_{index:00}", PrimitiveType.Cylinder, Vector3.zero, Vector3.one, new Color(0.16f, 0.18f, 0.14f));
-                _canopies[index] = CreatePart($"TreeCanopy_{index:00}", PrimitiveType.Sphere, Vector3.zero, Vector3.one, new Color(0.20f, 0.34f, 0.24f));
+                _treeInstances[index] = CreateResourceInstance(TreeResourcePaths[index], $"ForestTree_{index:00}", Vector3.one);
             }
 
-            _motes = new Renderer[9];
-            for (int index = 0; index < _motes.Length; index++)
+            _groundInstances = new Transform[GroundResourcePaths.Length];
+            for (int index = 0; index < _groundInstances.Length; index++)
             {
-                _motes[index] = CreatePart($"ForestMote_{index:00}", PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.05f, new Color(0.46f, 0.78f, 0.56f));
+                _groundInstances[index] = CreateResourceInstance(GroundResourcePaths[index], $"ForestGround_{index:00}", Vector3.one);
+            }
+
+            _motes = CreateMoteParticles();
+        }
+
+        private void PositionTrees(float time, float fade01)
+        {
+            if (_treeInstances == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < _treeInstances.Length; index++)
+            {
+                Transform instance = _treeInstances[index];
+                if (instance == null)
+                {
+                    continue;
+                }
+
+                float side = index < _treeInstances.Length / 2 ? -1f : 1f;
+                float lane01 = (index % (_treeInstances.Length / 2)) / Mathf.Max(1f, (_treeInstances.Length / 2) - 1f);
+                float x = side * Mathf.Lerp(2.2f, 4.5f, lane01);
+                float z = Mathf.Lerp(-0.9f, 4.8f, lane01);
+                float sway = Mathf.Sin(time * (0.55f + index * 0.07f)) * 0.08f;
+                instance.localPosition = new Vector3(x + sway, 0f, z);
+                instance.localRotation = Quaternion.Euler(0f, (index * 37f) + Mathf.Sin(time * 0.4f + index) * 6f, 0f);
+                float scale = Mathf.Lerp(0.22f, 0.42f, lane01) * Mathf.Lerp(0.88f, 1f, fade01);
+                instance.localScale = Vector3.one * scale;
+                SetRenderersVisible(instance, fade01, ResolveTreeColor(TreeResourcePaths[index], index));
             }
         }
 
-        private Renderer CreatePart(string objectName, PrimitiveType primitiveType, Vector3 localPosition, Vector3 localScale, Color color)
+        private void PositionGroundClutter(float time, float fade01)
         {
-            GameObject part = GameObject.CreatePrimitive(primitiveType);
-            part.name = objectName;
-            part.transform.SetParent(_root, false);
-            part.transform.localPosition = localPosition;
-            part.transform.localScale = localScale;
-            Collider collider = part.GetComponent<Collider>();
+            if (_groundInstances == null)
+            {
+                return;
+            }
+
+            Vector3[] positions =
+            {
+                new Vector3(-1.3f, 0f, 1.3f),
+                new Vector3(1.55f, 0f, 2.1f),
+                new Vector3(-0.55f, 0f, 3.2f),
+                new Vector3(0.62f, 0f, 0.95f),
+            };
+
+            for (int index = 0; index < _groundInstances.Length; index++)
+            {
+                Transform instance = _groundInstances[index];
+                if (instance == null)
+                {
+                    continue;
+                }
+
+                Vector3 position = positions[Mathf.Clamp(index, 0, positions.Length - 1)];
+                position.y += Mathf.Sin(time * (0.8f + index * 0.12f)) * 0.02f;
+                instance.localPosition = position;
+                instance.localRotation = Quaternion.Euler(0f, index * 53f, 0f);
+                instance.localScale = Vector3.one * Mathf.Lerp(0.48f, 0.82f, fade01);
+                SetRenderersVisible(instance, fade01, ResolveGroundColor(GroundResourcePaths[index], index));
+            }
+        }
+
+        private void ConfigureMotes(float fade01)
+        {
+            if (_motes == null)
+            {
+                return;
+            }
+
+            ParticleSystem.MainModule main = _motes.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.52f, 0.78f, 0.58f, 0.08f + fade01 * 0.16f));
+            ParticleSystem.EmissionModule emission = _motes.emission;
+            emission.rateOverTime = Mathf.Lerp(0f, 18f, fade01);
+            _motes.Play(true);
+        }
+
+        private Transform CreateResourceInstance(string resourcePath, string objectName, Vector3 fallbackScale)
+        {
+            GameObject prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab != null)
+            {
+                GameObject instance = Instantiate(prefab, _root);
+                instance.name = objectName;
+                StripColliders(instance);
+                return instance.transform;
+            }
+
+            GameObject fallback = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            fallback.name = objectName + "_Fallback";
+            fallback.transform.SetParent(_root, false);
+            fallback.transform.localScale = fallbackScale;
+            Collider collider = fallback.GetComponent<Collider>();
             if (collider != null)
             {
                 Destroy(collider);
             }
 
-            Renderer renderer = part.GetComponent<Renderer>();
-            renderer.material = CreateMaterial(color);
-            return renderer;
+            Renderer renderer = fallback.GetComponent<Renderer>();
+            renderer.material = CreateSurfaceMaterial(new Color(0.16f, 0.20f, 0.16f));
+            return fallback.transform;
+        }
+
+        private ParticleSystem CreateMoteParticles()
+        {
+            Texture2D moteTexture = Resources.Load<Texture2D>("ObserverAssets/Rain/circle_03");
+            GameObject moteObject = new GameObject("ForestMotes");
+            moteObject.transform.SetParent(_root, false);
+            moteObject.transform.localPosition = new Vector3(0f, 1.2f, 1.8f);
+            ParticleSystem particleSystem = moteObject.AddComponent<ParticleSystem>();
+            ParticleSystemRenderer renderer = moteObject.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateParticleMaterial(moteTexture);
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = true;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.maxParticles = 64;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(4f, 7f);
+            main.startSpeed = 0.12f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.14f);
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(6.5f, 2.4f, 4.5f);
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.05f, 0.05f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.02f, 0.08f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.04f, 0.04f);
+            return particleSystem;
+        }
+
+        private static void StripColliders(GameObject rootObject)
+        {
+            Collider[] colliders = rootObject.GetComponentsInChildren<Collider>(true);
+            foreach (Collider collider in colliders)
+            {
+                Destroy(collider);
+            }
+        }
+
+        private static void SetRenderersVisible(Transform rootTransform, float fade01, Color tint)
+        {
+            Renderer[] renderers = rootTransform.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.enabled = true;
+                Color color = Color.Lerp(new Color(0.03f, 0.04f, 0.03f), tint, Mathf.Lerp(0.45f, 1f, fade01));
+                color.a = 1f;
+                EnsureObserverMaterial(renderer, color);
+            }
+        }
+
+        private static Color ResolveTreeColor(string objectName, int index)
+        {
+            string lower = objectName.ToLowerInvariant();
+            if (lower.Contains("dead") || lower.Contains("twisted"))
+            {
+                return new Color(0.35f, 0.30f, 0.23f);
+            }
+
+            if (lower.Contains("pine"))
+            {
+                return index % 2 == 0 ? new Color(0.13f, 0.34f, 0.20f) : new Color(0.18f, 0.42f, 0.24f);
+            }
+
+            return new Color(0.22f, 0.45f, 0.24f);
+        }
+
+        private static Color ResolveGroundColor(string objectName, int index)
+        {
+            string lower = objectName.ToLowerInvariant();
+            if (lower.Contains("rock"))
+            {
+                return new Color(0.36f, 0.38f, 0.36f);
+            }
+
+            return index % 2 == 0 ? new Color(0.18f, 0.40f, 0.20f) : new Color(0.26f, 0.50f, 0.22f);
         }
 
         private void SetVisible(bool visible)
@@ -157,15 +307,69 @@ namespace BellRinger.ObserverDisplay
             }
         }
 
-        private static Material CreateMaterial(Color color)
+        private static Material CreateSurfaceMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
-                            Shader.Find("Standard") ??
-                            Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Unlit/Color") ??
+                            Shader.Find("Sprites/Default") ??
+                            Shader.Find("Universal Render Pipeline/Unlit") ??
+                            Shader.Find("Standard");
             Material material = new Material(shader)
             {
                 color = color,
+            };
+            return material;
+        }
+
+        private static void EnsureObserverMaterial(Renderer renderer, Color color)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+            {
+                renderer.sharedMaterial = CreateSurfaceMaterial(color);
+                return;
+            }
+
+            bool changed = false;
+            for (int index = 0; index < materials.Length; index++)
+            {
+                Material material = materials[index];
+                bool needsReplacement = material == null ||
+                                        material.shader == null ||
+                                        (material.shader.name != "Unlit/Color" && material.shader.name != "Sprites/Default");
+                if (needsReplacement)
+                {
+                    materials[index] = CreateSurfaceMaterial(color);
+                    changed = true;
+                    continue;
+                }
+
+                if (material.HasProperty("_Color"))
+                {
+                    material.color = color;
+                }
+            }
+
+            if (changed)
+            {
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        private static Material CreateParticleMaterial(Texture2D texture)
+        {
+            Shader shader = Shader.Find("Sprites/Default") ??
+                            Shader.Find("Unlit/Transparent") ??
+                            Shader.Find("Universal Render Pipeline/Particles/Unlit") ??
+                            Shader.Find("Particles/Standard Unlit");
+            Material material = new Material(shader)
+            {
+                color = Color.white,
+                mainTexture = texture,
             };
             return material;
         }

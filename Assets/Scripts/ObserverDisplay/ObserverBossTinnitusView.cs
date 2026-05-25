@@ -42,7 +42,7 @@ namespace BellRinger.ObserverDisplay
                 Mathf.Sin(time * 1.8f) * 3f,
                 time * (8f + pulse * 6f),
                 Mathf.Cos(time * 2.2f) * 2.5f);
-            _root.localScale = Vector3.one * Mathf.Lerp(1.55f, 0.38f, defeat01 * 0.82f);
+            _root.localScale = Vector3.one * Mathf.Lerp(2.45f, 0.72f, defeat01 * 0.82f);
 
             for (int index = 0; index < _bodyRenderers.Length; index++)
             {
@@ -55,7 +55,7 @@ namespace BellRinger.ObserverDisplay
                 Color color = Color.Lerp(new Color(0.05f, 0.03f, 0.08f), new Color(0.24f, 0.08f, 0.36f), 0.55f + pulse * 0.35f);
                 color = Color.Lerp(color, new Color(0.20f, 0.24f, 0.30f), defeat01 * 0.75f);
                 body.material.color = color;
-                ApplyEmission(body.material, color * (0.06f + pulse * 0.18f));
+                ApplyEmission(body.material, color * (0.20f + pulse * 0.42f));
             }
 
             if (_weakPointRenderer != null)
@@ -66,7 +66,7 @@ namespace BellRinger.ObserverDisplay
                 Color weakColor = Color.Lerp(new Color(0.72f, 0.22f, 1f), new Color(1f, 0.76f, 1f), match * 0.75f);
                 weakColor = Color.Lerp(weakColor, new Color(0.52f, 1f, 0.78f), defeat01);
                 _weakPointRenderer.material.color = weakColor;
-                ApplyEmission(_weakPointRenderer.material, weakColor * (1.2f + match * 1.6f));
+                ApplyEmission(_weakPointRenderer.material, weakColor * (2f + match * 2.8f));
             }
 
             if (_crackLines != null)
@@ -214,10 +214,10 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
-                            Shader.Find("Standard") ??
-                            Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Unlit/Color") ??
+                            Shader.Find("Sprites/Default") ??
+                            Shader.Find("Universal Render Pipeline/Unlit") ??
+                            Shader.Find("Standard");
             Material material = new Material(shader)
             {
                 color = color,
@@ -227,7 +227,7 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateLineMaterial()
         {
-            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            Shader shader = Shader.Find("Unlit/Color") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
             return new Material(shader);
         }
 

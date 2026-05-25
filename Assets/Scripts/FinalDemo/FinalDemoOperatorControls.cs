@@ -156,6 +156,8 @@ namespace BellRinger.FinalDemo
             }
 
             GUILayout.Space(8f);
+            DrawObserverVisualCheckSection();
+            GUILayout.Space(8f);
             DrawAudioTestSection();
             DrawLightHapticTestSection();
 
@@ -182,6 +184,8 @@ namespace BellRinger.FinalDemo
                 GUILayout.TextArea(BuildRuntimeStatusText(), GUILayout.ExpandHeight(true));
             }
 
+            GUILayout.Space(6f);
+            DrawObserverVisualCheckSection();
             GUILayout.Space(6f);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Force Next"))
@@ -231,6 +235,30 @@ namespace BellRinger.FinalDemo
             }
             GUILayout.EndHorizontal();
             GUILayout.EndScrollView();
+        }
+
+        private void DrawObserverVisualCheckSection()
+        {
+            GUILayout.Label("Observer Visual Checks");
+            GUILayout.BeginHorizontal();
+            DrawStageButton("Pad/Bell", FinalDemoStage.BellGaze);
+            DrawStageButton("Rain", FinalDemoStage.BellFollowRain);
+            DrawStageButton("Tinnitus", FinalDemoStage.GeneralTinnitusOne);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            DrawStageButton("Boss", FinalDemoStage.BossPatternOne);
+            DrawStageButton("Forest", FinalDemoStage.ForestEnding);
+            DrawStageButton("Complete", FinalDemoStage.Complete);
+            GUILayout.EndHorizontal();
+        }
+
+        private void DrawStageButton(string label, FinalDemoStage stage)
+        {
+            if (GUILayout.Button(label))
+            {
+                director.ForceStage(stage);
+            }
         }
 
         private void DrawLedWindow(int windowId)

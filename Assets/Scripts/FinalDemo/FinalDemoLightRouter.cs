@@ -54,17 +54,70 @@ namespace BellRinger.FinalDemo
             {
                 if (miniRipple)
                 {
-                    bridge.SendLedRipple(frame.x, frame.y, 1.7f, 0.75f, bellColor, frame.brightnessNormalized);
+                    bridge.SendLedRipple(frame.centerX, frame.centerY, 1.7f, 0.75f, bellColor, frame.brightnessNormalized);
                 }
                 else
                 {
-                    bridge.SendLedPulseCore(frame.x, frame.y, 0.55f, 0.8f, 0.6f, bellColor, frame.brightnessNormalized, 1.4f);
+                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.55f, 0.8f, 0.6f, bellColor, frame.brightnessNormalized, 1.4f);
                 }
             }
 
             RenderBellLogicalFrame(frame, miniRipple, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ShowBellAnchor(Vector3 worldPosition, float intensity = 0.35f)
+        {
+            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame))
+            {
+                frame = new BellRingerLedDotFrame(8, 4, 8f, 4f, Mathf.Clamp01(intensity));
+            }
+
+            if (!TryEmit(FinalDemoFeedbackPriority.Bell))
+            {
+                return;
+            }
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellColor, frame.brightnessNormalized, 1.15f);
+            }
+
+            RenderBellLogicalFrame(frame, false, bellColor);
+            HoldPriority(FinalDemoFeedbackPriority.Bell);
+            _lastAction = $"Bell anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ShowBellWave(Vector3 worldPosition, float envelope01, float onset01, float intensityScale = 1f)
+        {
+            float envelope = Mathf.Clamp01(envelope01);
+            float onset = Mathf.Clamp01(onset01);
+            float brightness = Mathf.Clamp01((0.12f + envelope * 0.68f + onset * 0.05f) * Mathf.Clamp01(intensityScale));
+            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
+            {
+                frame = new BellRingerLedDotFrame(8, 4, brightness);
+            }
+
+            if (!TryEmit(FinalDemoFeedbackPriority.Bell))
+            {
+                return;
+            }
+
+            float radius = Mathf.Lerp(0.35f, 2.75f, Mathf.Pow(envelope, 0.72f)) + onset * 0.12f;
+            float core = Mathf.Lerp(0.36f, 0.78f, envelope);
+            float width = Mathf.Lerp(0.75f, 1.55f, Mathf.Clamp01(envelope + onset * 0.12f));
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.95f + onset * 0.18f);
+            }
+
+            RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
+            HoldPriority(FinalDemoFeedbackPriority.Bell);
+            _lastAction = $"Bell wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
         }
 
         public void ShowRainFloorBand(float intensity = 0.45f)
@@ -102,8 +155,8 @@ namespace BellRinger.FinalDemo
             if (outputToHardware && bridge != null)
             {
                 bridge.SendLedTinnitus(
-                    frame.x,
-                    frame.y,
+                    frame.centerX,
+                    frame.centerY,
                     boss ? 1.65f : 1.05f,
                     boss ? 3.2f : 1.6f,
                     boss ? 0.65f : 1f,
@@ -119,6 +172,56 @@ namespace BellRinger.FinalDemo
             RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
             HoldPriority(priority);
             _lastAction = $"{(boss ? "Boss" : "Tinnitus")} light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ShowTinnitusWave(Vector3 worldPosition, float envelope01, float onset01, float intensityScale = 1f, bool boss = false)
+        {
+            float envelope = Mathf.Clamp01(envelope01);
+            float onset = Mathf.Clamp01(onset01);
+            float brightness = Mathf.Clamp01((0.12f + envelope * 0.62f + onset * 0.06f) * Mathf.Clamp01(intensityScale));
+            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
+            {
+                frame = new BellRingerLedDotFrame(8, 4, brightness);
+            }
+
+            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
+            if (!TryEmit(priority))
+            {
+                return;
+            }
+
+            float coreSize = boss
+                ? Mathf.Lerp(1.2f, 2.35f, envelope)
+                : Mathf.Lerp(0.65f, 1.28f, envelope);
+            float tearAmount = boss
+                ? Mathf.Lerp(0.9f, 3.15f, envelope) + onset * 0.35f
+                : Mathf.Lerp(0.35f, 1.55f, envelope) + onset * 0.22f;
+            float instability = Mathf.Clamp01(envelope * 0.55f + onset * 0.16f);
+            float axisX = Mathf.Sin((_seed + 1) * 0.73f);
+            float axisY = boss ? Mathf.Cos((_seed + 3) * 0.47f) * 0.55f : 0f;
+            float smear = boss ? Mathf.Lerp(1.7f, 3.4f, envelope) : Mathf.Lerp(1.1f, 2.2f, envelope);
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedTinnitus(
+                    frame.centerX,
+                    frame.centerY,
+                    coreSize,
+                    tearAmount,
+                    axisX,
+                    axisY,
+                    tinnitusColor,
+                    brightness,
+                    ++_seed,
+                    instability,
+                    smear,
+                    boss ? 1.85f : 1.35f);
+            }
+
+            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
+            HoldPriority(priority);
+            _lastAction = $"{(boss ? "Boss" : "Tinnitus")} wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
         }
 
         public void ShowWallNoise(float intensity = 0.3f)
@@ -228,6 +331,28 @@ namespace BellRinger.FinalDemo
             AddPixel(frame.x + 1, frame.y, color, frame.brightnessNormalized * 0.38f);
             AddPixel(frame.x, frame.y - 1, color, frame.brightnessNormalized * 0.24f);
             AddPixel(frame.x, frame.y + 1, color, frame.brightnessNormalized * 0.24f);
+        }
+
+        private void RenderBellWaveLogicalFrame(BellRingerLedDotFrame frame, float radius, float width, Color color, float brightness)
+        {
+            ClearLogicalFrame();
+            float halfWidth = Mathf.Max(0.12f, width * 0.5f);
+            for (int y = 0; y < LogicalFrameHeight; y++)
+            {
+                for (int x = 0; x < LogicalFrameWidth; x++)
+                {
+                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(frame.x, frame.y));
+                    float core = Mathf.Exp(-(distance * distance) / 0.55f);
+                    float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth);
+                    float alpha = Mathf.Max(core * 0.72f, ring);
+                    if (alpha <= 0.01f)
+                    {
+                        continue;
+                    }
+
+                    AddPixel(x, y, color, brightness * alpha);
+                }
+            }
         }
 
         private void RenderRainLogicalFrame(float intensity)

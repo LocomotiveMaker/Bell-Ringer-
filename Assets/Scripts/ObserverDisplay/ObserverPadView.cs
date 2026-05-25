@@ -1,5 +1,4 @@
 using BellRinger.FinalDemo;
-using System.IO;
 using UnityEngine;
 
 namespace BellRinger.ObserverDisplay
@@ -14,12 +13,12 @@ namespace BellRinger.ObserverDisplay
 
         private Transform _modelRoot;
         private Transform _topSurface;
+        private Renderer _glowRenderer;
         private LineRenderer _linkRenderer;
         private TintedRenderer[] _tintedRenderers;
-        private Renderer _sourcedCardRenderer;
-        private bool _usingSourcedCard;
         private bool _initialized;
         private bool _hasKnownPose;
+        private bool _hasAppliedSnapshot;
         private Vector3 _lastKnownPosition;
         private Quaternion _lastKnownRotation = Quaternion.identity;
 
@@ -71,8 +70,17 @@ namespace BellRinger.ObserverDisplay
 
             float positionLerp01 = 1f - Mathf.Exp(-Mathf.Max(0.01f, positionLerp) * Time.unscaledDeltaTime);
             float rotationLerp01 = 1f - Mathf.Exp(-Mathf.Max(0.01f, rotationLerp) * Time.unscaledDeltaTime);
-            _modelRoot.position = Vector3.Lerp(_modelRoot.position, targetPosition, positionLerp01);
-            _modelRoot.rotation = Quaternion.Slerp(_modelRoot.rotation, targetRotation, rotationLerp01);
+            if (!_hasAppliedSnapshot)
+            {
+                _modelRoot.position = targetPosition;
+                _modelRoot.rotation = targetRotation;
+                _hasAppliedSnapshot = true;
+            }
+            else
+            {
+                _modelRoot.position = Vector3.Lerp(_modelRoot.position, targetPosition, positionLerp01);
+                _modelRoot.rotation = Quaternion.Slerp(_modelRoot.rotation, targetRotation, rotationLerp01);
+            }
 
             ApplyTint(visible01);
             UpdateLink(snapshot, hasBell, bellWorldPosition, motion01, visible01);
@@ -88,9 +96,11 @@ namespace BellRinger.ObserverDisplay
             _initialized = true;
             _modelRoot = new GameObject("ObserverPadModel").transform;
             _modelRoot.SetParent(transform, false);
+            _modelRoot.localScale = Vector3.one * 3.8f;
 
             Material shellMaterial = CreateStandardMaterial(new Color(0.10f, 0.11f, 0.12f));
             Material trimMaterial = CreateStandardMaterial(new Color(0.80f, 0.64f, 0.19f));
+            Material glowMaterial = CreateStandardMaterial(new Color(0.95f, 0.68f, 0.14f));
             Material markerMaterial = CreateStandardMaterial(new Color(0.88f, 0.90f, 0.92f));
             Material buttonXMaterial = CreateStandardMaterial(new Color(0.13f, 0.55f, 0.93f));
             Material buttonYMaterial = CreateStandardMaterial(new Color(0.94f, 0.83f, 0.18f));
@@ -98,7 +108,9 @@ namespace BellRinger.ObserverDisplay
             Material buttonBMaterial = CreateStandardMaterial(new Color(0.86f, 0.22f, 0.22f));
             Material controlMaterial = CreateStandardMaterial(new Color(0.22f, 0.23f, 0.24f));
 
-            TintedRenderer[] tinted = new TintedRenderer[18];
+            _glowRenderer = CreateGlowPart(glowMaterial);
+
+            TintedRenderer[] tinted = new TintedRenderer[19];
             int tintedCount = 0;
 
             tinted[tintedCount++] = CreatePart("BodyCore", PrimitiveType.Cube, new Vector3(0f, 0f, 0f), new Vector3(0.34f, 0.042f, 0.18f), shellMaterial);
@@ -131,13 +143,6 @@ namespace BellRinger.ObserverDisplay
             _topSurface.SetParent(_modelRoot, false);
             _topSurface.localPosition = new Vector3(0f, 0.036f, 0.02f);
 
-            Texture2D sourcedTexture = ObserverSourceTextureLoader.LoadColorKeyedJpeg("ThirdParty/ObserverSource/PolyPizza/controller-poly-pizza.jpg", 0.14f);
-            if (sourcedTexture != null)
-            {
-                _usingSourcedCard = true;
-                _sourcedCardRenderer = CreateSourcedCard("ControllerCard", sourcedTexture, new Vector3(0f, 0.045f, 0f), new Vector3(0.52f, 0.30f, 1f));
-            }
-
             GameObject linkObject = new GameObject("BellLink");
             linkObject.transform.SetParent(_modelRoot, false);
             _linkRenderer = linkObject.AddComponent<LineRenderer>();
@@ -160,7 +165,7 @@ namespace BellRinger.ObserverDisplay
             Collider collider = part.GetComponent<Collider>();
             if (collider != null)
             {
-                Destroy(collider);
+                DestroyRuntimeObject(collider);
             }
 
             Renderer renderer = part.GetComponent<Renderer>();
@@ -174,13 +179,6 @@ namespace BellRinger.ObserverDisplay
 
         private void ApplyTint(float visible01)
         {
-            if (_usingSourcedCard && _sourcedCardRenderer != null)
-            {
-                _sourcedCardRenderer.enabled = visible01 > 0.02f;
-                Color tint = Color.Lerp(Color.black, Color.white, Mathf.Lerp(0.38f, 1f, Mathf.Clamp01(visible01)));
-                _sourcedCardRenderer.material.color = tint;
-            }
-
             if (_tintedRenderers == null)
             {
                 return;
@@ -195,9 +193,36 @@ namespace BellRinger.ObserverDisplay
                     continue;
                 }
 
-                renderer.enabled = !_usingSourcedCard && visible01 > 0.02f;
+                renderer.enabled = visible01 > 0.02f;
                 renderer.material.color = Color.Lerp(Color.black, _tintedRenderers[index].baseColor, brightness);
+                ApplyEmission(renderer.material, new Color(0.95f, 0.72f, 0.22f) * (0.08f + brightness * 0.14f));
             }
+
+            if (_glowRenderer != null)
+            {
+                Color glowColor = new Color(0.95f, 0.64f, 0.10f) * Mathf.Lerp(0.18f, 0.46f, brightness);
+                glowColor.a = 1f;
+                _glowRenderer.enabled = visible01 > 0.02f;
+                _glowRenderer.material.color = glowColor;
+            }
+        }
+
+        private Renderer CreateGlowPart(Material material)
+        {
+            GameObject glow = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            glow.name = "PadAmberGlow";
+            glow.transform.SetParent(_modelRoot, false);
+            glow.transform.localPosition = new Vector3(0f, -0.026f, 0.012f);
+            glow.transform.localScale = new Vector3(0.29f, 0.003f, 0.15f);
+            Collider collider = glow.GetComponent<Collider>();
+            if (collider != null)
+            {
+                DestroyRuntimeObject(collider);
+            }
+
+            Renderer renderer = glow.GetComponent<Renderer>();
+            renderer.material = material;
+            return renderer;
         }
 
         private void UpdateLink(ObserverDisplaySnapshot snapshot, bool hasBell, Vector3 bellWorldPosition, float motion01, float visible01)
@@ -233,10 +258,10 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateStandardMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                            Shader.Find("Universal Render Pipeline/Simple Lit") ??
-                            Shader.Find("Standard") ??
-                            Shader.Find("Sprites/Default");
+            Shader shader = Shader.Find("Unlit/Color") ??
+                            Shader.Find("Sprites/Default") ??
+                            Shader.Find("Universal Render Pipeline/Unlit") ??
+                            Shader.Find("Standard");
             Material material = new Material(shader);
             material.color = color;
             material.SetFloat("_Surface", 0f);
@@ -245,30 +270,31 @@ namespace BellRinger.ObserverDisplay
 
         private static Material CreateLineMaterial()
         {
-            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            Shader shader = Shader.Find("Unlit/Color") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Standard");
             return new Material(shader);
         }
 
-        private Renderer CreateSourcedCard(string objectName, Texture2D texture, Vector3 localPosition, Vector3 localScale)
+        private static void ApplyEmission(Material material, Color emission)
         {
-            GameObject card = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            card.name = objectName;
-            card.transform.SetParent(_modelRoot, false);
-            card.transform.localPosition = localPosition;
-            card.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            card.transform.localScale = localScale;
-            Collider collider = card.GetComponent<Collider>();
-            if (collider != null)
+            if (material == null || !material.HasProperty("_EmissionColor"))
             {
-                Destroy(collider);
+                return;
             }
 
-            Material material = new Material(Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Transparent") ?? Shader.Find("Unlit/Texture"));
-            material.mainTexture = texture;
-            material.color = Color.white;
-            Renderer renderer = card.GetComponent<Renderer>();
-            renderer.material = material;
-            return renderer;
+            material.SetColor("_EmissionColor", emission);
+            material.EnableKeyword("_EMISSION");
+        }
+
+        private static void DestroyRuntimeObject(Object target)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(target);
+            }
+            else
+            {
+                DestroyImmediate(target);
+            }
         }
     }
 }

@@ -30,8 +30,18 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 openingCloseBellOffset = new Vector3(-0.55f, 0.02f, 0.35f);
         [SerializeField, Range(0f, 1f)] private float openingCloseBellVolume = 0.72f;
         [SerializeField, Range(0f, 1f)] private float openingCloseBellLedIntensity = 0.75f;
+        [SerializeField] private bool soundReactiveLedEnabled = true;
+        [SerializeField] private float soundReactiveLedUpdateIntervalSeconds = 0.12f;
+        [SerializeField] private float bellSoundReactiveSensitivity = 1.45f;
+        [SerializeField] private float tinnitusSoundReactiveSensitivity = 1.25f;
+        [SerializeField] private float bellCallPostClipGapSeconds = 0.18f;
         [SerializeField] private float bellOrbitSeconds = 8f;
         [SerializeField] private float bellOrbitCallIntervalSeconds = 1.15f;
+        [SerializeField] private bool bellOrbitUseSmoothSplinePath = true;
+        [SerializeField] private AnimationCurve bellOrbitProgressCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField] private bool bellOrbitContinuousAnchorEnabled = true;
+        [SerializeField] private float bellOrbitContinuousAnchorUpdateIntervalSeconds = 0.1f;
+        [SerializeField, Range(0f, 1f)] private float bellOrbitContinuousAnchorIntensity = 0.34f;
         [SerializeField] private Vector3[] bellOrbitLocalPoints =
         {
             new Vector3(-1.1f, 0.05f, 0.75f),
@@ -163,8 +173,18 @@ namespace BellRinger.FinalDemo
         public Vector3 OpeningCloseBellOffset => openingCloseBellOffset;
         public float OpeningCloseBellVolume => Mathf.Clamp01(openingCloseBellVolume);
         public float OpeningCloseBellLedIntensity => Mathf.Clamp01(openingCloseBellLedIntensity);
+        public bool SoundReactiveLedEnabled => soundReactiveLedEnabled;
+        public float SoundReactiveLedUpdateIntervalSeconds => Mathf.Clamp(soundReactiveLedUpdateIntervalSeconds, 0.09f, 0.25f);
+        public float BellSoundReactiveSensitivity => Mathf.Max(0.1f, bellSoundReactiveSensitivity);
+        public float TinnitusSoundReactiveSensitivity => Mathf.Max(0.1f, tinnitusSoundReactiveSensitivity);
+        public float BellCallPostClipGapSeconds => Mathf.Max(0f, bellCallPostClipGapSeconds);
         public float BellOrbitSeconds => Mathf.Max(0.1f, bellOrbitSeconds);
         public float BellOrbitCallIntervalSeconds => Mathf.Max(0.2f, bellOrbitCallIntervalSeconds);
+        public bool BellOrbitUseSmoothSplinePath => bellOrbitUseSmoothSplinePath;
+        public AnimationCurve BellOrbitProgressCurve => bellOrbitProgressCurve;
+        public bool BellOrbitContinuousAnchorEnabled => bellOrbitContinuousAnchorEnabled;
+        public float BellOrbitContinuousAnchorUpdateIntervalSeconds => Mathf.Clamp(bellOrbitContinuousAnchorUpdateIntervalSeconds, 0.06f, 0.25f);
+        public float BellOrbitContinuousAnchorIntensity => Mathf.Clamp01(bellOrbitContinuousAnchorIntensity);
         public Vector3[] BellOrbitLocalPoints => bellOrbitLocalPoints;
         public float BellOrbitNearIntensity => Mathf.Clamp01(bellOrbitNearIntensity);
         public float BellOrbitFarIntensity => Mathf.Clamp01(bellOrbitFarIntensity);
