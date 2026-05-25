@@ -5992,6 +5992,7 @@ GameObject:
   - component: {fileID: 203800290}
   - component: {fileID: 203800289}
   - component: {fileID: 203800288}
+  - component: {fileID: 203800293}
   m_Layer: 0
   m_Name: PlayerRig
   m_TagString: Untagged
@@ -6050,6 +6051,28 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &203800293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203800286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cf573073c714544aab1dbde531013d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerViewCamera: {fileID: 203800287}
+  operatorControls: {fileID: 0}
+  followOperatorHudBand: 1
+  fillRemainingTopArea: 1
+  viewportWidth01: 1
+  viewportHeight01: 0.5
+  bottomHudBandPixels: 316
+  bottomGapPixels: 18
+  verticalOffsetPixels: 0
+  outsideViewportColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &203800288
 MonoBehaviour:
   m_ObjectHideFlags: 0

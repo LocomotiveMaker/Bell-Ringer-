@@ -103,6 +103,17 @@ namespace BellRinger.Debug.Editor
             playerRig.AddComponent<HeadImuReceiver>();
             playerRig.AddComponent<HeadTiltInputProvider>();
             playerRig.AddComponent<BellRingerSimpleMoveLookController>();
+            FinalDemoPlayerViewViewportLayout viewportLayout = playerRig.AddComponent<FinalDemoPlayerViewViewportLayout>();
+            SerializedObject viewportObject = new SerializedObject(viewportLayout);
+            viewportObject.FindProperty("playerViewCamera").objectReferenceValue = camera;
+            viewportObject.FindProperty("followOperatorHudBand").boolValue = true;
+            viewportObject.FindProperty("fillRemainingTopArea").boolValue = true;
+            viewportObject.FindProperty("viewportWidth01").floatValue = 1f;
+            viewportObject.FindProperty("viewportHeight01").floatValue = 0.5f;
+            viewportObject.FindProperty("bottomHudBandPixels").floatValue = 316f;
+            viewportObject.FindProperty("bottomGapPixels").floatValue = 18f;
+            viewportObject.FindProperty("verticalOffsetPixels").floatValue = 0f;
+            viewportObject.ApplyModifiedPropertiesWithoutUndo();
             return playerRig;
         }
 

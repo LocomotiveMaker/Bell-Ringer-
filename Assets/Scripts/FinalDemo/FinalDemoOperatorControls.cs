@@ -24,6 +24,16 @@ namespace BellRinger.FinalDemo
         private Vector2 _runtimeScroll;
         private Color[] _ledScratch;
 
+        public float RuntimeHudTopPixelsFromBottom
+        {
+            get
+            {
+                float margin = Mathf.Max(8f, hudMarginPixels);
+                float runtimeHeight = Mathf.Min(runtimePanelSize.y, Screen.height * 0.28f);
+                return runtimeHeight + margin;
+            }
+        }
+
         public void Initialize(FinalDemoDirector newDirector, FinalDemoInputStatus newInputStatus)
         {
             director = newDirector;
