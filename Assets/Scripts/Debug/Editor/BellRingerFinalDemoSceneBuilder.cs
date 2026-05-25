@@ -53,6 +53,7 @@ namespace BellRinger.Debug.Editor
             GameObject audioRoot = CreateAudioRoot(systemsRoot.transform, cueLibrary, playerRig.transform);
             GameObject lightRoot = CreateLightRoot(systemsRoot.transform, playerRig.transform, hardwareBridge.GetComponent<HardwareBridge>());
             GameObject hapticRoot = CreateHapticRoot(systemsRoot.transform);
+            GameObject authoringCapture = CreateAuthoringCaptureRoot(systemsRoot.transform);
             CreateWorldEnvironment(worldRoot.transform, out GameObject darkSky, out GameObject clearSky);
             CreatePadVisual(padRoot.transform, playerRig.transform, padInput.GetComponent<PadPoseProvider>());
             CreateBellAuthoring(bellRoot.transform);
@@ -62,10 +63,11 @@ namespace BellRinger.Debug.Editor
             CreateForestAuthoring(forestRoot.transform);
             CreateUiAuthoring(uiRoot.transform);
 
-            AssignDirector(director, tuningProfile, cueLibrary, playerRig, inputStatus, operatorControls, audioRoot, lightRoot, hapticRoot);
+            AssignDirector(director, tuningProfile, cueLibrary, sceneReferences, playerRig, inputStatus, operatorControls, audioRoot, lightRoot, hapticRoot);
             AssignInputStatus(inputStatus, hardwareBridge, playerRig, padInput, audioRoot, lightRoot, hapticRoot);
             AssignOperator(operatorControls, director, inputStatus);
             AssignSceneReferences(sceneReferences, playerRoot, playerRig, hardwareRoot, systemsRoot, worldRoot, padRoot, bellRoot, rainRoot, tinnitusRoot, bossRoot, forestRoot, uiRoot, padInput);
+            AssignAuthoringCapture(authoringCapture.GetComponent<FinalDemoAuthoringCapture>(), sceneReferences, padInput, playerRig);
             AssignStageVisibility(stageVisibility, director, padRoot, bellRoot, rainRoot, tinnitusRoot, bossRoot, forestRoot, darkSky, clearSky);
 
             Selection.activeObject = root;
@@ -149,6 +151,14 @@ namespace BellRinger.Debug.Editor
             return hapticRoot;
         }
 
+        private static GameObject CreateAuthoringCaptureRoot(Transform root)
+        {
+            GameObject captureRoot = new GameObject("AuthoringCapture_RuntimePoseAndPath");
+            captureRoot.transform.SetParent(root);
+            captureRoot.AddComponent<FinalDemoAuthoringCapture>();
+            return captureRoot;
+        }
+
         private static void CreateWorldEnvironment(Transform root, out GameObject darkSky, out GameObject clearSky)
         {
             GameObject environment = CreateRoot(root, "Environment");
@@ -225,7 +235,7 @@ namespace BellRinger.Debug.Editor
                 new Vector3(0f, 2.05f, 2.1f),
                 new Vector3(1.4f, 1.62f, 1.7f),
                 new Vector3(0.35f, 1.3f, 1.0f),
-            });
+            }, true);
             GameObject followPath = CreatePath(root, "BellFollowPath_Authoring", new[]
             {
                 new Vector3(-1.4f, 1.45f, 3.2f),
@@ -316,7 +326,7 @@ namespace BellRinger.Debug.Editor
             marker.transform.localPosition = Vector3.zero;
         }
 
-        private static GameObject CreatePath(Transform parent, string name, Vector3[] positions)
+        private static GameObject CreatePath(Transform parent, string name, Vector3[] positions, bool loop = false)
         {
             GameObject path = CreateRoot(parent, name);
             for (int index = 0; index < positions.Length; index++)
@@ -324,6 +334,11 @@ namespace BellRinger.Debug.Editor
                 CreatePrimitive(path.transform, $"Waypoint_{index + 1:00}", PrimitiveType.Sphere, positions[index], new Vector3(0.12f, 0.12f, 0.12f), new Color(0.12f, 0.8f, 1f));
             }
 
+            FinalDemoAuthoringPath authoringPath = path.AddComponent<FinalDemoAuthoringPath>();
+            SerializedObject serialized = new SerializedObject(authoringPath);
+            serialized.FindProperty("loop").boolValue = loop;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            authoringPath.CollectChildWaypoints();
             return path;
         }
 
@@ -332,6 +347,12 @@ namespace BellRinger.Debug.Editor
             GameObject pose = CreateRoot(parent, name);
             pose.transform.localPosition = cameraSpacePosition;
             pose.transform.localRotation = Quaternion.Euler(-yawPitchRoll.y, yawPitchRoll.x, -yawPitchRoll.z);
+            FinalDemoPoseAuthoringMarker marker = pose.AddComponent<FinalDemoPoseAuthoringMarker>();
+            SerializedObject serialized = new SerializedObject(marker);
+            serialized.FindProperty("targetCameraSpacePosition").vector3Value = cameraSpacePosition;
+            serialized.FindProperty("targetYawPitchRollDegrees").vector3Value = yawPitchRoll;
+            serialized.FindProperty("useTransformLocalPose").boolValue = true;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
             CreatePrimitive(pose.transform, "PosePosition", PrimitiveType.Cube, Vector3.zero, new Vector3(0.14f, 0.14f, 0.14f), color);
             CreatePrimitive(pose.transform, "PoseForward", PrimitiveType.Cube, new Vector3(0f, 0f, 0.18f), new Vector3(0.055f, 0.055f, 0.36f), color);
             return pose;
@@ -481,11 +502,12 @@ namespace BellRinger.Debug.Editor
             };
         }
 
-        private static void AssignDirector(FinalDemoDirector director, FinalDemoTuningProfile tuningProfile, FinalDemoCueLibrary cueLibrary, GameObject playerRig, FinalDemoInputStatus inputStatus, FinalDemoOperatorControls operatorControls, GameObject audioRoot, GameObject lightRoot, GameObject hapticRoot)
+        private static void AssignDirector(FinalDemoDirector director, FinalDemoTuningProfile tuningProfile, FinalDemoCueLibrary cueLibrary, FinalDemoSceneReferences sceneReferences, GameObject playerRig, FinalDemoInputStatus inputStatus, FinalDemoOperatorControls operatorControls, GameObject audioRoot, GameObject lightRoot, GameObject hapticRoot)
         {
             SerializedObject serialized = new SerializedObject(director);
             serialized.FindProperty("tuningProfile").objectReferenceValue = tuningProfile;
             serialized.FindProperty("cueLibrary").objectReferenceValue = cueLibrary;
+            serialized.FindProperty("sceneReferences").objectReferenceValue = sceneReferences;
             serialized.FindProperty("playerRig").objectReferenceValue = playerRig.transform;
             serialized.FindProperty("playerCamera").objectReferenceValue = playerRig.GetComponent<Camera>();
             serialized.FindProperty("movementController").objectReferenceValue = playerRig.GetComponent<BellRingerSimpleMoveLookController>();
@@ -519,6 +541,15 @@ namespace BellRinger.Debug.Editor
             SerializedObject serialized = new SerializedObject(operatorControls);
             serialized.FindProperty("director").objectReferenceValue = director;
             serialized.FindProperty("inputStatus").objectReferenceValue = inputStatus;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void AssignAuthoringCapture(FinalDemoAuthoringCapture capture, FinalDemoSceneReferences sceneReferences, GameObject padInput, GameObject playerRig)
+        {
+            SerializedObject serialized = new SerializedObject(capture);
+            serialized.FindProperty("sceneReferences").objectReferenceValue = sceneReferences;
+            serialized.FindProperty("padPoseProvider").objectReferenceValue = padInput.GetComponent<PadPoseProvider>();
+            serialized.FindProperty("playerCamera").objectReferenceValue = playerRig.GetComponent<Camera>();
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

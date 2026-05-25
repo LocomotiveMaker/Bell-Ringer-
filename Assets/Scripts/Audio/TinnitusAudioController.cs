@@ -92,6 +92,14 @@ namespace BellRinger.Audio
             ConfigureGlitchSources();
         }
 
+        public void SetBinauralPreview(Transform listener, bool enabled, float binauralStrength = 1f)
+        {
+            EnsureAudioSources();
+            ConfigureSourceBinaural(_toneSource, listener, enabled, binauralStrength);
+            ConfigureSourceBinaural(_continuousGlitchSource, listener, enabled, binauralStrength);
+            ConfigureSourceBinaural(_shortGlitchSource, listener, enabled, binauralStrength);
+        }
+
         public void TriggerBurst(float intensity = 1f)
         {
             _triggeredBurst = Mathf.Max(_triggeredBurst, Mathf.Clamp01(intensity));
@@ -255,6 +263,35 @@ namespace BellRinger.Audio
             source.rolloffMode = AudioRolloffMode.Linear;
             source.dopplerLevel = 0f;
             return source;
+        }
+
+        private static void ConfigureSourceBinaural(AudioSource source, Transform listener, bool enabled, float binauralStrength)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            BellRingerBinauralSpatializer binaural = source.GetComponent<BellRingerBinauralSpatializer>();
+            if (enabled)
+            {
+                source.spatialBlend = 0f;
+                source.spatialize = false;
+                if (binaural == null)
+                {
+                    binaural = source.gameObject.AddComponent<BellRingerBinauralSpatializer>();
+                }
+
+                binaural.Configure(source, listener, true, binauralStrength);
+                return;
+            }
+
+            source.spatialBlend = 1f;
+            source.spatialize = false;
+            if (binaural != null)
+            {
+                binaural.Configure(source, listener, false, binauralStrength);
+            }
         }
 
         private void UpdateGlitchClipPlayback()

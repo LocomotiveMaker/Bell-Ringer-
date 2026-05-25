@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BellRinger.Audio;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -29,6 +30,7 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float narrationDuckMultiplier = 0.52f;
         [SerializeField] private float defaultNarrationDuckSeconds = 2.5f;
         [SerializeField] private bool spatializerEnabled;
+        [SerializeField, Range(0f, 1f)] private float softwareBinauralStrength = 1f;
 
         [Header("Optional AudioMixer Groups")]
         [SerializeField] private AudioMixerGroup masterGroup;
@@ -59,6 +61,8 @@ namespace BellRinger.FinalDemo
         public int ActiveLoopCount => _loops.Count;
         public bool IsNarrationDucking => Time.realtimeSinceStartup < _duckUntilRealtime;
         public bool SpatializerEnabled => spatializerEnabled;
+        public bool HasNativeSpatializer => !string.IsNullOrEmpty(AudioSettings.GetSpatializerPluginName());
+        public bool UsingSoftwareBinaural => spatializerEnabled && !HasNativeSpatializer;
 
         private void Update()
         {
@@ -88,11 +92,13 @@ namespace BellRinger.FinalDemo
             {
                 if (loop.source != null && loop.cue != null)
                 {
-                    loop.source.spatialize = spatializerEnabled && loop.cue.Spatialized;
+                    ConfigureSourceSpatialization(loop.source, loop.cue);
                 }
             }
 
-            _lastAction = $"Spatializer preview {(enabled ? "enabled" : "disabled")}.";
+            _lastAction = enabled
+                ? $"HRTF preview enabled ({(UsingSoftwareBinaural ? "software binaural" : AudioSettings.GetSpatializerPluginName())})."
+                : "HRTF preview disabled.";
         }
 
         public AudioSource PlayOneShot(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale = 1f)
@@ -210,7 +216,8 @@ namespace BellRinger.FinalDemo
 
         public string BuildStatusText()
         {
-            return $"Audio loops={ActiveLoopCount} ducking={IsNarrationDucking} hrtf={SpatializerEnabled} last={LastAction}";
+            string hrtfMode = SpatializerEnabled ? (UsingSoftwareBinaural ? "software" : "native") : "off";
+            return $"Audio loops={ActiveLoopCount} ducking={IsNarrationDucking} hrtf={hrtfMode} last={LastAction}";
         }
 
         public float GetCueLengthSeconds(FinalDemoCueId cueId)
@@ -341,6 +348,7 @@ namespace BellRinger.FinalDemo
             source.maxDistance = cue.MaxDistance;
             source.pitch = cue.Pitch;
             source.outputAudioMixerGroup = ResolveMixerGroup(cue.Bus);
+            ConfigureSourceSpatialization(source, cue);
 
             if (cue.LowPassCutoff < 21999f)
             {
@@ -353,6 +361,45 @@ namespace BellRinger.FinalDemo
                 AudioHighPassFilter highPassFilter = source.gameObject.AddComponent<AudioHighPassFilter>();
                 highPassFilter.cutoffFrequency = cue.HighPassCutoff;
             }
+        }
+
+        private void ConfigureSourceSpatialization(AudioSource source, FinalDemoCueEntry cue)
+        {
+            if (source == null || cue == null)
+            {
+                return;
+            }
+
+            bool eligible = cue.Spatialized && IsBinauralPreviewBus(cue.Bus);
+            BellRingerBinauralSpatializer binaural = source.GetComponent<BellRingerBinauralSpatializer>();
+            if (spatializerEnabled && eligible && UsingSoftwareBinaural)
+            {
+                source.spatialBlend = 0f;
+                source.spatialize = false;
+                if (binaural == null)
+                {
+                    binaural = source.gameObject.AddComponent<BellRingerBinauralSpatializer>();
+                }
+
+                binaural.Configure(source, listenerTransform, true, softwareBinauralStrength);
+                return;
+            }
+
+            if (binaural != null)
+            {
+                binaural.Configure(source, listenerTransform, false, softwareBinauralStrength);
+            }
+
+            source.spatialBlend = cue.Spatialized ? 1f : 0f;
+            source.spatialize = spatializerEnabled && eligible && HasNativeSpatializer;
+            source.spatializePostEffects = false;
+        }
+
+        private static bool IsBinauralPreviewBus(FinalDemoAudioBus bus)
+        {
+            return bus == FinalDemoAudioBus.Bell ||
+                   bus == FinalDemoAudioBus.Tinnitus ||
+                   bus == FinalDemoAudioBus.BossTinnitus;
         }
 
         private AudioMixerGroup ResolveMixerGroup(FinalDemoAudioBus bus)

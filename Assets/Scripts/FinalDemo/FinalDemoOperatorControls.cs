@@ -241,6 +241,12 @@ namespace BellRinger.FinalDemo
         {
             GUILayout.Label("Observer Visual Checks");
             GUILayout.BeginHorizontal();
+            DrawStageButton("Bell Orbit", FinalDemoStage.BellOrbit);
+            DrawStageButton("Bell Follow", FinalDemoStage.BellFollowOne);
+            DrawStageButton("Bell Gaze", FinalDemoStage.BellGaze);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
             DrawStageButton("Pad/Bell", FinalDemoStage.BellGaze);
             DrawStageButton("Rain", FinalDemoStage.BellFollowRain);
             DrawStageButton("Tinnitus", FinalDemoStage.GeneralTinnitusOne);

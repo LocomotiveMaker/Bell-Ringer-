@@ -12,6 +12,7 @@ namespace BellRinger.FinalDemo
     {
         [SerializeField] private FinalDemoTuningProfile tuningProfile;
         [SerializeField] private FinalDemoCueLibrary cueLibrary;
+        [SerializeField] private FinalDemoSceneReferences sceneReferences;
         [SerializeField] private Transform playerRig;
         [SerializeField] private Camera playerCamera;
         [SerializeField] private BellRingerSimpleMoveLookController movementController;
@@ -100,6 +101,7 @@ namespace BellRinger.FinalDemo
         public bool HrtfPreviewEnabled { get; private set; }
         public FinalDemoTuningProfile TuningProfile => tuningProfile;
         public FinalDemoCueLibrary CueLibrary => cueLibrary;
+        public FinalDemoSceneReferences SceneReferences => sceneReferences;
         public FinalDemoInputStatus InputStatus => inputStatus;
         public FinalDemoAudioRouter AudioRouter => audioRouter;
         public FinalDemoLightRouter LightRouter => lightRouter;
@@ -131,6 +133,8 @@ namespace BellRinger.FinalDemo
                 EnsureRuntimeObjects();
             }
 
+            sceneReferences ??= GetComponent<FinalDemoSceneReferences>() ?? FindFirstObjectByType<FinalDemoSceneReferences>();
+            playerCamera ??= sceneReferences != null ? sceneReferences.PlayerCamera : null;
             operatorControls ??= GetComponent<FinalDemoOperatorControls>();
             inputStatus ??= GetComponent<FinalDemoInputStatus>() ?? FindFirstObjectByType<FinalDemoInputStatus>();
             operatorControls?.Initialize(this, inputStatus);
@@ -230,6 +234,7 @@ namespace BellRinger.FinalDemo
             HrtfPreviewEnabled = !HrtfPreviewEnabled;
             audioRouter ??= FindFirstObjectByType<FinalDemoAudioRouter>();
             audioRouter?.SetSpatializerEnabled(HrtfPreviewEnabled);
+            _tinnitusAudioController?.SetBinauralPreview(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
         }
 
         public void RecenterHead()
@@ -300,7 +305,9 @@ namespace BellRinger.FinalDemo
 
         public bool TryGetBellWorldPosition(out Vector3 worldPosition)
         {
-            Transform bell = FindNamedTransform("FinalDemo_BellPlaceholder");
+            Transform bell = sceneReferences != null && sceneReferences.BellVisual != null
+                ? sceneReferences.BellVisual
+                : FindNamedTransform("FinalDemo_BellPlaceholder");
             if (bell != null)
             {
                 worldPosition = bell.position;
@@ -313,7 +320,9 @@ namespace BellRinger.FinalDemo
 
         public bool TryGetBossWorldPosition(out Vector3 worldPosition)
         {
-            Transform boss = FindNamedTransform("FinalDemo_BossTinnitus");
+            Transform boss = sceneReferences != null && sceneReferences.BossVisual != null
+                ? sceneReferences.BossVisual
+                : FindNamedTransform("FinalDemo_BossTinnitus");
             if (boss != null)
             {
                 worldPosition = boss.position;
@@ -599,7 +608,7 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            Vector3 targetPosition = rainStage ? tuningProfile.BellFollowTargetTwoPosition : tuningProfile.BellFollowTargetOnePosition;
+            Vector3 targetPosition = ResolveBellFollowTargetPosition(rainStage);
             MoveBellPlaceholder(targetPosition);
             _currentBellFollowDistance = ResolvePlanarDistanceToPlayer(targetPosition);
 
@@ -891,12 +900,16 @@ namespace BellRinger.FinalDemo
                 _poseMatchEvaluator.MatchFeedbackRadiusMultiplier = tuningProfile.GeneralTinnitusMatchFeedbackRadiusMultiplier;
                 _poseMatchEvaluator.TreatmentSeconds = tuningProfile.GeneralTinnitusTreatmentSeconds;
 
-                Vector3 targetCameraSpace = stage == FinalDemoStage.GeneralTinnitusOne
-                    ? tuningProfile.GeneralTinnitusOnePadTargetCameraSpace
-                    : tuningProfile.GeneralTinnitusTwoPadTargetCameraSpace;
-                Vector3 targetYawPitchRoll = stage == FinalDemoStage.GeneralTinnitusOne
-                    ? tuningProfile.GeneralTinnitusOnePadTargetYawPitchRoll
-                    : tuningProfile.GeneralTinnitusTwoPadTargetYawPitchRoll;
+                FinalDemoPoseAuthoringMarker marker = ResolveGeneralTinnitusPoseMarker(stage);
+                if (marker != null && marker.OverrideTolerances)
+                {
+                    _poseMatchEvaluator.PositionToleranceMeters = marker.PositionToleranceMeters;
+                    _poseMatchEvaluator.YawToleranceDegrees = marker.RotationToleranceDegrees;
+                    _poseMatchEvaluator.PitchToleranceDegrees = marker.RotationToleranceDegrees;
+                    _poseMatchEvaluator.RollToleranceDegrees = marker.RotationToleranceDegrees;
+                }
+
+                ResolveGeneralTinnitusPoseTarget(stage, out Vector3 targetCameraSpace, out Vector3 targetYawPitchRoll);
                 _poseMatchEvaluator.SetTargetPose(targetCameraSpace, targetYawPitchRoll.x, targetYawPitchRoll.y, targetYawPitchRoll.z);
                 _poseMatchEvaluator.ResetProgress();
             }
@@ -1139,10 +1152,19 @@ namespace BellRinger.FinalDemo
                 offset.x * smoothMove01,
                 offset.y * smoothMove01 + Mathf.Sin(move01 * Mathf.PI) * 0.08f,
                 offset.z * smoothMove01);
+
+            if (TryResolveBossAuthoringPathTarget(_currentBossPatternIndex, moving ? move01 : 0f, out Vector3 authoredCameraSpace, out Vector3 authoredWorldPosition))
+            {
+                targetPosition = authoredCameraSpace;
+                MoveBossWeakpointVisual(authoredWorldPosition);
+            }
+
+            FinalDemoPoseAuthoringMarker marker = ResolveBossPoseMarker(_currentBossPatternIndex);
+            Vector3 startRotation = marker != null ? marker.TargetYawPitchRollDegrees : Vector3.zero;
             Vector3 endRotation = ResolveVectorAt(tuningProfile.BossWeakPointEndYawPitchRoll, _currentBossPatternIndex, new Vector3(14f, -8f, 10f));
-            float yaw = Mathf.Lerp(0f, endRotation.x, smoothMove01);
-            float pitch = Mathf.Lerp(0f, endRotation.y, smoothMove01);
-            float roll = Mathf.Lerp(0f, endRotation.z, smoothMove01);
+            float yaw = Mathf.Lerp(startRotation.x, endRotation.x, smoothMove01);
+            float pitch = Mathf.Lerp(startRotation.y, endRotation.y, smoothMove01);
+            float roll = Mathf.Lerp(startRotation.z, endRotation.z, smoothMove01);
             float toleranceMultiplier = 1f + _bossPatternFailureCount * tuningProfile.BossFailureToleranceGain;
 
             _poseMatchEvaluator.TreatmentSeconds = totalSeconds;
@@ -1150,6 +1172,14 @@ namespace BellRinger.FinalDemo
             _poseMatchEvaluator.YawToleranceDegrees = (moving ? tuningProfile.BossMovingToleranceDegrees : tuningProfile.BossHoldRotationToleranceDegrees) * toleranceMultiplier;
             _poseMatchEvaluator.PitchToleranceDegrees = _poseMatchEvaluator.YawToleranceDegrees;
             _poseMatchEvaluator.RollToleranceDegrees = _poseMatchEvaluator.YawToleranceDegrees;
+            if (marker != null && marker.OverrideTolerances && !moving)
+            {
+                _poseMatchEvaluator.PositionToleranceMeters = marker.PositionToleranceMeters * toleranceMultiplier;
+                _poseMatchEvaluator.YawToleranceDegrees = marker.RotationToleranceDegrees * toleranceMultiplier;
+                _poseMatchEvaluator.PitchToleranceDegrees = marker.RotationToleranceDegrees * toleranceMultiplier;
+                _poseMatchEvaluator.RollToleranceDegrees = marker.RotationToleranceDegrees * toleranceMultiplier;
+            }
+
             _poseMatchEvaluator.MatchFeedbackRadiusMultiplier = 4f;
             _poseMatchEvaluator.SetTargetPose(targetPosition, yaw, pitch, roll);
             _currentBossPatternProgress01 = _poseMatchEvaluator.Progress01;
@@ -1409,7 +1439,7 @@ namespace BellRinger.FinalDemo
                 hapticRouter = hapticRoot.AddComponent<FinalDemoHapticRouter>();
             }
 
-            audioRouter.Initialize(cueLibrary, playerRig);
+            audioRouter.Initialize(cueLibrary, ResolveAudioListenerTransform());
             audioRouter.SetSpatializerEnabled(HrtfPreviewEnabled);
             lightRouter.Initialize(playerRig, HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>());
         }
@@ -1449,9 +1479,9 @@ namespace BellRinger.FinalDemo
                 bell.position = stage switch
                 {
                     FinalDemoStage.BellOrbit => new Vector3(0.8f, 1.65f, 1.6f),
-                    FinalDemoStage.BellFollowOne => tuningProfile != null ? tuningProfile.BellFollowTargetOnePosition : new Vector3(-1.4f, 1.5f, 3.2f),
-                    FinalDemoStage.BellFollowRain => tuningProfile != null ? tuningProfile.BellFollowTargetTwoPosition : new Vector3(1.4f, 1.5f, 3.6f),
-                    FinalDemoStage.BellGaze => new Vector3(0f, 1.55f, 2.2f),
+                    FinalDemoStage.BellFollowOne => ResolveBellFollowTargetPosition(false),
+                    FinalDemoStage.BellFollowRain => ResolveBellFollowTargetPosition(true),
+                    FinalDemoStage.BellGaze => ResolveBellGazeCuePosition(_bellGazeSuccessCount),
                     FinalDemoStage.BellAcquisition => ResolvePlayerRelativePosition(tuningProfile != null ? tuningProfile.BellAcquisitionLocalOffset : new Vector3(0f, -0.08f, 0.85f)),
                     _ => new Vector3(0f, 1.6f, 2.4f),
                 };
@@ -1470,17 +1500,35 @@ namespace BellRinger.FinalDemo
 
             if (stage == FinalDemoStage.ForestEnding && tuningProfile != null)
             {
-                MoveBellPlaceholder(tuningProfile.ForestBellWorldPosition);
+                MoveBellPlaceholder(ResolveForestBellPosition());
             }
         }
 
         private void MoveBellPlaceholder(Vector3 worldPosition)
         {
-            Transform bell = FindNamedTransform("FinalDemo_BellPlaceholder");
+            Transform bell = sceneReferences != null && sceneReferences.BellVisual != null
+                ? sceneReferences.BellVisual
+                : FindNamedTransform("FinalDemo_BellPlaceholder");
             if (bell != null)
             {
                 bell.position = worldPosition;
             }
+        }
+
+        private Transform ResolveAudioListenerTransform()
+        {
+            if (playerCamera != null)
+            {
+                return playerCamera.transform;
+            }
+
+            AudioListener listener = FindFirstObjectByType<AudioListener>();
+            if (listener != null)
+            {
+                return listener.transform;
+            }
+
+            return playerRig;
         }
 
         private Vector3 ResolvePlayerRelativePosition(Vector3 localOffset)
@@ -1513,12 +1561,37 @@ namespace BellRinger.FinalDemo
 
         private Vector3 GetBellPlaceholderPosition()
         {
-            Transform bell = FindNamedTransform("FinalDemo_BellPlaceholder");
+            Transform bell = sceneReferences != null && sceneReferences.BellVisual != null
+                ? sceneReferences.BellVisual
+                : FindNamedTransform("FinalDemo_BellPlaceholder");
             return bell != null ? bell.position : ResolvePlayerRelativePosition(Vector3.forward * 1.4f);
+        }
+
+        private Vector3 ResolveBellFollowTargetPosition(bool rainStage)
+        {
+            FinalDemoAuthoringPath path = sceneReferences != null ? sceneReferences.BellFollowAuthoringPath : null;
+            int index = rainStage ? 1 : 0;
+            if (path != null && path.TryGetWorldPoint(index, out Vector3 authoredPosition))
+            {
+                return authoredPosition;
+            }
+
+            if (tuningProfile != null)
+            {
+                return rainStage ? tuningProfile.BellFollowTargetTwoPosition : tuningProfile.BellFollowTargetOnePosition;
+            }
+
+            return rainStage ? new Vector3(1.4f, 1.5f, 3.6f) : new Vector3(-1.4f, 1.5f, 3.2f);
         }
 
         private Vector3 ResolveBellGazeCuePosition(int cueIndex)
         {
+            FinalDemoAuthoringPath path = sceneReferences != null ? sceneReferences.BellGazeAuthoringPath : null;
+            if (path != null && path.TryGetWorldPoint(cueIndex, out Vector3 authoredPosition))
+            {
+                return authoredPosition;
+            }
+
             Vector3[] offsets = tuningProfile != null ? tuningProfile.BellGazeLocalOffsets : null;
             if (offsets == null || offsets.Length == 0)
             {
@@ -1600,6 +1673,7 @@ namespace BellRinger.FinalDemo
             controller.Volume = 0.052f * (tuningProfile != null ? tuningProfile.GeneralTinnitusToneVolume : 0.8f);
             controller.CleanseStability = 0f;
             controller.enabled = true;
+            controller.SetBinauralPreview(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
             _tinnitusAudioController = controller;
             _tinnitusReactiveLight = AttachReactiveLight(
                 controller.GetComponent<AudioSource>(),
@@ -1650,6 +1724,14 @@ namespace BellRinger.FinalDemo
 
         private Vector3 ResolveGeneralTinnitusWorldPosition(FinalDemoStage stage)
         {
+            Transform authored = stage == FinalDemoStage.GeneralTinnitusTwo
+                ? sceneReferences != null ? sceneReferences.TinnitusTwoVisual : null
+                : sceneReferences != null ? sceneReferences.TinnitusOneVisual : null;
+            if (authored != null)
+            {
+                return authored.position;
+            }
+
             if (tuningProfile == null)
             {
                 return stage == FinalDemoStage.GeneralTinnitusTwo
@@ -1664,8 +1746,15 @@ namespace BellRinger.FinalDemo
 
         private void MoveGeneralTinnitusPlaceholder(FinalDemoStage stage, Vector3 worldPosition)
         {
-            string objectName = stage == FinalDemoStage.GeneralTinnitusTwo ? "FinalDemo_TinnitusB" : "FinalDemo_TinnitusA";
-            Transform tinnitus = FindNamedTransform(objectName);
+            Transform tinnitus = stage == FinalDemoStage.GeneralTinnitusTwo
+                ? sceneReferences != null ? sceneReferences.TinnitusTwoVisual : null
+                : sceneReferences != null ? sceneReferences.TinnitusOneVisual : null;
+            if (tinnitus == null)
+            {
+                string objectName = stage == FinalDemoStage.GeneralTinnitusTwo ? "FinalDemo_TinnitusB" : "FinalDemo_TinnitusA";
+                tinnitus = FindNamedTransform(objectName);
+            }
+
             if (tinnitus != null)
             {
                 tinnitus.position = worldPosition;
@@ -1674,16 +1763,122 @@ namespace BellRinger.FinalDemo
 
         private Vector3 ResolveBossPosition()
         {
+            if (sceneReferences != null && sceneReferences.BossVisual != null)
+            {
+                return sceneReferences.BossVisual.position;
+            }
+
             return tuningProfile != null ? tuningProfile.BossWorldPosition : new Vector3(0f, 1.6f, 4.2f);
         }
 
         private void MoveBossPlaceholder(Vector3 worldPosition)
         {
-            Transform boss = FindNamedTransform("FinalDemo_BossTinnitus");
+            Transform boss = sceneReferences != null && sceneReferences.BossVisual != null
+                ? sceneReferences.BossVisual
+                : FindNamedTransform("FinalDemo_BossTinnitus");
             if (boss != null)
             {
                 boss.position = worldPosition;
             }
+        }
+
+        private void MoveBossWeakpointVisual(Vector3 worldPosition)
+        {
+            Transform weakpoint = FindNamedTransform("BossWeakpoint_Current");
+            if (weakpoint != null)
+            {
+                weakpoint.position = worldPosition;
+            }
+        }
+
+        private FinalDemoPoseAuthoringMarker ResolveGeneralTinnitusPoseMarker(FinalDemoStage stage)
+        {
+            if (sceneReferences == null)
+            {
+                return null;
+            }
+
+            return stage == FinalDemoStage.GeneralTinnitusTwo
+                ? sceneReferences.TinnitusTwoHealMarker
+                : sceneReferences.TinnitusOneHealMarker;
+        }
+
+        private void ResolveGeneralTinnitusPoseTarget(FinalDemoStage stage, out Vector3 cameraSpacePosition, out Vector3 yawPitchRoll)
+        {
+            FinalDemoPoseAuthoringMarker marker = ResolveGeneralTinnitusPoseMarker(stage);
+            if (marker != null)
+            {
+                cameraSpacePosition = marker.TargetCameraSpacePosition;
+                yawPitchRoll = marker.TargetYawPitchRollDegrees;
+                return;
+            }
+
+            cameraSpacePosition = stage == FinalDemoStage.GeneralTinnitusOne
+                ? tuningProfile.GeneralTinnitusOnePadTargetCameraSpace
+                : tuningProfile.GeneralTinnitusTwoPadTargetCameraSpace;
+            yawPitchRoll = stage == FinalDemoStage.GeneralTinnitusOne
+                ? tuningProfile.GeneralTinnitusOnePadTargetYawPitchRoll
+                : tuningProfile.GeneralTinnitusTwoPadTargetYawPitchRoll;
+        }
+
+        private FinalDemoPoseAuthoringMarker ResolveBossPoseMarker(int patternIndex)
+        {
+            if (sceneReferences == null)
+            {
+                return null;
+            }
+
+            return patternIndex switch
+            {
+                1 => sceneReferences.BossPoseTwoMarker,
+                2 => sceneReferences.BossPoseThreeMarker,
+                _ => sceneReferences.BossPoseOneMarker,
+            };
+        }
+
+        private FinalDemoAuthoringPath ResolveBossAuthoringPath(int patternIndex)
+        {
+            if (sceneReferences == null)
+            {
+                return null;
+            }
+
+            return patternIndex switch
+            {
+                1 => sceneReferences.BossWeakpointPathTwoAuthoring,
+                2 => sceneReferences.BossWeakpointPathThreeAuthoring,
+                _ => sceneReferences.BossWeakpointPathOneAuthoring,
+            };
+        }
+
+        private bool TryResolveBossAuthoringPathTarget(int patternIndex, float move01, out Vector3 cameraSpacePosition, out Vector3 worldPosition)
+        {
+            FinalDemoAuthoringPath path = ResolveBossAuthoringPath(patternIndex);
+            if (path == null || !path.TryEvaluateWorldPosition01(move01, out worldPosition))
+            {
+                cameraSpacePosition = default;
+                worldPosition = default;
+                return false;
+            }
+
+            cameraSpacePosition = WorldToPlayerCameraSpace(worldPosition);
+            return true;
+        }
+
+        private Vector3 WorldToPlayerCameraSpace(Vector3 worldPosition)
+        {
+            Transform reference = playerCamera != null ? playerCamera.transform : playerRig;
+            return reference != null ? reference.InverseTransformPoint(worldPosition) : worldPosition;
+        }
+
+        private Vector3 ResolveForestBellPosition()
+        {
+            if (sceneReferences != null && sceneReferences.ForestSet != null)
+            {
+                return sceneReferences.ForestSet.position + new Vector3(0f, 1.45f, 0.8f);
+            }
+
+            return tuningProfile != null ? tuningProfile.ForestBellWorldPosition : new Vector3(0f, 1.6f, 5.2f);
         }
 
         private int ResolveBossPatternIndex(FinalDemoStage stage)
@@ -1729,6 +1924,22 @@ namespace BellRinger.FinalDemo
 
         private Vector3 ResolveBellOrbitPosition(float elapsedSeconds, out float intensity)
         {
+            FinalDemoAuthoringPath authoredPath = sceneReferences != null ? sceneReferences.BellOrbitAuthoringPath : null;
+            if (authoredPath != null && authoredPath.Count > 0)
+            {
+                float authoredOrbitDuration = tuningProfile != null ? tuningProfile.BellOrbitSeconds : 1f;
+                float authoredNormalized = EvaluateBellOrbitProgress(elapsedSeconds / Mathf.Max(0.01f, authoredOrbitDuration));
+                if (authoredPath.TryEvaluateWorldPosition01(authoredNormalized, out Vector3 authoredPosition))
+                {
+                    float distance = playerRig != null ? Vector3.Distance(playerRig.position, authoredPosition) : 1.2f;
+                    float nearIntensity = tuningProfile != null ? tuningProfile.BellOrbitNearIntensity : 0.85f;
+                    float farIntensity = tuningProfile != null ? tuningProfile.BellOrbitFarIntensity : 0.35f;
+                    float authoredDistance01 = Mathf.InverseLerp(0.65f, 2.2f, distance);
+                    intensity = Mathf.Lerp(nearIntensity, farIntensity, authoredDistance01);
+                    return authoredPosition;
+                }
+            }
+
             Vector3[] points = tuningProfile != null ? tuningProfile.BellOrbitLocalPoints : null;
             if (points == null || points.Length == 0)
             {

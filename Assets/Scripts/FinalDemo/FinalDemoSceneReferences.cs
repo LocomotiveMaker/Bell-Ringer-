@@ -78,5 +78,16 @@ namespace BellRinger.FinalDemo
         public Transform BossPoseTwo => bossPoseTwo;
         public Transform BossPoseThree => bossPoseThree;
         public PadPoseProvider PadPoseProvider => padPoseProvider;
+        public FinalDemoAuthoringPath BellOrbitAuthoringPath => bellOrbitPath != null ? bellOrbitPath.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoAuthoringPath BellFollowAuthoringPath => bellFollowPath != null ? bellFollowPath.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoAuthoringPath BellGazeAuthoringPath => bellGazePath != null ? bellGazePath.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoAuthoringPath BossWeakpointPathOneAuthoring => bossWeakpointPathOne != null ? bossWeakpointPathOne.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoAuthoringPath BossWeakpointPathTwoAuthoring => bossWeakpointPathTwo != null ? bossWeakpointPathTwo.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoAuthoringPath BossWeakpointPathThreeAuthoring => bossWeakpointPathThree != null ? bossWeakpointPathThree.GetComponent<FinalDemoAuthoringPath>() : null;
+        public FinalDemoPoseAuthoringMarker TinnitusOneHealMarker => tinnitusOneHealPose != null ? tinnitusOneHealPose.GetComponent<FinalDemoPoseAuthoringMarker>() : null;
+        public FinalDemoPoseAuthoringMarker TinnitusTwoHealMarker => tinnitusTwoHealPose != null ? tinnitusTwoHealPose.GetComponent<FinalDemoPoseAuthoringMarker>() : null;
+        public FinalDemoPoseAuthoringMarker BossPoseOneMarker => bossPoseOne != null ? bossPoseOne.GetComponent<FinalDemoPoseAuthoringMarker>() : null;
+        public FinalDemoPoseAuthoringMarker BossPoseTwoMarker => bossPoseTwo != null ? bossPoseTwo.GetComponent<FinalDemoPoseAuthoringMarker>() : null;
+        public FinalDemoPoseAuthoringMarker BossPoseThreeMarker => bossPoseThree != null ? bossPoseThree.GetComponent<FinalDemoPoseAuthoringMarker>() : null;
     }
 }
