@@ -22,12 +22,23 @@ $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 . (Join-Path $PSScriptRoot "Use-ValidationTools.ps1")
 
-$projectPath = Resolve-Path (Join-Path $projectRoot "tools\PadTracker\BellRinger.PadTracker.csproj")
-$nugetConfigPath = Resolve-Path (Join-Path $projectRoot "NuGet.config")
-$builtAppPath = Join-Path $projectRoot "tools\PadTracker\bin\Debug\net8.0\BellRinger.PadTracker.dll"
-$hasBuiltApp = Test-Path $builtAppPath
+$projectFilePath = Join-Path $projectRoot "tools\PadTracker\BellRinger.PadTracker.csproj"
+$nugetConfigFilePath = Join-Path $projectRoot "NuGet.config"
+$builtExePath = Join-Path $projectRoot "tools\PadTracker\bin\Debug\net8.0\BellRinger.PadTracker.exe"
+$builtDllPath = Join-Path $projectRoot "tools\PadTracker\bin\Debug\net8.0\BellRinger.PadTracker.dll"
+$hasBuiltApp = (Test-Path $builtExePath) -or (Test-Path $builtDllPath)
 
 if ($Restore -or -not $hasBuiltApp) {
+    if (-not (Test-Path $projectFilePath)) {
+        throw "Pad tracker project file not found at '$projectFilePath'."
+    }
+
+    if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+        throw "dotnet was not found. Install .NET 8 SDK or keep the prebuilt tracker output in tools\PadTracker\bin\Debug\net8.0."
+    }
+
+    $projectPath = Resolve-Path $projectFilePath
+    $nugetConfigPath = Resolve-Path $nugetConfigFilePath
     $buildArguments = @("build", $projectPath.Path, "--configfile", $nugetConfigPath.Path)
     if (-not $Restore) {
         $buildArguments += "--no-restore"
@@ -39,7 +50,7 @@ if ($Restore -or -not $hasBuiltApp) {
     }
 }
 
-$arguments = @($builtAppPath)
+$arguments = @()
 
 if ($Scan) {
     $arguments += "--scan-cameras"
@@ -76,7 +87,18 @@ if ($Scan) {
     }
 }
 
-dotnet @arguments
+if (Test-Path $builtExePath) {
+    & $builtExePath @arguments
+} elseif (Test-Path $builtDllPath) {
+    if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+        throw "dotnet was not found. Install .NET 8 runtime or rebuild the tracker on a machine with the SDK."
+    }
+
+    dotnet $builtDllPath @arguments
+} else {
+    throw "Pad tracker build output was not found. Run tools\Build-PadTracker.ps1 -Restore once after restoring the project."
+}
+
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }

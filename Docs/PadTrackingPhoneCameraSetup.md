@@ -48,18 +48,22 @@ Use this order exactly:
 
 ## Commands
 
+Type only the command itself.
+
+Do not type the PowerShell prompt marker such as `PS C:\...>` or `>>`.
+
 ### 1. Scan camera indices
 
 First run once:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Build-PadTracker.ps1 -Restore
+.\tools\Build-PadTracker.cmd -Restore
 ```
 
 Then run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -Scan
+.\tools\Run-PadTracker.cmd -Scan
 ```
 
 The tracker will try camera indices `0` through `7` and print which ones open successfully.
@@ -71,30 +75,45 @@ The user should write down the webcam index that corresponds to the phone feed.
 Recommended first live command:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 720 -PreviewMaxDim 960
+.\tools\Run-PadTracker.cmd -CameraIndex 0 -Width 1280 -Height 720 -Fps 30 -DetectMaxDim 720 -PreviewMaxDim 960
 ```
 
 Replace `0` with the camera index found in the scan step.
 
 Meaning of the new optimization flags:
 
-- `-Backend MSMF`
-  - use the Media Foundation backend explicitly
 - `-DetectMaxDim 720`
   - do ArUco detection on a reduced image for speed
 - `-PreviewMaxDim 960`
   - show a smaller preview window to reduce drawing cost
 
+Note on `-Backend`:
+
+- If `-Backend` is not specified, the tracker will try a fallback order (`DSHOW` then `MSMF` then `ANY`).
+- If `-Backend` is specified, only that backend is used. Prefer leaving it unset unless troubleshooting.
+
 If the preview still feels heavy, try:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 640 -PreviewMaxDim 800
+.\tools\Run-PadTracker.cmd -CameraIndex 0 -Width 1280 -Height 720 -Fps 30 -DetectMaxDim 640 -PreviewMaxDim 800
 ```
 
 If the user wants to measure pure tracking speed without preview cost, try:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0 -Width 1280 -Height 720 -Fps 60 -Backend MSMF -DetectMaxDim 720 -NoPreview
+.\tools\Run-PadTracker.cmd -CameraIndex 0 -Width 1280 -Height 720 -Fps 30 -DetectMaxDim 720 -NoPreview
+```
+
+If a virtual camera such as `Iriun Webcam` opens but the preview never appears, try an explicit backend:
+
+```powershell
+.\tools\Run-PadTracker.cmd -CameraIndex 0 -Width 1280 -Height 720 -Fps 30 -Backend DSHOW -DetectMaxDim 720 -PreviewMaxDim 960
+```
+
+If `DSHOW` opens but still shows no frames, try:
+
+```powershell
+.\tools\Run-PadTracker.cmd -CameraIndex 0 -Width 1280 -Height 720 -Fps 30 -Backend MSMF -DetectMaxDim 720 -PreviewMaxDim 960
 ```
 
 ### 3. Create the Unity scene
@@ -102,7 +121,7 @@ powershell -ExecutionPolicy Bypass -File tools\Run-PadTracker.ps1 -CameraIndex 0
 If the scene does not already exist, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\Create-PadTrackingTestScene.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\Create-PadTrackingTestScene.ps1
 ```
 
 Then open:
