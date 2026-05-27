@@ -6028,9 +6028,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.33362776
+    y: 0.40546125
     width: 1
-    height: 0.66637224
+    height: 0.59453875
   near clip plane: 0.03
   far clip plane: 80
   field of view: 68
@@ -6148,6 +6148,7 @@ Transform:
   - {fileID: 666511704}
   - {fileID: 1518915806}
   - {fileID: 1387292601}
+  - {fileID: 1446795318}
   m_Father: {fileID: 440105806}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &203800293
@@ -6497,7 +6498,7 @@ Transform:
   m_GameObject: {fileID: 280364706}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.16, y: -0.03, z: 0.68}
+  m_LocalPosition: {x: 2.62, y: -0.03, z: 55.97}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6734,6 +6735,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   refreshIntervalSeconds: 0.06
+  imuFriendlyScaling: 1
+  pulseMasterScale: 0.72
+  continuousMasterScale: 0.48
+  highMotorExtraScale: 0.68
 --- !u!1 &351078899
 GameObject:
   m_ObjectHideFlags: 0
@@ -9095,7 +9100,7 @@ Transform:
   m_GameObject: {fileID: 839732007}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 10.45, y: 1.45, z: 44.74}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9667,7 +9672,7 @@ Transform:
   m_GameObject: {fileID: 1009578192}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.2, y: 1.45, z: 2.8}
+  m_LocalPosition: {x: 1.08, y: 1.45, z: 56.27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -10488,7 +10493,7 @@ Transform:
   m_GameObject: {fileID: 1207336593}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.55, y: 1.45, z: 4.1}
+  m_LocalPosition: {x: 10.45, y: 1.45, z: 44.74}
   m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10705,6 +10710,7 @@ MonoBehaviour:
   wallNoiseColor: {r: 0.06, g: 0.78, b: 0.9, a: 1}
   highPriorityHoldSeconds: 0.35
   defaultMaxDistance: 6
+  horizontalPositionWeight: 1.18
 --- !u!1 &1266882791
 GameObject:
   m_ObjectHideFlags: 0
@@ -12118,6 +12124,89 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1446033114}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1446795317
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1446795318}
+  - component: {fileID: 1446795319}
+  m_Layer: 0
+  m_Name: FinalDemoViewportBlackBackdropCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1446795318
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446795317}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 203800292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &1446795319
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446795317}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -100
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 0
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 0
+  m_AllowMSAA: 0
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 0
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
 --- !u!1 &1450260189
 GameObject:
   m_ObjectHideFlags: 0
@@ -12643,7 +12732,7 @@ Transform:
   m_GameObject: {fileID: 1508354530}
   serializedVersion: 2
   m_LocalRotation: {x: 0.14799677, y: 0.1138426, z: -0.08483225, w: 0.9787443}
-  m_LocalPosition: {x: 0.18, y: 0.02, z: 0.74}
+  m_LocalPosition: {x: 1.25, y: 1.35, z: 77.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -18890,7 +18979,7 @@ Transform:
   m_GameObject: {fileID: 1789045690}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.25, y: 1.35, z: 3.1}
+  m_LocalPosition: {x: 1.25, y: 1.35, z: 77.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -19825,7 +19914,7 @@ Transform:
   m_GameObject: {fileID: 1999968306}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.4, y: 1.45, z: 3.2}
+  m_LocalPosition: {x: -5.67, y: 1.379, z: 17.04}
   m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 0
   m_Children: []

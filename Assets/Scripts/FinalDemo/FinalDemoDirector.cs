@@ -62,6 +62,7 @@ namespace BellRinger.FinalDemo
         private float _rainStartedAtRealtime;
         private float _lastBellAssistAtRealtime;
         private float _lastPadShakeAssistAtRealtime;
+        private float _lastPadShakeNarrationAtRealtime;
         private float _currentBellFollowDistance = float.PositiveInfinity;
         private float _currentRainIntensity;
         private int _bellGazeSuccessCount;
@@ -96,6 +97,7 @@ namespace BellRinger.FinalDemo
         private readonly HashSet<FinalDemoCueId> _playedNarrationCueIds = new HashSet<FinalDemoCueId>();
         private FinalDemoCueId _activeNarrationCueId = FinalDemoCueId.None;
         private float _activeNarrationUntilRealtime;
+        private bool _pendingOpeningAfterFaceForwardNarration;
 
         private struct NarrationRequest
         {
@@ -188,8 +190,17 @@ namespace BellRinger.FinalDemo
             if (_currentStage == FinalDemoStage.Preflight)
             {
                 QueueNarration(FinalDemoCueId.NarrFaceForwardWait, FinalDemoStage.Preflight, false, true);
+                audioRouter?.StartLoop(
+                    FinalDemoCueId.ForestBed,
+                    ResolvePlayerRelativePosition(Vector3.forward * 2f),
+                    tuningProfile != null ? tuningProfile.PreflightAmbienceVolume : 0.14f);
+                _pendingOpeningAfterFaceForwardNarration = true;
                 TickNarrationQueue();
-                EnterStage(FinalDemoStage.OpeningAmbience);
+                if (_pendingOpeningAfterFaceForwardNarration && _activeNarrationCueId == FinalDemoCueId.None)
+                {
+                    _pendingOpeningAfterFaceForwardNarration = false;
+                    EnterStage(FinalDemoStage.OpeningAmbience);
+                }
             }
         }
 
@@ -223,6 +234,7 @@ namespace BellRinger.FinalDemo
         {
             ClearAllNarrationState();
             _hasStarted = false;
+            _pendingOpeningAfterFaceForwardNarration = false;
             EnterStage(FinalDemoStage.Preflight);
         }
 
@@ -285,6 +297,7 @@ namespace BellRinger.FinalDemo
             hapticRouter?.StopAllHaptics();
             lightRouter?.Clear();
             ClearQueuedNarration();
+            _pendingOpeningAfterFaceForwardNarration = false;
         }
 
         private void QueueNarration(FinalDemoCueId cueId, FinalDemoStage stage, bool requireCurrentStage = true, bool oncePerRun = true)
@@ -324,6 +337,12 @@ namespace BellRinger.FinalDemo
                 }
 
                 _activeNarrationCueId = FinalDemoCueId.None;
+                if (_pendingOpeningAfterFaceForwardNarration && _currentStage == FinalDemoStage.Preflight)
+                {
+                    _pendingOpeningAfterFaceForwardNarration = false;
+                    EnterStage(FinalDemoStage.OpeningAmbience);
+                    return;
+                }
             }
 
             while (_narrationQueue.Count > 0)
@@ -484,6 +503,7 @@ namespace BellRinger.FinalDemo
             _nextRainLightAtRealtime = Time.realtimeSinceStartup;
             _lastBellAssistAtRealtime = Time.realtimeSinceStartup - 999f;
             _lastPadShakeAssistAtRealtime = Time.realtimeSinceStartup - 999f;
+            _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup - 999f;
             _currentBellFollowDistance = float.PositiveInfinity;
             _currentRainIntensity = 0f;
             _bellGazeProgressSeconds = 0f;
@@ -512,6 +532,7 @@ namespace BellRinger.FinalDemo
             {
                 Vector3 ambiencePosition = ResolvePlayerRelativePosition(Vector3.forward * 2.4f);
                 audioRouter?.StartLoop(FinalDemoCueId.BellOpeningOrbit, ambiencePosition, 0f);
+                audioRouter?.StartLoop(FinalDemoCueId.ForestBed, ResolvePlayerRelativePosition(Vector3.forward * 2f), 0f);
             }
             else if (nextStage == FinalDemoStage.BellGaze)
             {
@@ -596,7 +617,8 @@ namespace BellRinger.FinalDemo
             }
 
             float fade = Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningAmbienceFadeSeconds);
-            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BellOpeningOrbit, tuningProfile.OpeningAmbienceVolume * fade);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.ForestBed, tuningProfile.OpeningAmbienceVolume * fade);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BellOpeningOrbit, tuningProfile.OpeningAmbienceVolume * 0.72f * fade);
 
             if (StageElapsedSeconds >= tuningProfile.OpeningAmbienceSeconds)
             {
@@ -654,6 +676,7 @@ namespace BellRinger.FinalDemo
 
             Vector3 bellPosition = ResolvePlayerRelativePosition(tuningProfile.OpeningCloseBellOffset);
             MoveBellPlaceholder(bellPosition);
+            TickBellContinuousAnchor(bellPosition, tuningProfile.OpeningCloseBellLedIntensity * 0.48f);
 
             if (!_stageOneShotPlayed)
             {
@@ -678,7 +701,7 @@ namespace BellRinger.FinalDemo
             Vector3 bellPosition = ResolveBellOrbitPosition(StageElapsedSeconds, out float pointIntensity);
             MoveBellPlaceholder(bellPosition);
 
-            TickBellOrbitContinuousAnchor(bellPosition, pointIntensity);
+            TickBellContinuousAnchor(bellPosition, pointIntensity, 1f);
 
             if (Time.realtimeSinceStartup >= _nextBellCallAtRealtime)
             {
@@ -693,7 +716,7 @@ namespace BellRinger.FinalDemo
             }
         }
 
-        private void TickBellOrbitContinuousAnchor(Vector3 bellPosition, float pointIntensity)
+        private void TickBellContinuousAnchor(Vector3 bellPosition, float pointIntensity, float anchorScale = 1f)
         {
             if (tuningProfile == null || !tuningProfile.BellOrbitContinuousAnchorEnabled || Time.realtimeSinceStartup < _bellOrbitAnchorSuppressedUntilRealtime)
             {
@@ -705,7 +728,7 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            float anchorIntensity = Mathf.Clamp01(pointIntensity * tuningProfile.BellOrbitContinuousAnchorIntensity);
+            float anchorIntensity = Mathf.Clamp01(pointIntensity * tuningProfile.BellOrbitContinuousAnchorIntensity * Mathf.Max(0f, anchorScale));
             lightRouter?.ShowBellAnchor(bellPosition, anchorIntensity);
             _nextBellOrbitAnchorAtRealtime = Time.realtimeSinceStartup + tuningProfile.BellOrbitContinuousAnchorUpdateIntervalSeconds;
         }
@@ -726,6 +749,7 @@ namespace BellRinger.FinalDemo
             Vector3 targetPosition = ResolveBellFollowTargetPosition(rainStage);
             MoveBellPlaceholder(targetPosition);
             _currentBellFollowDistance = ResolvePlanarDistanceToPlayer(targetPosition);
+            TickBellContinuousAnchor(targetPosition, tuningProfile.BellFollowLedIntensity * 0.42f);
 
             if (rainStage)
             {
@@ -748,7 +772,7 @@ namespace BellRinger.FinalDemo
             if (assistOverdue && Time.realtimeSinceStartup - _lastBellAssistAtRealtime >= tuningProfile.BellAssistRepeatSeconds)
             {
                 TriggerBellAssist(targetPosition, FinalDemoCueId.BellStrongAssist);
-                QueueNarration(FinalDemoCueId.NarrPadShakeAssist, _currentStage, true, false);
+                TryQueuePadShakeAssistNarration();
             }
 
             TryPadShakeBellAssist(targetPosition);
@@ -782,7 +806,6 @@ namespace BellRinger.FinalDemo
                 _nextRainLightAtRealtime = Time.realtimeSinceStartup;
                 audioRouter?.StartLoop(FinalDemoCueId.RainLightBed, playerRig.position, 0f);
                 audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
-                QueueNarration(FinalDemoCueId.NarrRainFocusBell, FinalDemoStage.BellFollowRain);
             }
 
             if (!_rainLoopStarted)
@@ -803,6 +826,13 @@ namespace BellRinger.FinalDemo
 
             audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainLightBed, _currentRainIntensity);
             audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainStrongBed, windTextureIntensity);
+
+            if (!_stageNarrationPlayed &&
+                Time.realtimeSinceStartup - _rainStartedAtRealtime >= tuningProfile.RainFocusBellNarrationDelaySeconds)
+            {
+                QueueNarration(FinalDemoCueId.NarrRainFocusBell, FinalDemoStage.BellFollowRain);
+                _stageNarrationPlayed = true;
+            }
 
             if (Time.realtimeSinceStartup >= _nextRainLightAtRealtime)
             {
@@ -862,6 +892,23 @@ namespace BellRinger.FinalDemo
 
             _lastPadShakeAssistAtRealtime = Time.realtimeSinceStartup;
             TriggerBellAssist(targetPosition, FinalDemoCueId.BellPadShakeResponse);
+            TryQueuePadShakeAssistNarration();
+        }
+
+        private void TryQueuePadShakeAssistNarration()
+        {
+            if (tuningProfile == null)
+            {
+                return;
+            }
+
+            if (Time.realtimeSinceStartup - _lastPadShakeNarrationAtRealtime < tuningProfile.PadShakeAssistNarrationCooldownSeconds)
+            {
+                return;
+            }
+
+            _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup;
+            QueueNarration(FinalDemoCueId.NarrPadShakeAssist, _currentStage, true, false);
         }
 
         private void BeginBellGazeStage()
@@ -881,6 +928,7 @@ namespace BellRinger.FinalDemo
             }
 
             Vector3 bellPosition = UpdateBellGazeMove();
+            TickBellContinuousAnchor(bellPosition, tuningProfile.BellGazeLedIntensity * 0.38f);
             TryPlayBellGazeCall(bellPosition);
 
             if (_bellGazeMoving)
@@ -913,7 +961,6 @@ namespace BellRinger.FinalDemo
                 _bellGazeMoveTargetPosition = targetPosition;
                 _bellGazeMoveStartedAtRealtime = Time.realtimeSinceStartup;
                 _bellGazeMoving = true;
-                audioRouter?.PlayOneShot(FinalDemoCueId.BellMovementTexture, targetPosition, 0.55f);
             }
             else
             {
@@ -1660,7 +1707,7 @@ namespace BellRinger.FinalDemo
 
             audioRouter.Initialize(cueLibrary, ResolveAudioListenerTransform());
             audioRouter.SetSpatializerEnabled(HrtfPreviewEnabled);
-            lightRouter.Initialize(playerRig, HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>());
+            lightRouter.Initialize(ResolveAudioListenerTransform(), HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>());
         }
 
         private void EnsurePadInputRoot()

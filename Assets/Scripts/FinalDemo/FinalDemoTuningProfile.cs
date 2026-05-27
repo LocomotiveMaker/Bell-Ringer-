@@ -22,6 +22,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 playerStartPosition = new Vector3(0f, 1.6f, -1.5f);
 
         [Header("Opening / Bell Orbit")]
+        [SerializeField, Range(0f, 1f)] private float preflightAmbienceVolume = 0.14f;
         [SerializeField] private float openingAmbienceSeconds = 5f;
         [SerializeField] private float openingAmbienceFadeSeconds = 1.6f;
         [SerializeField, Range(0f, 1f)] private float openingAmbienceVolume = 0.32f;
@@ -31,17 +32,17 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float openingCloseBellVolume = 0.72f;
         [SerializeField, Range(0f, 1f)] private float openingCloseBellLedIntensity = 0.75f;
         [SerializeField] private bool soundReactiveLedEnabled = true;
-        [SerializeField] private float soundReactiveLedUpdateIntervalSeconds = 0.12f;
+        [SerializeField] private float soundReactiveLedUpdateIntervalSeconds = 0.09f;
         [SerializeField] private float bellSoundReactiveSensitivity = 1.45f;
         [SerializeField] private float tinnitusSoundReactiveSensitivity = 1.25f;
-        [SerializeField] private float bellCallPostClipGapSeconds = 0.18f;
+        [SerializeField] private float bellCallPostClipGapSeconds = 0.32f;
         [SerializeField] private float bellOrbitSeconds = 8f;
-        [SerializeField] private float bellOrbitCallIntervalSeconds = 1.15f;
+        [SerializeField] private float bellOrbitCallIntervalSeconds = 1.45f;
         [SerializeField] private bool bellOrbitUseSmoothSplinePath = true;
         [SerializeField] private AnimationCurve bellOrbitProgressCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         [SerializeField] private bool bellOrbitContinuousAnchorEnabled = true;
-        [SerializeField] private float bellOrbitContinuousAnchorUpdateIntervalSeconds = 0.1f;
-        [SerializeField, Range(0f, 1f)] private float bellOrbitContinuousAnchorIntensity = 0.34f;
+        [SerializeField] private float bellOrbitContinuousAnchorUpdateIntervalSeconds = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float bellOrbitContinuousAnchorIntensity = 0.38f;
         [SerializeField] private Vector3[] bellOrbitLocalPoints =
         {
             new Vector3(-1.1f, 0.05f, 0.75f),
@@ -58,7 +59,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 bellFollowTargetOnePosition = new Vector3(-1.4f, 1.5f, 3.2f);
         [SerializeField] private Vector3 bellFollowTargetTwoPosition = new Vector3(1.4f, 1.5f, 3.6f);
         [SerializeField] private float bellArrivalRadius = 0.8f;
-        [SerializeField] private float bellFollowCallIntervalSeconds = 1.6f;
+        [SerializeField] private float bellFollowCallIntervalSeconds = 2.3f;
         [SerializeField, Range(0f, 1f)] private float bellFollowVolume = 0.62f;
         [SerializeField, Range(0f, 1f)] private float bellFollowLedIntensity = 0.62f;
         [SerializeField] private float bellAssistTimeoutSeconds = 7.5f;
@@ -66,11 +67,13 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellAssistGainMultiplier = 1.35f;
         [SerializeField] private float padShakeAssistMotionThreshold = 0.58f;
         [SerializeField] private float padShakeAssistCooldownSeconds = 2.5f;
+        [SerializeField] private float padShakeAssistNarrationCooldownSeconds = 11f;
         [SerializeField] private Vector3 rainZoneCenter = new Vector3(0f, 1.6f, 2.9f);
         [SerializeField] private float rainZoneRadius = 2.4f;
         [SerializeField] private float rainIntensityRampSeconds = 4f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
+        [SerializeField] private float rainFocusBellNarrationDelaySeconds = 8f;
         [SerializeField, Range(0f, 1f)] private float rainWindTextureMaxIntensity = 0.34f;
         [SerializeField, Range(0f, 1f)] private float rainAssistVolumeFloor = 0.24f;
         [SerializeField] private float rainCloseDropIntervalSeconds = 2.2f;
@@ -80,7 +83,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellGazeAssistStartSeconds = 6f;
         [SerializeField] private float bellGazeAssistMaxConeDegrees = 28f;
         [SerializeField] private float bellGazeMoveSeconds = 1.1f;
-        [SerializeField] private float bellGazeCallIntervalSeconds = 1.1f;
+        [SerializeField] private float bellGazeCallIntervalSeconds = 1.5f;
         [SerializeField, Range(0f, 1f)] private float bellGazeLedIntensity = 0.78f;
         [SerializeField] private Vector3[] bellGazeLocalOffsets =
         {
@@ -165,6 +168,7 @@ namespace BellRinger.FinalDemo
         public int PadTrackingUdpPort => padTrackingUdpPort;
         public float PlayerFixedHeight => playerFixedHeight;
         public Vector3 PlayerStartPosition => playerStartPosition;
+        public float PreflightAmbienceVolume => Mathf.Clamp01(preflightAmbienceVolume);
         public float OpeningAmbienceSeconds => Mathf.Max(0.1f, openingAmbienceSeconds);
         public float OpeningAmbienceFadeSeconds => Mathf.Max(0.01f, openingAmbienceFadeSeconds);
         public float OpeningAmbienceVolume => Mathf.Clamp01(openingAmbienceVolume);
@@ -201,11 +205,13 @@ namespace BellRinger.FinalDemo
         public float BellAssistGainMultiplier => Mathf.Max(1f, bellAssistGainMultiplier);
         public float PadShakeAssistMotionThreshold => Mathf.Clamp01(padShakeAssistMotionThreshold);
         public float PadShakeAssistCooldownSeconds => Mathf.Max(0.1f, padShakeAssistCooldownSeconds);
+        public float PadShakeAssistNarrationCooldownSeconds => Mathf.Max(0.5f, padShakeAssistNarrationCooldownSeconds);
         public Vector3 RainZoneCenter => rainZoneCenter;
         public float RainZoneRadius => Mathf.Max(0.1f, rainZoneRadius);
         public float RainIntensityRampSeconds => Mathf.Max(0.1f, rainIntensityRampSeconds);
         public float RainMaxIntensity => Mathf.Clamp01(rainMaxIntensity);
         public float RainWindTextureDelaySeconds => Mathf.Max(0f, rainWindTextureDelaySeconds);
+        public float RainFocusBellNarrationDelaySeconds => Mathf.Max(0f, rainFocusBellNarrationDelaySeconds);
         public float RainWindTextureMaxIntensity => Mathf.Clamp01(rainWindTextureMaxIntensity);
         public float RainAssistVolumeFloor => Mathf.Clamp01(rainAssistVolumeFloor);
         public float RainCloseDropIntervalSeconds => Mathf.Max(0.2f, rainCloseDropIntervalSeconds);

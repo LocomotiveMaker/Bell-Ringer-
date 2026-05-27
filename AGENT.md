@@ -63,3 +63,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+Keep notebook compatibility as a default requirement for all changes.
+If a structural change could affect notebook runtime, device paths, or performance, call it out explicitly and document it.

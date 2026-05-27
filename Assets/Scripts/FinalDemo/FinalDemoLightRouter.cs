@@ -16,6 +16,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Color wallNoiseColor = new Color(0.06f, 0.78f, 0.9f);
         [SerializeField] private float highPriorityHoldSeconds = 0.35f;
         [SerializeField] private float defaultMaxDistance = 6f;
+        [SerializeField] private float horizontalPositionWeight = 1.18f;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
         private float _holdUntilRealtime;
@@ -281,9 +282,16 @@ namespace BellRinger.FinalDemo
         private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame)
         {
             Transform listener = listenerTransform != null ? listenerTransform : Camera.main != null ? Camera.main.transform : null;
-            return BellRingerAudioLedMapper.TryMap(
-                listener,
-                worldPosition,
+            if (listener == null)
+            {
+                frame = default;
+                return false;
+            }
+
+            Vector3 localTargetPosition = listener.InverseTransformPoint(worldPosition);
+            localTargetPosition.x *= Mathf.Max(0.1f, horizontalPositionWeight);
+            return BellRingerAudioLedMapper.TryMapFromLocalPosition(
+                localTargetPosition,
                 0.25f,
                 defaultMaxDistance,
                 Mathf.Clamp01(intensity),

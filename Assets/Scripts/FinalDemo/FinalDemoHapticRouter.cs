@@ -7,6 +7,10 @@ namespace BellRinger.FinalDemo
     public sealed class FinalDemoHapticRouter : MonoBehaviour
     {
         [SerializeField] private float refreshIntervalSeconds = 0.06f;
+        [SerializeField] private bool imuFriendlyScaling = true;
+        [SerializeField, Range(0f, 1f)] private float pulseMasterScale = 0.72f;
+        [SerializeField, Range(0f, 1f)] private float continuousMasterScale = 0.48f;
+        [SerializeField, Range(0f, 1f)] private float highMotorExtraScale = 0.68f;
 
         private FinalDemoFeedbackPriority _activePriority = FinalDemoFeedbackPriority.Rain;
         private float _activeUntilRealtime;
@@ -67,7 +71,7 @@ namespace BellRinger.FinalDemo
         public void StartTinnitusCleanseHum(float intensity = 0.55f, float seconds = 1.8f)
         {
             float clampedIntensity = Mathf.Clamp01(intensity);
-            Pulse(0.18f + clampedIntensity * 0.25f, 0.26f + clampedIntensity * 0.32f, seconds, FinalDemoFeedbackPriority.CriticalPad, "tinnitus cleanse hum");
+            Pulse(0.14f + clampedIntensity * 0.18f, 0.08f + clampedIntensity * 0.14f, seconds, FinalDemoFeedbackPriority.CriticalPad, "tinnitus cleanse hum", true);
             _continuous = true;
         }
 
@@ -105,19 +109,37 @@ namespace BellRinger.FinalDemo
 
         private void Pulse(float lowMotor, float highMotor, float seconds, FinalDemoFeedbackPriority priority, string label)
         {
+            Pulse(lowMotor, highMotor, seconds, priority, label, false);
+        }
+
+        private void Pulse(float lowMotor, float highMotor, float seconds, FinalDemoFeedbackPriority priority, string label, bool continuousPattern)
+        {
             if (HapticsActive && priority < _activePriority)
             {
                 _lastAction = $"{label} ignored by higher priority {_activePriority}";
                 return;
             }
 
+            ApplyImuFriendlyScaling(ref lowMotor, ref highMotor, continuousPattern);
             _activePriority = priority;
             _activeUntilRealtime = Time.realtimeSinceStartup + Mathf.Max(0.01f, seconds);
             _lowMotor = Mathf.Clamp01(lowMotor);
             _highMotor = Mathf.Clamp01(highMotor);
-            _continuous = false;
+            _continuous = continuousPattern;
             ApplyHaptics(_lowMotor, _highMotor);
             _lastAction = $"{label} {_lowMotor:0.00}/{_highMotor:0.00}";
+        }
+
+        private void ApplyImuFriendlyScaling(ref float lowMotor, ref float highMotor, bool continuousPattern)
+        {
+            if (!imuFriendlyScaling)
+            {
+                return;
+            }
+
+            float masterScale = continuousPattern ? continuousMasterScale : pulseMasterScale;
+            lowMotor *= Mathf.Clamp01(masterScale);
+            highMotor *= Mathf.Clamp01(masterScale * highMotorExtraScale);
         }
 
         private void ApplyHaptics(float lowMotor, float highMotor)
