@@ -57,6 +57,17 @@ namespace BellRinger.FinalDemo
         private float _nextBellCallAtRealtime;
         private float _nextBellOrbitAnchorAtRealtime;
         private float _bellOrbitAnchorSuppressedUntilRealtime;
+        private float _bellLightActiveUntilRealtime;
+        private bool _bellOrbitMovingToFirstFollow;
+        private Vector3 _bellOrbitMoveStartPosition;
+        private Vector3 _bellOrbitMoveTargetPosition;
+        private float _bellOrbitMoveStartedAtRealtime;
+        private bool _bellFollowRelocating;
+        private Vector3 _bellFollowRelocationStartPosition;
+        private Vector3 _bellFollowRelocationTargetPosition;
+        private float _bellFollowRelocationStartedAtRealtime;
+        private Vector3 _bellFollowStageStartPosition;
+        private int _bellFollowCallCount;
         private float _nextRainDropAtRealtime;
         private float _nextRainLightAtRealtime;
         private float _rainStartedAtRealtime;
@@ -114,7 +125,7 @@ namespace BellRinger.FinalDemo
         public bool PlayerMovementLocked => _playerMovementLocked;
         public bool IsComplete => _currentStage == FinalDemoStage.Complete;
         public FinalDemoAssistLevel AssistLevel { get; private set; } = FinalDemoAssistLevel.Gentle;
-        public bool HrtfPreviewEnabled { get; private set; }
+        public bool HrtfPreviewEnabled { get; private set; } = true;
         public FinalDemoTuningProfile TuningProfile => tuningProfile;
         public FinalDemoCueLibrary CueLibrary => cueLibrary;
         public FinalDemoSceneReferences SceneReferences => sceneReferences;
@@ -154,6 +165,7 @@ namespace BellRinger.FinalDemo
             operatorControls ??= GetComponent<FinalDemoOperatorControls>();
             inputStatus ??= GetComponent<FinalDemoInputStatus>() ?? FindFirstObjectByType<FinalDemoInputStatus>();
             ApplyTuningSerialSettings();
+            EnsurePresentationHelpers();
             operatorControls?.Initialize(this, inputStatus);
             inputStatus?.RefreshReferences();
         }
@@ -172,6 +184,7 @@ namespace BellRinger.FinalDemo
             }
 
             TickCurrentStage();
+            ApplyBellFollowProgressBlocker();
             TickNarrationQueue();
 
             if (tuningProfile != null &&
@@ -190,10 +203,6 @@ namespace BellRinger.FinalDemo
             if (_currentStage == FinalDemoStage.Preflight)
             {
                 QueueNarration(FinalDemoCueId.NarrFaceForwardWait, FinalDemoStage.Preflight, false, true);
-                audioRouter?.StartLoop(
-                    FinalDemoCueId.ForestBed,
-                    ResolvePlayerRelativePosition(Vector3.forward * 2f),
-                    tuningProfile != null ? tuningProfile.PreflightAmbienceVolume : 0.14f);
                 _pendingOpeningAfterFaceForwardNarration = true;
                 TickNarrationQueue();
                 if (_pendingOpeningAfterFaceForwardNarration && _activeNarrationCueId == FinalDemoCueId.None)
@@ -485,6 +494,7 @@ namespace BellRinger.FinalDemo
 
         private void EnterStage(FinalDemoStage nextStage)
         {
+            Vector3 previousBellPosition = GetBellPlaceholderPosition();
             _currentStage = nextStage;
             _stageStartedAtRealtime = Time.realtimeSinceStartup;
             audioRouter?.StopAllCues();
@@ -527,12 +537,19 @@ namespace BellRinger.FinalDemo
             _nextBellCallAtRealtime = Time.realtimeSinceStartup;
             _nextBellOrbitAnchorAtRealtime = Time.realtimeSinceStartup;
             _bellOrbitAnchorSuppressedUntilRealtime = 0f;
+            _bellLightActiveUntilRealtime = 0f;
+            _bellOrbitMovingToFirstFollow = false;
+            _bellFollowRelocating = false;
+            _bellFollowStageStartPosition = playerRig != null ? playerRig.position : Vector3.zero;
+            _bellFollowCallCount = 0;
 
             if (nextStage == FinalDemoStage.OpeningAmbience)
             {
-                Vector3 ambiencePosition = ResolvePlayerRelativePosition(Vector3.forward * 2.4f);
-                audioRouter?.StartLoop(FinalDemoCueId.BellOpeningOrbit, ambiencePosition, 0f);
-                audioRouter?.StartLoop(FinalDemoCueId.ForestBed, ResolvePlayerRelativePosition(Vector3.forward * 2f), 0f);
+                audioRouter?.StartLoop(FinalDemoCueId.OpeningAmbienceBed, ResolvePlayerRelativePosition(Vector3.forward * 2f), 0f);
+            }
+            else if (nextStage == FinalDemoStage.BellFollowRain)
+            {
+                BeginBellFollowRelocation(previousBellPosition, ResolveBellFollowTargetPosition(true));
             }
             else if (nextStage == FinalDemoStage.BellGaze)
             {
@@ -617,8 +634,7 @@ namespace BellRinger.FinalDemo
             }
 
             float fade = Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningAmbienceFadeSeconds);
-            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.ForestBed, tuningProfile.OpeningAmbienceVolume * fade);
-            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BellOpeningOrbit, tuningProfile.OpeningAmbienceVolume * 0.72f * fade);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.OpeningAmbienceBed, tuningProfile.OpeningAmbienceVolume * fade);
 
             if (StageElapsedSeconds >= tuningProfile.OpeningAmbienceSeconds)
             {
@@ -698,8 +714,15 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            Vector3 bellPosition = ResolveBellOrbitPosition(StageElapsedSeconds, out float pointIntensity);
+            if (_bellOrbitMovingToFirstFollow)
+            {
+                TickBellOrbitToFirstFollowMove();
+                return;
+            }
+
+            Vector3 bellPosition = ResolveBellOrbitPosition(Mathf.Min(StageElapsedSeconds, tuningProfile.BellOrbitSeconds), out float pointIntensity);
             MoveBellPlaceholder(bellPosition);
+            UpdateBellMovementTextureLoop(bellPosition, 0f, false);
 
             TickBellContinuousAnchor(bellPosition, pointIntensity, 1f);
 
@@ -712,13 +735,63 @@ namespace BellRinger.FinalDemo
 
             if (StageElapsedSeconds >= tuningProfile.BellOrbitSeconds)
             {
-                ForceNextStage();
+                BeginBellOrbitToFirstFollowMove(bellPosition);
             }
+        }
+
+        private void BeginBellOrbitToFirstFollowMove(Vector3 startPosition)
+        {
+            _bellOrbitMovingToFirstFollow = true;
+            _bellOrbitMoveStartPosition = startPosition;
+            _bellOrbitMoveTargetPosition = ResolveBellFollowTargetPosition(false);
+            _bellOrbitMoveStartedAtRealtime = Time.realtimeSinceStartup;
+            _nextBellCallAtRealtime = float.PositiveInfinity;
+            _bellLightActiveUntilRealtime = 0f;
+            lightRouter?.Clear();
+        }
+
+        private void TickBellOrbitToFirstFollowMove()
+        {
+            if (tuningProfile == null)
+            {
+                return;
+            }
+
+            float elapsed = Time.realtimeSinceStartup - _bellOrbitMoveStartedAtRealtime;
+            float duration = tuningProfile.BellOrbitToFirstTargetMoveSeconds;
+            float move01 = Mathf.Clamp01(elapsed / duration);
+            Vector3 bellPosition = Vector3.Lerp(_bellOrbitMoveStartPosition, _bellOrbitMoveTargetPosition, Smooth01(move01));
+            MoveBellPlaceholder(bellPosition);
+
+            float envelope = ResolveBellMovementEnvelope(elapsed, duration, tuningProfile.BellMovementTextureFadeSeconds);
+            UpdateBellMovementTextureLoop(bellPosition, tuningProfile.BellMovementTextureVolume * envelope, envelope > 0.001f);
+
+            if (move01 < 1f)
+            {
+                return;
+            }
+
+            UpdateBellMovementTextureLoop(bellPosition, 0f, false);
+            _bellOrbitMovingToFirstFollow = false;
+            _bellFollowStageStartPosition = playerRig != null ? playerRig.position : _bellOrbitMoveTargetPosition;
+            ForceNextStage();
+        }
+
+        private static float ResolveBellMovementEnvelope(float elapsedSeconds, float durationSeconds, float fadeSeconds)
+        {
+            float fadeIn = Mathf.Clamp01(elapsedSeconds / Mathf.Max(0.01f, fadeSeconds));
+            float fadeOut = Mathf.Clamp01((durationSeconds - elapsedSeconds) / Mathf.Max(0.01f, fadeSeconds));
+            return Mathf.Min(fadeIn, fadeOut);
         }
 
         private void TickBellContinuousAnchor(Vector3 bellPosition, float pointIntensity, float anchorScale = 1f)
         {
             if (tuningProfile == null || !tuningProfile.BellOrbitContinuousAnchorEnabled || Time.realtimeSinceStartup < _bellOrbitAnchorSuppressedUntilRealtime)
+            {
+                return;
+            }
+
+            if (Time.realtimeSinceStartup > _bellLightActiveUntilRealtime)
             {
                 return;
             }
@@ -746,6 +819,12 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
+            if (_bellFollowRelocating)
+            {
+                TickBellFollowRelocation();
+                return;
+            }
+
             Vector3 targetPosition = ResolveBellFollowTargetPosition(rainStage);
             MoveBellPlaceholder(targetPosition);
             _currentBellFollowDistance = ResolvePlanarDistanceToPlayer(targetPosition);
@@ -766,7 +845,7 @@ namespace BellRinger.FinalDemo
                     _stageNarrationPlayed = true;
                 }
 
-                ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, tuningProfile.BellFollowCallIntervalSeconds);
+                ScheduleNextBellFollowCall();
             }
 
             if (assistOverdue && Time.realtimeSinceStartup - _lastBellAssistAtRealtime >= tuningProfile.BellAssistRepeatSeconds)
@@ -895,6 +974,64 @@ namespace BellRinger.FinalDemo
             TryQueuePadShakeAssistNarration();
         }
 
+        private void BeginBellFollowRelocation(Vector3 startPosition, Vector3 targetPosition)
+        {
+            _bellFollowRelocating = true;
+            _bellFollowRelocationStartPosition = startPosition;
+            _bellFollowRelocationTargetPosition = targetPosition;
+            _bellFollowRelocationStartedAtRealtime = Time.realtimeSinceStartup;
+            _nextBellCallAtRealtime = float.PositiveInfinity;
+            _bellLightActiveUntilRealtime = 0f;
+            MoveBellPlaceholder(startPosition);
+            lightRouter?.Clear();
+        }
+
+        private void TickBellFollowRelocation()
+        {
+            if (tuningProfile == null)
+            {
+                return;
+            }
+
+            float elapsed = Time.realtimeSinceStartup - _bellFollowRelocationStartedAtRealtime;
+            float duration = tuningProfile.BellFollowRelocationSeconds;
+            float move01 = Mathf.Clamp01(elapsed / duration);
+            Vector3 bellPosition = Vector3.Lerp(_bellFollowRelocationStartPosition, _bellFollowRelocationTargetPosition, Smooth01(move01));
+            MoveBellPlaceholder(bellPosition);
+            _currentBellFollowDistance = float.PositiveInfinity;
+
+            float envelope = ResolveBellMovementEnvelope(elapsed, duration, tuningProfile.BellMovementTextureFadeSeconds);
+            UpdateBellMovementTextureLoop(bellPosition, tuningProfile.BellMovementTextureVolume * envelope, envelope > 0.001f);
+
+            if (move01 < 1f)
+            {
+                return;
+            }
+
+            UpdateBellMovementTextureLoop(bellPosition, 0f, false);
+            _bellFollowRelocating = false;
+            _bellFollowStageStartPosition = playerRig != null ? playerRig.position : _bellFollowRelocationTargetPosition;
+            MoveBellPlaceholder(_bellFollowRelocationTargetPosition);
+            PlayBellFollowCall(_bellFollowRelocationTargetPosition, false);
+            ScheduleNextBellFollowCall();
+        }
+
+        private void ScheduleNextBellFollowCall()
+        {
+            if (tuningProfile == null)
+            {
+                ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, 8f);
+                return;
+            }
+
+            float requestedInterval = Mathf.Max(
+                tuningProfile.BellFollowMinimumCallIntervalSeconds,
+                tuningProfile.BellFollowInitialCallIntervalSeconds -
+                (_bellFollowCallCount * tuningProfile.BellFollowMissIntervalReductionSeconds));
+            _bellFollowCallCount++;
+            ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, requestedInterval);
+        }
+
         private void TryQueuePadShakeAssistNarration()
         {
             if (tuningProfile == null)
@@ -909,6 +1046,41 @@ namespace BellRinger.FinalDemo
 
             _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup;
             QueueNarration(FinalDemoCueId.NarrPadShakeAssist, _currentStage, true, false);
+        }
+
+        private void ApplyBellFollowProgressBlocker()
+        {
+            if (tuningProfile == null ||
+                !tuningProfile.BellFollowProgressBlockerEnabled ||
+                playerRig == null ||
+                _bellFollowRelocating ||
+                (_currentStage != FinalDemoStage.BellFollowOne && _currentStage != FinalDemoStage.BellFollowRain))
+            {
+                return;
+            }
+
+            Vector3 targetPosition = ResolveBellFollowTargetPosition(_currentStage == FinalDemoStage.BellFollowRain);
+            Vector2 start = new Vector2(_bellFollowStageStartPosition.x, _bellFollowStageStartPosition.z);
+            Vector2 target = new Vector2(targetPosition.x, targetPosition.z);
+            Vector2 current = new Vector2(playerRig.position.x, playerRig.position.z);
+            Vector2 route = target - start;
+            float routeLength = route.magnitude;
+            if (routeLength <= 0.001f)
+            {
+                return;
+            }
+
+            Vector2 direction = route / routeLength;
+            float currentDistance = Vector2.Dot(current - start, direction);
+            float maxDistance = routeLength + tuningProfile.BellFollowBlockerMarginMeters;
+            if (currentDistance <= maxDistance)
+            {
+                return;
+            }
+
+            Vector2 lateral = current - (start + direction * currentDistance);
+            Vector2 clamped = start + direction * maxDistance + lateral;
+            playerRig.position = new Vector3(clamped.x, tuningProfile.PlayerFixedHeight, clamped.y);
         }
 
         private void BeginBellGazeStage()
@@ -928,6 +1100,7 @@ namespace BellRinger.FinalDemo
             }
 
             Vector3 bellPosition = UpdateBellGazeMove();
+            UpdateBellMovementTextureLoop(bellPosition, 0.28f, _bellGazeMoving);
             TickBellContinuousAnchor(bellPosition, tuningProfile.BellGazeLedIntensity * 0.38f);
             TryPlayBellGazeCall(bellPosition);
 
@@ -1124,6 +1297,7 @@ namespace BellRinger.FinalDemo
 
             bool isLooking = UpdateTinnitusLookAndLight(targetWorldPosition, cleanseProgress);
             bool isInsideTolerance = _poseMatchEvaluator.IsInsideTolerance;
+            UpdateTinnitusHealingLoop(targetWorldPosition, cleanseProgress, isInsideTolerance);
             if (isInsideTolerance && !_wasTinnitusInsideTolerance)
             {
                 audioRouter?.PlayOneShot(FinalDemoCueId.TinnitusPoseLock, targetWorldPosition, 1f);
@@ -1190,6 +1364,7 @@ namespace BellRinger.FinalDemo
 
         private void CompleteGeneralTinnitus(Vector3 targetWorldPosition)
         {
+            audioRouter?.StopLoop(FinalDemoCueId.TinnitusHealingLoop);
             StopProceduralTinnitus();
             PlayReactiveTinnitusCue(FinalDemoCueId.TinnitusResolve, targetWorldPosition, 1f, 0.85f, false);
             lightRouter?.Clear();
@@ -1337,11 +1512,17 @@ namespace BellRinger.FinalDemo
                 offset.x * smoothMove01,
                 offset.y * smoothMove01 + Mathf.Sin(move01 * Mathf.PI) * 0.08f,
                 offset.z * smoothMove01);
+            Vector3 weakpointWorldPosition = PlayerCameraSpaceToWorld(targetPosition);
 
             if (TryResolveBossAuthoringPathTarget(_currentBossPatternIndex, moving ? move01 : 0f, out Vector3 authoredCameraSpace, out Vector3 authoredWorldPosition))
             {
                 targetPosition = authoredCameraSpace;
+                weakpointWorldPosition = authoredWorldPosition;
                 MoveBossWeakpointVisual(authoredWorldPosition);
+            }
+            else
+            {
+                MoveBossWeakpointVisual(weakpointWorldPosition);
             }
 
             FinalDemoPoseAuthoringMarker marker = ResolveBossPoseMarker(_currentBossPatternIndex);
@@ -1369,6 +1550,7 @@ namespace BellRinger.FinalDemo
             _poseMatchEvaluator.SetTargetPose(targetPosition, yaw, pitch, roll);
             _currentBossPatternProgress01 = _poseMatchEvaluator.Progress01;
             _currentBossPatternTargetMatch01 = _poseMatchEvaluator.TotalMatch01;
+            UpdateBossWeakpointMoveLoop(weakpointWorldPosition, Mathf.Lerp(0.32f, 0.52f, smoothMove01), moving);
         }
 
         private void ResetCurrentBossPatternAfterMiss(Vector3 bossPosition)
@@ -1460,8 +1642,66 @@ namespace BellRinger.FinalDemo
         private AudioSource PlayReactiveBellCue(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale, float intensityScale)
         {
             AudioSource source = audioRouter?.PlayOneShot(cueId, worldPosition, volumeScale);
+            float cueLength = audioRouter != null ? audioRouter.GetCueLengthSeconds(cueId) : 0.2f;
+            _bellLightActiveUntilRealtime = Mathf.Max(_bellLightActiveUntilRealtime, Time.realtimeSinceStartup + Mathf.Max(0.1f, cueLength));
+            lightRouter?.ShowBellWave(worldPosition, 0.22f, 0.32f, intensityScale);
             AttachReactiveLight(source, worldPosition, FinalDemoAudioReactiveLight.ReactiveLightKind.Bell, intensityScale);
             return source;
+        }
+
+        private void UpdateBellMovementTextureLoop(Vector3 worldPosition, float volumeScale, bool moving)
+        {
+            if (audioRouter == null)
+            {
+                return;
+            }
+
+            if (!moving || volumeScale <= 0.001f)
+            {
+                audioRouter.StopLoop(FinalDemoCueId.BellMovementTexture);
+                return;
+            }
+
+            audioRouter.StartLoop(FinalDemoCueId.BellMovementTexture, worldPosition, volumeScale);
+            if (Time.realtimeSinceStartup >= _nextBellOrbitAnchorAtRealtime)
+            {
+                lightRouter?.ShowBellAnchor(worldPosition, Mathf.Clamp01(volumeScale * 0.35f));
+                float interval = tuningProfile != null ? tuningProfile.SoundReactiveLedUpdateIntervalSeconds : 0.12f;
+                _nextBellOrbitAnchorAtRealtime = Time.realtimeSinceStartup + interval;
+            }
+        }
+
+        private void UpdateTinnitusHealingLoop(Vector3 worldPosition, float cleanseProgress, bool enabled)
+        {
+            if (audioRouter == null)
+            {
+                return;
+            }
+
+            if (!enabled)
+            {
+                audioRouter.StopLoop(FinalDemoCueId.TinnitusHealingLoop);
+                return;
+            }
+
+            float loopVolume = Mathf.Lerp(0.24f, 0.52f, Mathf.Clamp01(cleanseProgress));
+            audioRouter.StartLoop(FinalDemoCueId.TinnitusHealingLoop, worldPosition, loopVolume);
+        }
+
+        private void UpdateBossWeakpointMoveLoop(Vector3 worldPosition, float volumeScale, bool moving)
+        {
+            if (audioRouter == null)
+            {
+                return;
+            }
+
+            if (!moving || volumeScale <= 0.001f)
+            {
+                audioRouter.StopLoop(FinalDemoCueId.BossWeakpointMove);
+                return;
+            }
+
+            audioRouter.StartLoop(FinalDemoCueId.BossWeakpointMove, worldPosition, volumeScale);
         }
 
         private AudioSource PlayReactiveTinnitusCue(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale, float intensityScale, bool boss)
@@ -1725,6 +1965,26 @@ namespace BellRinger.FinalDemo
             padRoot.AddComponent<PadImuReceiver>();
             padRoot.AddComponent<PadPoseProvider>();
             _poseMatchEvaluator = padRoot.AddComponent<PadPoseMatchEvaluator>();
+        }
+
+        private void EnsurePresentationHelpers()
+        {
+            FinalDemoKoreanGuide guide = GetComponent<FinalDemoKoreanGuide>();
+            if (guide == null)
+            {
+                guide = gameObject.AddComponent<FinalDemoKoreanGuide>();
+            }
+
+            FinalDemoModelPresenter presenter = GetComponent<FinalDemoModelPresenter>();
+            if (presenter == null)
+            {
+                presenter = gameObject.AddComponent<FinalDemoModelPresenter>();
+            }
+
+            presenter.ConfigureTargets(
+                sceneReferences != null ? sceneReferences.BellVisual : FindNamedTransform("FinalDemo_BellPlaceholder"),
+                sceneReferences != null ? sceneReferences.PadVisual : FindNamedTransform("PadVisual_Authoring_FollowsPose"));
+            presenter.ApplyModelVisuals();
         }
 
         private void EnsurePlaceholderWorld()
@@ -2137,6 +2397,12 @@ namespace BellRinger.FinalDemo
             return reference != null ? reference.InverseTransformPoint(worldPosition) : worldPosition;
         }
 
+        private Vector3 PlayerCameraSpaceToWorld(Vector3 cameraSpacePosition)
+        {
+            Transform reference = playerCamera != null ? playerCamera.transform : playerRig;
+            return reference != null ? reference.TransformPoint(cameraSpacePosition) : cameraSpacePosition;
+        }
+
         private Vector3 ResolveForestBellPosition()
         {
             if (sceneReferences != null && sceneReferences.ForestSet != null)
@@ -2191,7 +2457,7 @@ namespace BellRinger.FinalDemo
         private Vector3 ResolveBellOrbitPosition(float elapsedSeconds, out float intensity)
         {
             FinalDemoAuthoringPath authoredPath = sceneReferences != null ? sceneReferences.BellOrbitAuthoringPath : null;
-            if (authoredPath != null && authoredPath.Count > 0)
+            if (authoredPath != null && authoredPath.Count > 0 && (tuningProfile == null || !tuningProfile.BellOrbitPreferProfilePath))
             {
                 float authoredOrbitDuration = tuningProfile != null ? tuningProfile.BellOrbitSeconds : 1f;
                 float authoredNormalized = EvaluateBellOrbitProgress(elapsedSeconds / Mathf.Max(0.01f, authoredOrbitDuration));
@@ -2221,12 +2487,12 @@ namespace BellRinger.FinalDemo
 
             float orbitDuration = tuningProfile != null ? tuningProfile.BellOrbitSeconds : 1f;
             float normalized = EvaluateBellOrbitProgress(elapsedSeconds / Mathf.Max(0.01f, orbitDuration));
-            float scaled = normalized * points.Length;
-            int segmentIndex = Mathf.Clamp(Mathf.FloorToInt(scaled), 0, points.Length - 1);
-            int nextIndex = (segmentIndex + 1) % points.Length;
+            float scaled = normalized * (points.Length - 1);
+            int segmentIndex = Mathf.Clamp(Mathf.FloorToInt(scaled), 0, points.Length - 2);
+            int nextIndex = segmentIndex + 1;
             float segmentT = scaled - segmentIndex;
             Vector3 localPosition = tuningProfile != null && tuningProfile.BellOrbitUseSmoothSplinePath && points.Length >= 4
-                ? ResolveClosedCatmullRom(points, segmentIndex, segmentT)
+                ? ResolveOpenCatmullRom(points, segmentIndex, segmentT)
                 : Vector3.Lerp(points[segmentIndex], points[nextIndex], Smooth01(segmentT));
             float distance01 = Mathf.InverseLerp(0.65f, 2.2f, localPosition.magnitude);
             intensity = Mathf.Lerp(tuningProfile.BellOrbitNearIntensity, tuningProfile.BellOrbitFarIntensity, distance01);
@@ -2241,13 +2507,13 @@ namespace BellRinger.FinalDemo
             return Mathf.Min(0.9999f, Mathf.Clamp01(curved));
         }
 
-        private static Vector3 ResolveClosedCatmullRom(Vector3[] points, int segmentIndex, float t)
+        private static Vector3 ResolveOpenCatmullRom(Vector3[] points, int segmentIndex, float t)
         {
             int count = points.Length;
-            Vector3 p0 = points[(segmentIndex - 1 + count) % count];
-            Vector3 p1 = points[segmentIndex % count];
-            Vector3 p2 = points[(segmentIndex + 1) % count];
-            Vector3 p3 = points[(segmentIndex + 2) % count];
+            Vector3 p0 = points[Mathf.Clamp(segmentIndex - 1, 0, count - 1)];
+            Vector3 p1 = points[Mathf.Clamp(segmentIndex, 0, count - 1)];
+            Vector3 p2 = points[Mathf.Clamp(segmentIndex + 1, 0, count - 1)];
+            Vector3 p3 = points[Mathf.Clamp(segmentIndex + 2, 0, count - 1)];
             float t2 = t * t;
             float t3 = t2 * t;
             return 0.5f * (

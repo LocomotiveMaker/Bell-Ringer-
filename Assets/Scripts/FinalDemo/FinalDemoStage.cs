@@ -68,6 +68,7 @@ namespace BellRinger.FinalDemo
         NarrBellInHand = 34,
         NarrApproachTinnitus = 35,
         NarrFindSoundOrigin = 36,
+        OpeningAmbienceBed = 37,
     }
 
     public enum FinalDemoAudioBus

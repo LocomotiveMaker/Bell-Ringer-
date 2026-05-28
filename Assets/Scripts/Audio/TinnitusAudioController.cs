@@ -251,6 +251,9 @@ namespace BellRinger.Audio
                 child = childObject.transform;
             }
 
+            child.localPosition = Vector3.zero;
+            child.localRotation = Quaternion.identity;
+
             source = child.GetComponent<AudioSource>();
             if (source == null)
             {

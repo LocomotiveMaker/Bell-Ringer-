@@ -5,23 +5,23 @@ namespace BellRinger.FinalDemo
     [CreateAssetMenu(menuName = "Bell Ringer/Final Demo Tuning Profile", fileName = "FinalDemoTuningProfile")]
     public sealed class FinalDemoTuningProfile : ScriptableObject
     {
-        [Header("Runtime")]
+        [Header("실행/입력 / Runtime")]
         [SerializeField] private bool autoAdvancePlaceholderStages;
         [SerializeField] private float placeholderStageSeconds = 3f;
         [SerializeField] private bool startWithMovementLocked = true;
         [SerializeField] private FinalDemoAssistLevel defaultAssistLevel = FinalDemoAssistLevel.Gentle;
 
-        [Header("Input Defaults")]
-        [SerializeField] private string hardwareSerialPort = "COM9";
+        [Header("입력 포트 / Device Ports")]
+        [SerializeField] private string hardwareSerialPort = "COM40";
         [SerializeField] private string headImuSerialPort = "COM40";
         [SerializeField] private string padImuSerialPort = "COM30";
         [SerializeField] private int padTrackingUdpPort = 39051;
 
-        [Header("Player")]
+        [Header("플레이어 / Player")]
         [SerializeField] private float playerFixedHeight = 1.6f;
         [SerializeField] private Vector3 playerStartPosition = new Vector3(0f, 1.6f, -1.5f);
 
-        [Header("Opening / Bell Orbit")]
+        [Header("오디오 / Opening Audio")]
         [SerializeField, Range(0f, 1f)] private float preflightAmbienceVolume = 0.14f;
         [SerializeField] private float openingAmbienceSeconds = 5f;
         [SerializeField] private float openingAmbienceFadeSeconds = 1.6f;
@@ -31,13 +31,21 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 openingCloseBellOffset = new Vector3(-0.55f, 0.02f, 0.35f);
         [SerializeField, Range(0f, 1f)] private float openingCloseBellVolume = 0.72f;
         [SerializeField, Range(0f, 1f)] private float openingCloseBellLedIntensity = 0.75f;
+
+        [Header("LED / Sound-Reactive Light")]
         [SerializeField] private bool soundReactiveLedEnabled = true;
         [SerializeField] private float soundReactiveLedUpdateIntervalSeconds = 0.09f;
         [SerializeField] private float bellSoundReactiveSensitivity = 1.45f;
         [SerializeField] private float tinnitusSoundReactiveSensitivity = 1.25f;
         [SerializeField] private float bellCallPostClipGapSeconds = 0.32f;
-        [SerializeField] private float bellOrbitSeconds = 8f;
-        [SerializeField] private float bellOrbitCallIntervalSeconds = 1.45f;
+
+        [Header("종 경로 / Bell Orbit")]
+        [SerializeField] private float bellOrbitSeconds = 19.1f;
+        [SerializeField] private float bellOrbitCallIntervalSeconds = 0.39f;
+        [SerializeField] private bool bellOrbitPreferProfilePath = true;
+        [SerializeField] private float bellOrbitToFirstTargetMoveSeconds = 2.2f;
+        [SerializeField] private float bellMovementTextureFadeSeconds = 0.15f;
+        [SerializeField, Range(0f, 1f)] private float bellMovementTextureVolume = 0.48f;
         [SerializeField] private bool bellOrbitUseSmoothSplinePath = true;
         [SerializeField] private AnimationCurve bellOrbitProgressCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         [SerializeField] private bool bellOrbitContinuousAnchorEnabled = true;
@@ -45,32 +53,48 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float bellOrbitContinuousAnchorIntensity = 0.38f;
         [SerializeField] private Vector3[] bellOrbitLocalPoints =
         {
-            new Vector3(-1.1f, 0.05f, 0.75f),
-            new Vector3(0f, 0f, 1.65f),
-            new Vector3(1.05f, -0.02f, 1.05f),
-            new Vector3(0.55f, 0.7f, 0.85f),
+            new Vector3(-1.35f, 0.02f, 0.85f),
+            new Vector3(0f, 0f, 1.7f),
+            new Vector3(1.35f, -0.02f, 0.85f),
+            new Vector3(0f, 0f, -0.85f),
+            new Vector3(-1.35f, 0.02f, 0.85f),
+            new Vector3(0f, 0f, 1.7f),
+            new Vector3(0f, 0.72f, 1.45f),
+            new Vector3(0f, 0f, -0.85f),
+            new Vector3(0f, -0.65f, 0.9f),
+            new Vector3(0f, 0f, 1.7f),
         };
         [SerializeField, Range(0f, 1f)] private float bellOrbitNearIntensity = 0.78f;
         [SerializeField, Range(0f, 1f)] private float bellOrbitFarIntensity = 0.42f;
         [SerializeField, Range(0f, 1f)] private float bellOrbitVolume = 0.68f;
 
-        [Header("Bell Route")]
+        [Header("종 경로 / Bell Follow")]
         [SerializeField] private int bellFollowTargetCount = 2;
         [SerializeField] private Vector3 bellFollowTargetOnePosition = new Vector3(-1.4f, 1.5f, 3.2f);
         [SerializeField] private Vector3 bellFollowTargetTwoPosition = new Vector3(1.4f, 1.5f, 3.6f);
+        [SerializeField] private float bellFollowRelocationSeconds = 2.6f;
         [SerializeField] private float bellArrivalRadius = 0.8f;
         [SerializeField] private float bellFollowCallIntervalSeconds = 2.3f;
+        [SerializeField] private float bellFollowInitialCallIntervalSeconds = 11f;
+        [SerializeField] private float bellFollowMinimumCallIntervalSeconds = 8f;
+        [SerializeField] private float bellFollowMissIntervalReductionSeconds = 0.5f;
         [SerializeField, Range(0f, 1f)] private float bellFollowVolume = 0.62f;
         [SerializeField, Range(0f, 1f)] private float bellFollowLedIntensity = 0.62f;
         [SerializeField] private float bellAssistTimeoutSeconds = 7.5f;
         [SerializeField] private float bellAssistRepeatSeconds = 4f;
         [SerializeField] private float bellAssistGainMultiplier = 1.35f;
+        [SerializeField] private bool bellFollowProgressBlockerEnabled = true;
+        [SerializeField] private float bellFollowBlockerMarginMeters = 0.35f;
+
+        [Header("패드 흔들기 / Pad Shake")]
         [SerializeField] private float padShakeAssistMotionThreshold = 0.58f;
-        [SerializeField] private float padShakeAssistCooldownSeconds = 2.5f;
-        [SerializeField] private float padShakeAssistNarrationCooldownSeconds = 11f;
+        [SerializeField] private float padShakeAssistCooldownSeconds = 4.5f;
+        [SerializeField] private float padShakeAssistNarrationCooldownSeconds = 19.8f;
+
+        [Header("비/앰비언트 / Rain & Ambience")]
         [SerializeField] private Vector3 rainZoneCenter = new Vector3(0f, 1.6f, 2.9f);
         [SerializeField] private float rainZoneRadius = 2.4f;
-        [SerializeField] private float rainIntensityRampSeconds = 4f;
+        [SerializeField] private float rainIntensityRampSeconds = 3f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
         [SerializeField] private float rainFocusBellNarrationDelaySeconds = 8f;
@@ -95,7 +119,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellAcquisitionEffectSeconds = 1.8f;
         [SerializeField] private float bellAcquisitionTransitionSilenceSeconds = 0.8f;
 
-        [Header("Tinnitus")]
+        [Header("이명 / Tinnitus")]
         [SerializeField] private Vector3 generalTinnitusOneWorldPosition = new Vector3(-1.2f, 1.45f, 2.8f);
         [SerializeField] private Vector3 generalTinnitusTwoWorldPosition = new Vector3(1.25f, 1.35f, 3.1f);
         [SerializeField] private Vector3 generalTinnitusOnePadTargetCameraSpace = new Vector3(-0.08f, -0.02f, 0.66f);
@@ -112,7 +136,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float generalTinnitusLightIntervalSeconds = 0.16f;
         [SerializeField] private float generalTinnitusCleanseHapticIntervalSeconds = 0.55f;
 
-        [Header("Boss")]
+        [Header("대왕 이명 / Boss Tinnitus")]
         [SerializeField] private Vector3 bossWorldPosition = new Vector3(0f, 1.6f, 4.2f);
         [SerializeField] private float bossApproachRadius = 1.25f;
         [SerializeField] private float bossApproachAutoStartSeconds = 12f;
@@ -147,7 +171,7 @@ namespace BellRinger.FinalDemo
             new Vector3(22f, -12f, 18f),
         };
 
-        [Header("Ending")]
+        [Header("엔딩 / Ending")]
         [SerializeField] private float bossDefeatEffectSeconds = 3.2f;
         [SerializeField] private float bossDefeatSilenceSeconds = 1.2f;
         [SerializeField] private Vector3 forestBellWorldPosition = new Vector3(0f, 1.45f, 3.2f);
@@ -184,6 +208,10 @@ namespace BellRinger.FinalDemo
         public float BellCallPostClipGapSeconds => Mathf.Max(0f, bellCallPostClipGapSeconds);
         public float BellOrbitSeconds => Mathf.Max(0.1f, bellOrbitSeconds);
         public float BellOrbitCallIntervalSeconds => Mathf.Max(0.2f, bellOrbitCallIntervalSeconds);
+        public bool BellOrbitPreferProfilePath => bellOrbitPreferProfilePath;
+        public float BellOrbitToFirstTargetMoveSeconds => Mathf.Max(0.1f, bellOrbitToFirstTargetMoveSeconds);
+        public float BellMovementTextureFadeSeconds => Mathf.Clamp(bellMovementTextureFadeSeconds, 0.01f, BellOrbitToFirstTargetMoveSeconds * 0.45f);
+        public float BellMovementTextureVolume => Mathf.Clamp01(bellMovementTextureVolume);
         public bool BellOrbitUseSmoothSplinePath => bellOrbitUseSmoothSplinePath;
         public AnimationCurve BellOrbitProgressCurve => bellOrbitProgressCurve;
         public bool BellOrbitContinuousAnchorEnabled => bellOrbitContinuousAnchorEnabled;
@@ -196,13 +224,19 @@ namespace BellRinger.FinalDemo
         public int BellFollowTargetCount => Mathf.Max(1, bellFollowTargetCount);
         public Vector3 BellFollowTargetOnePosition => bellFollowTargetOnePosition;
         public Vector3 BellFollowTargetTwoPosition => bellFollowTargetTwoPosition;
+        public float BellFollowRelocationSeconds => Mathf.Max(0.1f, bellFollowRelocationSeconds);
         public float BellArrivalRadius => Mathf.Max(0.05f, bellArrivalRadius);
         public float BellFollowCallIntervalSeconds => Mathf.Max(0.2f, bellFollowCallIntervalSeconds);
+        public float BellFollowInitialCallIntervalSeconds => Mathf.Max(0.2f, bellFollowInitialCallIntervalSeconds);
+        public float BellFollowMinimumCallIntervalSeconds => Mathf.Clamp(bellFollowMinimumCallIntervalSeconds, 0.2f, BellFollowInitialCallIntervalSeconds);
+        public float BellFollowMissIntervalReductionSeconds => Mathf.Max(0f, bellFollowMissIntervalReductionSeconds);
         public float BellFollowVolume => Mathf.Clamp01(bellFollowVolume);
         public float BellFollowLedIntensity => Mathf.Clamp01(bellFollowLedIntensity);
         public float BellAssistTimeoutSeconds => Mathf.Max(0.1f, bellAssistTimeoutSeconds);
         public float BellAssistRepeatSeconds => Mathf.Max(0.2f, bellAssistRepeatSeconds);
         public float BellAssistGainMultiplier => Mathf.Max(1f, bellAssistGainMultiplier);
+        public bool BellFollowProgressBlockerEnabled => bellFollowProgressBlockerEnabled;
+        public float BellFollowBlockerMarginMeters => Mathf.Max(0f, bellFollowBlockerMarginMeters);
         public float PadShakeAssistMotionThreshold => Mathf.Clamp01(padShakeAssistMotionThreshold);
         public float PadShakeAssistCooldownSeconds => Mathf.Max(0.1f, padShakeAssistCooldownSeconds);
         public float PadShakeAssistNarrationCooldownSeconds => Mathf.Max(0.5f, padShakeAssistNarrationCooldownSeconds);

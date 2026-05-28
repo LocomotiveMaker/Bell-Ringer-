@@ -23,7 +23,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.45
-    maxDistance: 14
+    maxDistance: 18.2
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -31,16 +31,17 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 2
     operatorLabel: Bell movement texture
-    audioClip: {fileID: 8300000, guid: 589c0d6d5adda2f4aae22321308d8b02, type: 3}
+    audioClip: {fileID: 8300000, guid: b02cc1f1994e5ca4d9180fe2236dfd17, type: 3}
     alternateClips:
+    - {fileID: 8300000, guid: 589c0d6d5adda2f4aae22321308d8b02, type: 3}
     - {fileID: 8300000, guid: 0f7d8a344ac439341bda19784742f6fb, type: 3}
     bus: 1
     defaultVolume: 0.5
-    loop: 0
+    loop: 1
     spatialized: 1
     pitch: 1
     minDistance: 0.45
-    maxDistance: 14
+    maxDistance: 18.2
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -56,7 +57,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.5
-    maxDistance: 16
+    maxDistance: 20.8
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -72,7 +73,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.5
-    maxDistance: 16
+    maxDistance: 20.8
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -88,7 +89,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.35
-    maxDistance: 10
+    maxDistance: 13
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -104,7 +105,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.45
-    maxDistance: 12
+    maxDistance: 15.6
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -120,7 +121,7 @@ MonoBehaviour:
     spatialized: 1
     pitch: 1
     minDistance: 0.35
-    maxDistance: 12
+    maxDistance: 15.6
     lowPassCutoff: 22000
     highPassCutoff: 10
     lightBinding: 1
@@ -209,7 +210,8 @@ MonoBehaviour:
   - id: 13
     operatorLabel: Tinnitus long glitch
     audioClip: {fileID: 8300000, guid: e62f0b53259ad284698d6d6e1e13a10a, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: c45cee6267cf2bf4aad4c4f9459fc2db, type: 3}
     bus: 3
     defaultVolume: 0.34
     loop: 1
@@ -225,7 +227,10 @@ MonoBehaviour:
   - id: 14
     operatorLabel: Tinnitus burst
     audioClip: {fileID: 8300000, guid: 75b30e2df524a2d4ab9c384227594ea4, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: 391f06bf47f510e42af0189eb23e1ab0, type: 3}
+    - {fileID: 8300000, guid: 64ebbaeea421a51408a4deb1f66c968a, type: 3}
+    - {fileID: 8300000, guid: 79b5d13b870b31d4abbecbbba0a0be6b, type: 3}
     bus: 3
     defaultVolume: 0.42
     loop: 0
@@ -240,8 +245,9 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 15
     operatorLabel: Tinnitus pose lock
-    audioClip: {fileID: 8300000, guid: 8393e96fa4c3fc04687d98c6217ee65a, type: 3}
-    alternateClips: []
+    audioClip: {fileID: 8300000, guid: a017afb3c9abeac41b6f6a01effcd286, type: 3}
+    alternateClips:
+    - {fileID: 8300000, guid: 8393e96fa4c3fc04687d98c6217ee65a, type: 3}
     bus: 6
     defaultVolume: 0.5
     loop: 0
@@ -256,8 +262,9 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 16
     operatorLabel: Tinnitus pose lost
-    audioClip: {fileID: 8300000, guid: 6a9b23f3b1f51c842b60be5bfb22f6bc, type: 3}
-    alternateClips: []
+    audioClip: {fileID: 8300000, guid: 60ddb4ea01f966e47a8b4a4159798de0, type: 3}
+    alternateClips:
+    - {fileID: 8300000, guid: 6a9b23f3b1f51c842b60be5bfb22f6bc, type: 3}
     bus: 6
     defaultVolume: 0.36
     loop: 0
@@ -289,7 +296,8 @@ MonoBehaviour:
   - id: 18
     operatorLabel: Tinnitus resolve
     audioClip: {fileID: 8300000, guid: c3359f320bb2d08459281bfe18e605b6, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: 419b8f4b87e55924680a7efeff9faedd, type: 3}
     bus: 6
     defaultVolume: 0.62
     loop: 0
@@ -305,7 +313,8 @@ MonoBehaviour:
   - id: 19
     operatorLabel: Boss base pulse
     audioClip: {fileID: 8300000, guid: 479d601064e323b49b67daad2f7572aa, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: 5d278378ef196164e94959a37db72056, type: 3}
     bus: 4
     defaultVolume: 0.48
     loop: 1
@@ -321,7 +330,8 @@ MonoBehaviour:
   - id: 20
     operatorLabel: Boss glitch burst
     audioClip: {fileID: 8300000, guid: 51113352cf42c5f4d98d548a7773527b, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: b53a525da9cf6cf4c9c8159c50a8727e, type: 3}
     bus: 4
     defaultVolume: 0.48
     loop: 0
@@ -340,7 +350,7 @@ MonoBehaviour:
     alternateClips: []
     bus: 4
     defaultVolume: 0.5
-    loop: 0
+    loop: 1
     spatialized: 1
     pitch: 1
     minDistance: 0.5
@@ -353,7 +363,8 @@ MonoBehaviour:
   - id: 22
     operatorLabel: Boss hit
     audioClip: {fileID: 8300000, guid: 8cfc7cbd149ed6648afabf680559b143, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: 7a105643e81d20749a466579177f3814, type: 3}
     bus: 6
     defaultVolume: 0.58
     loop: 0
@@ -369,7 +380,8 @@ MonoBehaviour:
   - id: 23
     operatorLabel: Boss defeat rise
     audioClip: {fileID: 8300000, guid: 3b180d023dc77d548899b385666c5e27, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: 1ccc30965742ba6418ed4e3a61845930, type: 3}
     bus: 4
     defaultVolume: 0.58
     loop: 0
@@ -417,7 +429,8 @@ MonoBehaviour:
   - id: 26
     operatorLabel: Forest bed
     audioClip: {fileID: 8300000, guid: d2a0fbdf55ebe7c438739f22f06b8221, type: 3}
-    alternateClips: []
+    alternateClips:
+    - {fileID: 8300000, guid: c1695efe49ecc6040b32bdb9f021c129, type: 3}
     bus: 5
     defaultVolume: 0.5
     loop: 1
@@ -586,6 +599,22 @@ MonoBehaviour:
     minDistance: 0.4
     maxDistance: 10
     lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 37
+    operatorLabel: Opening ambience bed
+    audioClip: {fileID: 8300000, guid: f68666d548d702c4e84781d80c0557b4, type: 3}
+    alternateClips: []
+    bus: 5
+    defaultVolume: 0.42
+    loop: 1
+    spatialized: 0
+    pitch: 1
+    minDistance: 1
+    maxDistance: 20
+    lowPassCutoff: 18000
     highPassCutoff: 10
     lightBinding: 0
     hapticBinding: 0

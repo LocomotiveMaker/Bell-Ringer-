@@ -31,8 +31,12 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float defaultNarrationDuckSeconds = 2.5f;
         [SerializeField] private bool spatializerEnabled;
         [SerializeField, Range(0f, 1f)] private float softwareBinauralStrength = 1f;
+        [Header("오디오 / Bell Distance Reverb")]
+        [SerializeField] private bool bellDistanceReverbEnabled = true;
+        [SerializeField, Range(0f, 1f)] private float bellReverbStartDistance01 = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float bellReverbMaxWet01 = 0.28f;
 
-        [Header("Optional AudioMixer Groups")]
+        [Header("오디오 / Optional AudioMixer Groups")]
         [SerializeField] private AudioMixerGroup masterGroup;
         [SerializeField] private AudioMixerGroup bellGroup;
         [SerializeField] private AudioMixerGroup rainWindGroup;
@@ -361,6 +365,38 @@ namespace BellRinger.FinalDemo
                 AudioHighPassFilter highPassFilter = source.gameObject.AddComponent<AudioHighPassFilter>();
                 highPassFilter.cutoffFrequency = cue.HighPassCutoff;
             }
+
+            ApplyBellDistanceReverb(source, cue, worldPosition);
+        }
+
+        private void ApplyBellDistanceReverb(AudioSource source, FinalDemoCueEntry cue, Vector3 worldPosition)
+        {
+            if (!bellDistanceReverbEnabled || cue.Bus != FinalDemoAudioBus.Bell || listenerTransform == null)
+            {
+                return;
+            }
+
+            float distance = Vector3.Distance(listenerTransform.position, worldPosition);
+            float distance01 = Mathf.InverseLerp(cue.MinDistance, cue.MaxDistance, distance);
+            float wet01 = Mathf.InverseLerp(bellReverbStartDistance01, 1f, distance01) * bellReverbMaxWet01;
+            if (wet01 <= 0.001f)
+            {
+                return;
+            }
+
+            AudioReverbFilter reverb = source.gameObject.AddComponent<AudioReverbFilter>();
+            reverb.reverbPreset = AudioReverbPreset.User;
+            reverb.dryLevel = 0f;
+            reverb.room = Mathf.Lerp(-10000f, -4200f, wet01);
+            reverb.roomHF = -1400f;
+            reverb.decayTime = Mathf.Lerp(0.75f, 1.45f, wet01);
+            reverb.decayHFRatio = 0.45f;
+            reverb.reflectionsLevel = Mathf.Lerp(-10000f, -5200f, wet01);
+            reverb.reflectionsDelay = 0.026f;
+            reverb.reverbLevel = Mathf.Lerp(-10000f, -3800f, wet01);
+            reverb.reverbDelay = 0.052f;
+            reverb.diffusion = 72f;
+            reverb.density = 68f;
         }
 
         private void ConfigureSourceSpatialization(AudioSource source, FinalDemoCueEntry cue)

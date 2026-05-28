@@ -9,7 +9,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private FinalDemoCueEntry[] cues =
         {
             new FinalDemoCueEntry(FinalDemoCueId.BellOpeningOrbit, "Bell opening/orbit", FinalDemoAudioBus.Bell, true, true),
-            new FinalDemoCueEntry(FinalDemoCueId.BellMovementTexture, "Bell movement texture", FinalDemoAudioBus.Bell, false, true),
+            new FinalDemoCueEntry(FinalDemoCueId.BellMovementTexture, "Bell movement texture", FinalDemoAudioBus.Bell, true, true),
             new FinalDemoCueEntry(FinalDemoCueId.BellDistantCall, "Bell distant call", FinalDemoAudioBus.Bell, false, true),
             new FinalDemoCueEntry(FinalDemoCueId.BellStrongAssist, "Bell strong assist", FinalDemoAudioBus.Bell, false, true),
             new FinalDemoCueEntry(FinalDemoCueId.BellPadShakeResponse, "Bell pad shake response", FinalDemoAudioBus.Bell, false, true),
@@ -28,7 +28,7 @@ namespace BellRinger.FinalDemo
             new FinalDemoCueEntry(FinalDemoCueId.TinnitusResolve, "Tinnitus resolve", FinalDemoAudioBus.Interaction, false, true),
             new FinalDemoCueEntry(FinalDemoCueId.BossBasePulse, "Boss base pulse", FinalDemoAudioBus.BossTinnitus, true, true),
             new FinalDemoCueEntry(FinalDemoCueId.BossGlitchBurst, "Boss glitch burst", FinalDemoAudioBus.BossTinnitus, false, true),
-            new FinalDemoCueEntry(FinalDemoCueId.BossWeakpointMove, "Boss weakpoint move", FinalDemoAudioBus.BossTinnitus, false, true),
+            new FinalDemoCueEntry(FinalDemoCueId.BossWeakpointMove, "Boss weakpoint move", FinalDemoAudioBus.BossTinnitus, true, true),
             new FinalDemoCueEntry(FinalDemoCueId.BossHit, "Boss hit", FinalDemoAudioBus.Interaction, false, true),
             new FinalDemoCueEntry(FinalDemoCueId.BossDefeatRise, "Boss defeat rise", FinalDemoAudioBus.BossTinnitus, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.BossDefeatAir, "Boss defeat air", FinalDemoAudioBus.Ambience, false, false),
@@ -44,6 +44,7 @@ namespace BellRinger.FinalDemo
             new FinalDemoCueEntry(FinalDemoCueId.NarrBellInHand, "Narration bell in hand", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrApproachTinnitus, "Narration approach tinnitus", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrFindSoundOrigin, "Narration find sound origin", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.OpeningAmbienceBed, "Opening ambience bed", FinalDemoAudioBus.Ambience, true, false),
         };
 
         public FinalDemoCueEntry[] Cues => cues;

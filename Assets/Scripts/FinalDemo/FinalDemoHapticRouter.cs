@@ -6,6 +6,7 @@ namespace BellRinger.FinalDemo
     [DisallowMultipleComponent]
     public sealed class FinalDemoHapticRouter : MonoBehaviour
     {
+        [Header("패드 흔들기 / Haptic Output")]
         [SerializeField] private float refreshIntervalSeconds = 0.06f;
         [SerializeField] private bool imuFriendlyScaling = true;
         [SerializeField, Range(0f, 1f)] private float pulseMasterScale = 0.72f;

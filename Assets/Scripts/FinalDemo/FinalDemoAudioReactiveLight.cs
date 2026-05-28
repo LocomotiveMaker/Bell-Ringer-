@@ -19,15 +19,20 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float intensityScale = 1f;
         [SerializeField] private float sensitivity = 2.35f;
         [SerializeField] private float updateIntervalSeconds = 0.12f;
-        [SerializeField] private float attackSpeed = 8f;
-        [SerializeField] private float releaseSpeed = 2.2f;
+        [SerializeField] private float attackSpeed = 5.7f;
+        [SerializeField] private float releaseSpeed = 1.35f;
         [SerializeField] private bool emissionEnabled = true;
+        [SerializeField] private bool bellEmitOnOnsetOnly = true;
+        [SerializeField] private float bellOnsetThreshold = 0.09f;
+        [SerializeField] private float bellInitialEnvelopeThreshold = 0.035f;
+        [SerializeField] private float bellMinimumWaveIntervalSeconds = 0.6f;
 
         private readonly float[] _samples = new float[128];
         private float _envelope01;
         private float _emittedEnvelope01;
         private float _previousEnvelope01;
         private float _nextEmitAtRealtime;
+        private float _nextBellWaveAllowedAtRealtime;
         private bool _hasEmitted;
 
         public float Envelope01 => _envelope01;
@@ -89,6 +94,18 @@ namespace BellRinger.FinalDemo
             if (!emissionEnabled)
             {
                 return;
+            }
+
+            if (lightKind == ReactiveLightKind.Bell && bellEmitOnOnsetOnly)
+            {
+                bool shouldEmitBellWave = onset01 >= bellOnsetThreshold ||
+                                          (!_hasEmitted && _emittedEnvelope01 >= bellInitialEnvelopeThreshold);
+                if (!shouldEmitBellWave || Time.realtimeSinceStartup < _nextBellWaveAllowedAtRealtime)
+                {
+                    return;
+                }
+
+                _nextBellWaveAllowedAtRealtime = Time.realtimeSinceStartup + bellMinimumWaveIntervalSeconds;
             }
 
             if (_emittedEnvelope01 <= 0.015f && _hasEmitted && !audioSource.isPlaying)

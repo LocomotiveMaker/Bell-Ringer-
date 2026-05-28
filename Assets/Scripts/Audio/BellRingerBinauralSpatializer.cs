@@ -65,17 +65,19 @@ namespace BellRinger.Audio
 
             Vector3 local = listenerTransform.InverseTransformPoint(transform.position);
             float horizontalMagnitude = Mathf.Max(0.001f, new Vector2(local.x, local.z).magnitude);
-            float side = Mathf.Clamp((local.x / horizontalMagnitude) * 1.18f, -1f, 1f);
+            float rawSide = Mathf.Clamp(local.x / horizontalMagnitude, -1f, 1f);
+            float shapedSide = Mathf.Sign(rawSide) * Mathf.Pow(Mathf.Abs(rawSide), 0.72f);
+            float side = Mathf.Clamp(shapedSide * 1.55f, -1f, 1f);
             float absSide = Mathf.Abs(side);
             bool behind = local.z < -0.05f;
 
-            float ild = Mathf.Lerp(0f, 0.58f, absSide) * strength;
-            float nearBoost = Mathf.Lerp(0f, 0.11f, absSide) * strength;
+            float ild = Mathf.Lerp(0f, 0.72f, absSide) * strength;
+            float nearBoost = Mathf.Lerp(0f, 0.13f, absSide) * strength;
             _leftGain = side > 0f ? 1f - ild : 1f + nearBoost;
             _rightGain = side > 0f ? 1f + nearBoost : 1f - ild;
 
             float sampleRate = Mathf.Max(8000, AudioSettings.outputSampleRate);
-            _delaySamples = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(0f, 0.00082f * sampleRate, absSide) * strength), 0, MaxDelaySamples - 1);
+            _delaySamples = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(0f, 0.00095f * sampleRate, absSide) * strength), 0, MaxDelaySamples - 1);
             _side = side;
 
             float distance = Vector3.Distance(listenerTransform.position, transform.position);

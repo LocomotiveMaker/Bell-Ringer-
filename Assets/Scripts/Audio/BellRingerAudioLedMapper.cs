@@ -82,9 +82,14 @@ namespace BellRinger.Audio
             float planarDistance = new Vector2(localTargetPosition.x, localTargetPosition.z).magnitude;
             float horizontalAngle = Mathf.Atan2(localTargetPosition.x, localTargetPosition.z) * Mathf.Rad2Deg;
             float verticalAngle = Mathf.Atan2(localTargetPosition.y, planarDistance) * Mathf.Rad2Deg;
+            if (Mathf.Abs(horizontalAngle) > Mathf.Max(1f, horizontalAngleLimitDegrees) ||
+                Mathf.Abs(verticalAngle) > Mathf.Max(1f, verticalAngleLimitDegrees))
+            {
+                return false;
+            }
 
-            float normalizedX = Mathf.Clamp(horizontalAngle / Mathf.Max(1f, horizontalAngleLimitDegrees), -1f, 1f);
-            float normalizedY = Mathf.Clamp(verticalAngle / Mathf.Max(1f, verticalAngleLimitDegrees), -1f, 1f);
+            float normalizedX = horizontalAngle / Mathf.Max(1f, horizontalAngleLimitDegrees);
+            float normalizedY = verticalAngle / Mathf.Max(1f, verticalAngleLimitDegrees);
 
             float mappedXFloat = Mathf.Clamp(Mathf.Lerp(0f, DisplayWidth - 1, (normalizedX * 0.5f) + 0.5f), 0f, DisplayWidth - 1);
             float mappedYFloat = Mathf.Clamp(Mathf.Lerp(0f, DisplayHeight - 1, (normalizedY * 0.5f) + 0.5f), 0f, DisplayHeight - 1);

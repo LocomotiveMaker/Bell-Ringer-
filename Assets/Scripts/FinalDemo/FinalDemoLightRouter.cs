@@ -15,8 +15,14 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Color tinnitusColor = new Color(0.55f, 0.08f, 1f);
         [SerializeField] private Color wallNoiseColor = new Color(0.06f, 0.78f, 0.9f);
         [SerializeField] private float highPriorityHoldSeconds = 0.35f;
-        [SerializeField] private float defaultMaxDistance = 6f;
+        [SerializeField] private float defaultMaxDistance = 20.8f;
         [SerializeField] private float horizontalPositionWeight = 1.18f;
+        [Header("LED / Final Demo Output")]
+        [SerializeField, Range(0.25f, 3f)] private float finalDemoBrightnessBoost = 1.45f;
+        [SerializeField, Range(0.25f, 3f)] private float bellBrightnessBoost = 0.87f;
+        [SerializeField, Range(0.25f, 3f)] private float bellWaveBrightnessBoost = 0.43f;
+        [SerializeField, Range(0.05f, 1f)] private float bellWaveMaximumBrightness = 0.21f;
+        [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
         private float _holdUntilRealtime;
@@ -40,9 +46,10 @@ namespace BellRinger.FinalDemo
 
         public void ShowBellPoint(Vector3 worldPosition, float intensity = 1f, bool miniRipple = true)
         {
-            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame))
+            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame, bellBrightnessBoost))
             {
-                frame = new BellRingerLedDotFrame(8, 4, Mathf.Clamp01(intensity));
+                ClearMappedOutput(FinalDemoFeedbackPriority.Bell, "Bell point out of board.");
+                return;
             }
 
             if (!TryEmit(FinalDemoFeedbackPriority.Bell))
@@ -70,9 +77,10 @@ namespace BellRinger.FinalDemo
 
         public void ShowBellAnchor(Vector3 worldPosition, float intensity = 0.35f)
         {
-            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame))
+            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame, bellBrightnessBoost))
             {
-                frame = new BellRingerLedDotFrame(8, 4, 8f, 4f, Mathf.Clamp01(intensity));
+                ClearMappedOutput(FinalDemoFeedbackPriority.Bell, "Bell anchor out of board.");
+                return;
             }
 
             if (!TryEmit(FinalDemoFeedbackPriority.Bell))
@@ -95,25 +103,27 @@ namespace BellRinger.FinalDemo
         {
             float envelope = Mathf.Clamp01(envelope01);
             float onset = Mathf.Clamp01(onset01);
-            float brightness = Mathf.Clamp01((0.12f + envelope * 0.68f + onset * 0.05f) * Mathf.Clamp01(intensityScale));
-            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
+            float brightness = Mathf.Clamp01((0.03f + envelope * 0.28f + onset * 0.015f) * Mathf.Clamp01(intensityScale));
+            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame, bellWaveBrightnessBoost))
             {
-                frame = new BellRingerLedDotFrame(8, 4, brightness);
+                ClearMappedOutput(FinalDemoFeedbackPriority.Bell, "Bell wave out of board.");
+                return;
             }
+            brightness = Mathf.Min(frame.brightnessNormalized, bellWaveMaximumBrightness);
 
             if (!TryEmit(FinalDemoFeedbackPriority.Bell))
             {
                 return;
             }
 
-            float radius = Mathf.Lerp(0.35f, 2.75f, Mathf.Pow(envelope, 0.72f)) + onset * 0.12f;
-            float core = Mathf.Lerp(0.36f, 0.78f, envelope);
-            float width = Mathf.Lerp(0.75f, 1.55f, Mathf.Clamp01(envelope + onset * 0.12f));
+            float radius = Mathf.Lerp(0.42f, 2.1f, Mathf.SmoothStep(0f, 1f, envelope)) + onset * 0.04f;
+            float core = Mathf.Lerp(0.28f, 0.52f, envelope);
+            float width = Mathf.Lerp(1.15f, 2.15f, Mathf.Clamp01(envelope + onset * 0.04f));
 
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
             {
-                bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.95f + onset * 0.18f);
+                bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.62f + onset * 0.04f);
             }
 
             RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
@@ -143,7 +153,8 @@ namespace BellRinger.FinalDemo
         {
             if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame))
             {
-                frame = new BellRingerLedDotFrame(8, 4, Mathf.Clamp01(intensity));
+                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} point out of board.");
+                return;
             }
 
             FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
@@ -182,8 +193,10 @@ namespace BellRinger.FinalDemo
             float brightness = Mathf.Clamp01((0.12f + envelope * 0.62f + onset * 0.06f) * Mathf.Clamp01(intensityScale));
             if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
             {
-                frame = new BellRingerLedDotFrame(8, 4, brightness);
+                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} wave out of board.");
+                return;
             }
+            brightness = frame.brightnessNormalized;
 
             FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
             if (!TryEmit(priority))
@@ -279,7 +292,7 @@ namespace BellRinger.FinalDemo
             return _logicalFrame[(y * LogicalFrameWidth) + x];
         }
 
-        private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame)
+        private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame, float brightnessBoost = 1f)
         {
             Transform listener = listenerTransform != null ? listenerTransform : Camera.main != null ? Camera.main.transform : null;
             if (listener == null)
@@ -290,17 +303,38 @@ namespace BellRinger.FinalDemo
 
             Vector3 localTargetPosition = listener.InverseTransformPoint(worldPosition);
             localTargetPosition.x *= Mathf.Max(0.1f, horizontalPositionWeight);
+            float boost = finalDemoBrightnessBoost * Mathf.Max(0.1f, brightnessBoost);
+
             return BellRingerAudioLedMapper.TryMapFromLocalPosition(
                 localTargetPosition,
                 0.25f,
                 defaultMaxDistance,
                 Mathf.Clamp01(intensity),
+                boost,
                 1f,
-                0.8f,
-                0.1f,
+                0.04f,
                 85f,
                 55f,
                 out frame);
+        }
+
+        private void ClearMappedOutput(FinalDemoFeedbackPriority priority, string reason)
+        {
+            if (!clearWhenMappedOutsideBoard || !TryEmit(priority))
+            {
+                _lastAction = reason;
+                return;
+            }
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.ClearLedDisplay();
+            }
+
+            ClearLogicalFrame();
+            HoldPriority(priority);
+            _lastAction = reason;
         }
 
         private bool TryEmit(FinalDemoFeedbackPriority priority)
@@ -350,9 +384,9 @@ namespace BellRinger.FinalDemo
                 for (int x = 0; x < LogicalFrameWidth; x++)
                 {
                     float distance = Vector2.Distance(new Vector2(x, y), new Vector2(frame.x, frame.y));
-                    float core = Mathf.Exp(-(distance * distance) / 0.55f);
+                    float core = Mathf.Exp(-(distance * distance) / 0.9f);
                     float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth);
-                    float alpha = Mathf.Max(core * 0.72f, ring);
+                    float alpha = Mathf.Max(core * 0.42f, ring * 0.72f);
                     if (alpha <= 0.01f)
                     {
                         continue;
@@ -455,7 +489,12 @@ namespace BellRinger.FinalDemo
 
         private HardwareBridge ResolveBridge()
         {
-            hardwareBridge ??= HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>();
+            if (hardwareBridge == null ||
+                (!hardwareBridge.IsConnected && HardwareBridge.Instance != null && HardwareBridge.Instance.IsConnected))
+            {
+                hardwareBridge = HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>();
+            }
+
             return hardwareBridge;
         }
     }

@@ -66,3 +66,4 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 Keep notebook compatibility as a default requirement for all changes.
 If a structural change could affect notebook runtime, device paths, or performance, call it out explicitly and document it.
+Before making new changes, read the latest handoff log in `Docs/AccountSyncLogs`.
