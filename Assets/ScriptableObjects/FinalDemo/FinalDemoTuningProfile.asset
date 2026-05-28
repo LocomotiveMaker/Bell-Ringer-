@@ -27,6 +27,8 @@ MonoBehaviour:
   bellGazeHoldSeconds: 1.4
   bellGazeConeDegrees: 14
   generalTinnitusTreatmentSeconds: 4
+  generalTinnitusApproachRadius: 1.25
+  generalTinnitusRadiusScale: 1.3
   generalTinnitusPositionToleranceMeters: 0.18
   generalTinnitusRotationToleranceDegrees: 22
   bossPatternOneSeconds: 7

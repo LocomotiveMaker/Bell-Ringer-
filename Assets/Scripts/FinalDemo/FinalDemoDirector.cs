@@ -93,6 +93,8 @@ namespace BellRinger.FinalDemo
         private float _nextTinnitusLightAtRealtime;
         private float _nextTinnitusHapticAtRealtime;
         private float _currentTinnitusGazeAngleDegrees = 180f;
+        private bool _generalTinnitusPoseLocked;
+        private float _currentGeneralTinnitusDistance = float.PositiveInfinity;
         private bool _bossWasInsideTolerance;
         private int _bossPatternFailureCount;
         private float _nextBossLightAtRealtime;
@@ -426,7 +428,7 @@ namespace BellRinger.FinalDemo
             }
             else if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
             {
-                summary += $" match={GeneralTinnitusMatch01:0.00} cleanse={GeneralTinnitusProgress01:0.00} angle={_currentTinnitusGazeAngleDegrees:0.0}";
+                summary += $" distance={_currentGeneralTinnitusDistance:0.00}/{(tuningProfile != null ? tuningProfile.GeneralTinnitusApproachRadius : 0f):0.00}m locked={_generalTinnitusPoseLocked} match={GeneralTinnitusMatch01:0.00} cleanse={GeneralTinnitusProgress01:0.00} angle={_currentTinnitusGazeAngleDegrees:0.0}";
             }
             else if (_currentStage == FinalDemoStage.BossApproach)
             {
@@ -524,6 +526,8 @@ namespace BellRinger.FinalDemo
             _nextTinnitusLightAtRealtime = Time.realtimeSinceStartup;
             _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup;
             _currentTinnitusGazeAngleDegrees = 180f;
+            _generalTinnitusPoseLocked = false;
+            _currentGeneralTinnitusDistance = float.PositiveInfinity;
             _bossWasInsideTolerance = false;
             _bossPatternFailureCount = 0;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
@@ -724,12 +728,11 @@ namespace BellRinger.FinalDemo
             MoveBellPlaceholder(bellPosition);
             UpdateBellMovementTextureLoop(bellPosition, 0f, false);
 
-            TickBellContinuousAnchor(bellPosition, pointIntensity, 1f);
+            TickBellContinuousAnchor(bellPosition, pointIntensity, 1f, false);
 
             if (Time.realtimeSinceStartup >= _nextBellCallAtRealtime)
             {
-                PlayReactiveBellCue(FinalDemoCueId.BellDistantCall, bellPosition, tuningProfile.BellOrbitVolume, pointIntensity);
-                SuppressBellOrbitAnchorForCue(FinalDemoCueId.BellDistantCall);
+                audioRouter?.PlayOneShot(FinalDemoCueId.BellDistantCall, bellPosition, tuningProfile.BellOrbitVolume);
                 ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, tuningProfile.BellOrbitCallIntervalSeconds);
             }
 
@@ -784,14 +787,19 @@ namespace BellRinger.FinalDemo
             return Mathf.Min(fadeIn, fadeOut);
         }
 
-        private void TickBellContinuousAnchor(Vector3 bellPosition, float pointIntensity, float anchorScale = 1f)
+        private void TickBellContinuousAnchor(Vector3 bellPosition, float pointIntensity, float anchorScale = 1f, bool requireActiveBellLight = true)
         {
-            if (tuningProfile == null || !tuningProfile.BellOrbitContinuousAnchorEnabled || Time.realtimeSinceStartup < _bellOrbitAnchorSuppressedUntilRealtime)
+            if (tuningProfile == null || !tuningProfile.BellOrbitContinuousAnchorEnabled)
             {
                 return;
             }
 
-            if (Time.realtimeSinceStartup > _bellLightActiveUntilRealtime)
+            if (requireActiveBellLight && Time.realtimeSinceStartup < _bellOrbitAnchorSuppressedUntilRealtime)
+            {
+                return;
+            }
+
+            if (requireActiveBellLight && Time.realtimeSinceStartup > _bellLightActiveUntilRealtime)
             {
                 return;
             }
@@ -1273,18 +1281,26 @@ namespace BellRinger.FinalDemo
             EnsurePoseMatchEvaluator();
             Vector3 targetWorldPosition = ResolveGeneralTinnitusWorldPosition(_currentStage);
             MoveGeneralTinnitusPlaceholder(_currentStage, targetWorldPosition);
+            _currentGeneralTinnitusDistance = ResolvePlanarDistanceToPlayer(targetWorldPosition);
 
             if (_tinnitusAudioController != null)
             {
                 _tinnitusAudioController.transform.position = targetWorldPosition;
-                if (_tinnitusReactiveLight != null)
-                {
-                    _tinnitusReactiveLight.SetWorldPosition(targetWorldPosition);
-                }
             }
 
             if (_poseMatchEvaluator == null)
             {
+                return;
+            }
+
+            if (!_generalTinnitusPoseLocked)
+            {
+                UpdateTinnitusLookAndLight(targetWorldPosition, 0f);
+                if (_currentGeneralTinnitusDistance <= tuningProfile.GeneralTinnitusApproachRadius)
+                {
+                    LockGeneralTinnitusPoseCheck();
+                }
+
                 return;
             }
 
@@ -1298,6 +1314,7 @@ namespace BellRinger.FinalDemo
             bool isLooking = UpdateTinnitusLookAndLight(targetWorldPosition, cleanseProgress);
             bool isInsideTolerance = _poseMatchEvaluator.IsInsideTolerance;
             UpdateTinnitusHealingLoop(targetWorldPosition, cleanseProgress, isInsideTolerance);
+            TickPoseMatchGuidanceHaptics(isInsideTolerance, false, ref _nextTinnitusHapticAtRealtime);
             if (isInsideTolerance && !_wasTinnitusInsideTolerance)
             {
                 audioRouter?.PlayOneShot(FinalDemoCueId.TinnitusPoseLock, targetWorldPosition, 1f);
@@ -1328,11 +1345,6 @@ namespace BellRinger.FinalDemo
                 hapticRouter?.StartTinnitusCleanseHum(intensity, tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
                 _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds;
             }
-            else if (!isInsideTolerance && isLooking && Time.realtimeSinceStartup >= _nextTinnitusHapticAtRealtime)
-            {
-                hapticRouter?.TriggerBellAssistPulse();
-                _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 2f;
-            }
 
             if (_poseMatchEvaluator.IsResolved)
             {
@@ -1340,24 +1352,69 @@ namespace BellRinger.FinalDemo
             }
         }
 
+        private void LockGeneralTinnitusPoseCheck()
+        {
+            _generalTinnitusPoseLocked = true;
+            _wasTinnitusInsideTolerance = false;
+            _poseMatchEvaluator?.ResetProgress();
+            SetPlayerMovementLocked(true);
+            hapticRouter?.TriggerTinnitusLockPulse();
+            _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + 0.35f;
+        }
+
+        private void TickPoseMatchGuidanceHaptics(bool insideTolerance, bool boss, ref float nextHapticAtRealtime)
+        {
+            if (_poseMatchEvaluator == null || Time.realtimeSinceStartup < nextHapticAtRealtime)
+            {
+                return;
+            }
+
+            if (insideTolerance)
+            {
+                float progress = _poseMatchEvaluator.Progress01;
+                float intensity = Mathf.Lerp(0.3f, 0.75f, progress);
+                if (boss)
+                {
+                    hapticRouter?.TriggerBossTrackingPulse();
+                    nextHapticAtRealtime = Time.realtimeSinceStartup + 0.75f;
+                    return;
+                }
+
+                hapticRouter?.StartTinnitusCleanseHum(intensity, tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
+                nextHapticAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds;
+                return;
+            }
+
+            float match = Mathf.Clamp01(_poseMatchEvaluator.TotalMatch01);
+            if (match < 0.18f)
+            {
+                nextHapticAtRealtime = Time.realtimeSinceStartup + 0.18f;
+                return;
+            }
+
+            float guidance = Mathf.InverseLerp(0.18f, 0.78f, match);
+            if (boss)
+            {
+                hapticRouter?.TriggerBossTrackingPulse();
+                nextHapticAtRealtime = Time.realtimeSinceStartup + Mathf.Lerp(0.72f, 0.32f, guidance);
+                return;
+            }
+
+            hapticRouter?.StartTinnitusCleanseHum(Mathf.Lerp(0.18f, 0.52f, guidance), Mathf.Lerp(0.18f, 0.38f, guidance));
+            nextHapticAtRealtime = Time.realtimeSinceStartup + Mathf.Lerp(0.85f, 0.28f, guidance);
+        }
+
         private bool UpdateTinnitusLookAndLight(Vector3 targetWorldPosition, float cleanseProgress)
         {
             _currentTinnitusGazeAngleDegrees = ResolveGazeAngleTo(targetWorldPosition);
             bool isLooking = _currentTinnitusGazeAngleDegrees <= tuningProfile.GeneralTinnitusRevealConeDegrees;
-            if (_tinnitusReactiveLight != null)
-            {
-                _tinnitusReactiveLight.EmissionEnabled = isLooking;
-                _tinnitusReactiveLight.IntensityScale = tuningProfile.GeneralTinnitusLedIntensity * Mathf.Lerp(1f, 0.25f, cleanseProgress);
-                return isLooking;
-            }
-
             if (!isLooking || Time.realtimeSinceStartup < _nextTinnitusLightAtRealtime)
             {
                 return isLooking;
             }
 
             float intensity = tuningProfile.GeneralTinnitusLedIntensity * Mathf.Lerp(1f, 0.25f, cleanseProgress);
-            lightRouter?.ShowTinnitusPoint(targetWorldPosition, intensity);
+            lightRouter?.ShowTinnitusPattern(targetWorldPosition, intensity, cleanseProgress, false, tuningProfile.GeneralTinnitusRadiusScale);
             _nextTinnitusLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusLightIntervalSeconds;
             return true;
         }
@@ -1375,8 +1432,8 @@ namespace BellRinger.FinalDemo
         {
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            AudioSource bossSource = audioRouter != null ? audioRouter.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile != null ? tuningProfile.BossBaseVolume : 0.42f) : null;
-            _bossReactiveLight = AttachReactiveLight(bossSource, bossPosition, FinalDemoAudioReactiveLight.ReactiveLightKind.BossTinnitus, tuningProfile != null ? tuningProfile.BossMassLedIntensity : 0.78f);
+            audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile != null ? tuningProfile.BossBaseVolume : 0.42f);
+            _bossReactiveLight = null;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
         }
 
@@ -1390,11 +1447,10 @@ namespace BellRinger.FinalDemo
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
             _currentBossApproachDistance = ResolvePlanarDistanceToPlayer(bossPosition);
-            UpdateBossReactiveLight(bossPosition, tuningProfile.BossMassLedIntensity);
 
-            if (_bossReactiveLight == null && Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
+            if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
-                lightRouter?.ShowTinnitusPoint(bossPosition, tuningProfile.BossMassLedIntensity, true);
+                lightRouter?.ShowTinnitusPattern(bossPosition, tuningProfile.BossMassLedIntensity, 0f, true);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
@@ -1420,7 +1476,7 @@ namespace BellRinger.FinalDemo
             EnsurePoseMatchEvaluator();
             if (_poseMatchEvaluator != null)
             {
-                _poseMatchEvaluator.RequireRotation = false;
+                _poseMatchEvaluator.RequireRotation = true;
                 _poseMatchEvaluator.TreatmentSeconds = ResolveBossPatternSeconds(_currentBossPatternIndex);
                 _poseMatchEvaluator.MatchFeedbackRadiusMultiplier = 4f;
                 _poseMatchEvaluator.ResetProgress();
@@ -1429,8 +1485,8 @@ namespace BellRinger.FinalDemo
 
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            AudioSource bossSource = audioRouter != null ? audioRouter.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile.BossBaseVolume) : null;
-            _bossReactiveLight = AttachReactiveLight(bossSource, bossPosition, FinalDemoAudioReactiveLight.ReactiveLightKind.BossTinnitus, tuningProfile.BossMassLedIntensity);
+            audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile.BossBaseVolume);
+            _bossReactiveLight = null;
             if (stage == FinalDemoStage.BossPatternOne)
             {
                 QueueNarration(FinalDemoCueId.NarrFindSoundOrigin, FinalDemoStage.BossPatternOne);
@@ -1456,11 +1512,10 @@ namespace BellRinger.FinalDemo
 
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            UpdateBossReactiveLight(bossPosition, tuningProfile.BossMassLedIntensity);
-            if (_bossReactiveLight == null && Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
+            if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
                 float lightPulse = tuningProfile.BossMassLedIntensity * (0.8f + Mathf.Sin(Time.realtimeSinceStartup * Mathf.PI * 1.25f) * 0.12f);
-                lightRouter?.ShowTinnitusPoint(bossPosition, Mathf.Clamp01(lightPulse), true);
+                lightRouter?.ShowTinnitusPattern(bossPosition, Mathf.Clamp01(lightPulse), 0f, true);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
@@ -1473,11 +1528,7 @@ namespace BellRinger.FinalDemo
             }
 
             _bossWasInsideTolerance = insideTolerance;
-            if (insideTolerance && Time.realtimeSinceStartup >= _nextBossHapticAtRealtime)
-            {
-                hapticRouter?.TriggerBossTrackingPulse();
-                _nextBossHapticAtRealtime = Time.realtimeSinceStartup + 0.75f;
-            }
+            TickPoseMatchGuidanceHaptics(insideTolerance, true, ref _nextBossHapticAtRealtime);
 
             _currentBossPatternProgress01 = _poseMatchEvaluator.Progress01;
             _currentBossPatternTargetMatch01 = _poseMatchEvaluator.TotalMatch01;
@@ -1500,7 +1551,7 @@ namespace BellRinger.FinalDemo
             bool moving = progressSeconds >= holdSeconds;
             float move01 = moving ? Mathf.Clamp01((progressSeconds - holdSeconds) / Mathf.Max(0.1f, totalSeconds - holdSeconds)) : 0f;
             float smoothMove01 = Smooth01(move01);
-            _poseMatchEvaluator.RequireRotation = false;
+            _poseMatchEvaluator.RequireRotation = true;
             if (_currentBossPatternIndex == 0 && moving)
             {
                 QueueNarration(FinalDemoCueId.NarrBossTrack, FinalDemoStage.BossPatternOne);
@@ -1707,11 +1758,7 @@ namespace BellRinger.FinalDemo
         private AudioSource PlayReactiveTinnitusCue(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale, float intensityScale, bool boss)
         {
             AudioSource source = audioRouter?.PlayOneShot(cueId, worldPosition, volumeScale);
-            AttachReactiveLight(
-                source,
-                worldPosition,
-                boss ? FinalDemoAudioReactiveLight.ReactiveLightKind.BossTinnitus : FinalDemoAudioReactiveLight.ReactiveLightKind.Tinnitus,
-                intensityScale);
+            lightRouter?.ShowTinnitusPattern(worldPosition, intensityScale, boss ? 0f : GeneralTinnitusProgress01, boss, boss ? 1f : tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
             return source;
         }
 
@@ -2199,13 +2246,10 @@ namespace BellRinger.FinalDemo
             controller.Volume = 0.052f * (tuningProfile != null ? tuningProfile.GeneralTinnitusToneVolume : 0.8f);
             controller.CleanseStability = 0f;
             controller.enabled = true;
+            controller.SetSpatialRangeScale(tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
             controller.SetBinauralPreview(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
             _tinnitusAudioController = controller;
-            _tinnitusReactiveLight = AttachReactiveLight(
-                controller.GetComponent<AudioSource>(),
-                worldPosition,
-                FinalDemoAudioReactiveLight.ReactiveLightKind.Tinnitus,
-                tuningProfile != null ? tuningProfile.GeneralTinnitusLedIntensity : 0.72f);
+            _tinnitusReactiveLight = null;
         }
 
         private void StopProceduralTinnitus()

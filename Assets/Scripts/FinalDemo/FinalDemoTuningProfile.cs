@@ -127,6 +127,8 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 generalTinnitusOnePadTargetYawPitchRoll = new Vector3(-12f, 8f, -14f);
         [SerializeField] private Vector3 generalTinnitusTwoPadTargetYawPitchRoll = new Vector3(18f, -10f, 16f);
         [SerializeField] private float generalTinnitusTreatmentSeconds = 4f;
+        [SerializeField] private float generalTinnitusApproachRadius = 1.25f;
+        [SerializeField] private float generalTinnitusRadiusScale = 1.3f;
         [SerializeField] private float generalTinnitusPositionToleranceMeters = 0.18f;
         [SerializeField] private float generalTinnitusRotationToleranceDegrees = 22f;
         [SerializeField] private float generalTinnitusMatchFeedbackRadiusMultiplier = 2.5f;
@@ -268,10 +270,12 @@ namespace BellRinger.FinalDemo
         public Vector3 GeneralTinnitusOnePadTargetYawPitchRoll => generalTinnitusOnePadTargetYawPitchRoll;
         public Vector3 GeneralTinnitusTwoPadTargetYawPitchRoll => generalTinnitusTwoPadTargetYawPitchRoll;
         public float GeneralTinnitusTreatmentSeconds => Mathf.Max(0.1f, generalTinnitusTreatmentSeconds);
+        public float GeneralTinnitusApproachRadius => Mathf.Max(0.05f, generalTinnitusApproachRadius * GeneralTinnitusRadiusScale);
+        public float GeneralTinnitusRadiusScale => Mathf.Max(0.1f, generalTinnitusRadiusScale);
         public float GeneralTinnitusPositionToleranceMeters => Mathf.Max(0.01f, generalTinnitusPositionToleranceMeters);
         public float GeneralTinnitusRotationToleranceDegrees => Mathf.Clamp(generalTinnitusRotationToleranceDegrees, 1f, 180f);
         public float GeneralTinnitusMatchFeedbackRadiusMultiplier => Mathf.Max(1f, generalTinnitusMatchFeedbackRadiusMultiplier);
-        public float GeneralTinnitusRevealConeDegrees => Mathf.Clamp(generalTinnitusRevealConeDegrees, 1f, 120f);
+        public float GeneralTinnitusRevealConeDegrees => Mathf.Clamp(generalTinnitusRevealConeDegrees * GeneralTinnitusRadiusScale, 1f, 120f);
         public float GeneralTinnitusLedIntensity => Mathf.Clamp01(generalTinnitusLedIntensity);
         public float GeneralTinnitusToneVolume => Mathf.Clamp01(generalTinnitusToneVolume);
         public float GeneralTinnitusLightIntervalSeconds => Mathf.Max(0.05f, generalTinnitusLightIntervalSeconds);

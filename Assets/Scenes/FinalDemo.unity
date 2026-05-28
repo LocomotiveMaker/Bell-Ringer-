@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.12731713, g: 0.13414738, b: 0.121078536, a: 1}
+  m_IndirectSpecularColor: {r: 0.12731713, g: 0.13414736, b: 0.12107852, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -6028,9 +6028,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.31748626
+    y: 0.3178198
     width: 1
-    height: 0.6825137
+    height: 0.68218017
   near clip plane: 0.03
   far clip plane: 80
   field of view: 68
@@ -6154,6 +6154,8 @@ Transform:
   - {fileID: 1619557813}
   - {fileID: 568446960}
   - {fileID: 370068229}
+  - {fileID: 520959507}
+  - {fileID: 1084736548}
   m_Father: {fileID: 440105806}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &203800293
@@ -6825,6 +6827,7 @@ MonoBehaviour:
   invertCameraSpacePositionX: 1
   invertCameraSpacePositionZ: 1
   cameraSpacePositionAxisScale: {x: 1.5, y: 1.25, z: 1.5}
+  cameraSpacePositionOffset: {x: 0, y: 0.1, z: 0}
 --- !u!114 &351896314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7555,6 +7558,89 @@ Material:
     m_Colors:
     - _Color: {r: 0.6, g: 0.8, b: 1, a: 1}
   m_BuildTextureStacks: []
+--- !u!1 &520959506
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 520959507}
+  - component: {fileID: 520959508}
+  m_Layer: 0
+  m_Name: FinalDemoViewportBlackBackdropCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &520959507
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520959506}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 203800292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &520959508
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520959506}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -100
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 0
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 0
+  m_AllowMSAA: 0
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 0
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
 --- !u!1 &524674266
 GameObject:
   m_ObjectHideFlags: 0
@@ -8297,54 +8383,6 @@ MonoBehaviour:
   hapticRouter: {fileID: 328930869}
   createMissingRuntimeObjects: 0
   showRuntimeGizmos: 1
---- !u!114 &635247278
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 635247271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f76f83eebec34f2fb372d55f8dcbe401, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  overview: "FinalDemoRoot 안내입니다. 실제 조정 수치는 FinalDemoTuningProfile, WorldAudio_FinalDemo, WorldLight_FinalDemo, FinalDemoModelPresenter에서 섹션별로 조절합니다."
-  audioGuide: "종, 비, 이명 소리는 FinalDemoCueLibrary에서 연결합니다. 볼륨, 거리감, HRTF는 WorldAudio_FinalDemo의 FinalDemoAudioRouter와 FinalDemoTuningProfile을 함께 봅니다."
-  led: "종, 비, 이명 LED 밝기와 하드웨어 출력은 WorldLight_FinalDemo의 FinalDemoLightRouter에서 조절합니다. 종 광량은 bell 계열 boost와 maximum brightness를 우선 확인합니다."
-  bellRoute: "초기 종 회전 경로는 FinalDemoTuningProfile의 Bell Orbit Local Points를 봅니다. 실제 추적 구간은 BellFollowPath_Authoring 또는 Bell Follow Target 값을 봅니다."
-  padShake: "패드 흔들기 종소리 재생 기준은 Pad Shake 섹션의 motion threshold, cooldown, narration cooldown입니다."
-  rainAmbience: "오프닝 앰비언트는 OpeningAmbienceBed, 비는 RainLightBed/RainStrongBed를 사용합니다. 레인존 진입 후 Rain Intensity Ramp Seconds 동안 페이드인됩니다."
-  tinnitus: "이명은 절차음과 글리치 클립이 같은 월드 위치에서 재생됩니다. HRTF/software binaural은 FinalDemoDirector에서 기본 ON입니다."
-  model: "종/패드 모델 교체와 크기 보정은 FinalDemoModelPresenter에서 합니다. 파이널데모 씬에만 적용됩니다."
---- !u!114 &635247279
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 635247271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a19f104ed7b84419af59d7c9f571640c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bellVisual: {fileID: 655694890}
-  padVisual: {fileID: 186814578}
-  bellModelPrefab: {fileID: 0}
-  padModelPrefab: {fileID: 0}
-  bellModelResourcePath: FinalDemoModels/Bell/BellModel
-  padModelResourcePath: FinalDemoModels/Pad/PadGamepad
-  bellModelLocalPosition: {x: 0, y: -0.04, z: 0}
-  bellModelLocalEuler: {x: -90, y: 0, z: 0}
-  bellTargetMaxSize: 0.56
-  padModelLocalPosition: {x: 0, y: 0, z: 0}
-  padModelLocalEuler: {x: 0, y: 180, z: 0}
-  padTargetMaxSize: 0.72
-  applyWhitePadMaterial: 1
-  padWhite: {r: 0.92, g: 0.94, b: 0.9, a: 1}
-  applyOnAwake: 1
-  hidePlaceholderRenderers: 1
 --- !u!4 &635247277
 Transform:
   m_ObjectHideFlags: 0
@@ -8371,6 +8409,78 @@ Transform:
   - {fileID: 1543506600}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &635247278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635247271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f76f83eebec34f2fb372d55f8dcbe401, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  overview: "FinalDemoRoot \uC548\uB0B4\uC785\uB2C8\uB2E4. \uC2E4\uC81C \uC870\uC815
+    \uC218\uCE58\uB294 FinalDemoTuningProfile, WorldAudio_FinalDemo, WorldLight_FinalDemo,
+    FinalDemoModelPresenter\uC5D0\uC11C \uC139\uC158\uBCC4\uB85C \uC870\uC808\uD569\uB2C8\uB2E4."
+  audioGuide: "\uC885, \uBE44, \uC774\uBA85 \uC18C\uB9AC\uB294 FinalDemoCueLibrary\uC5D0\uC11C
+    \uC5F0\uACB0\uD569\uB2C8\uB2E4. \uBCFC\uB968, \uAC70\uB9AC\uAC10, HRTF\uB294
+    WorldAudio_FinalDemo\uC758 FinalDemoAudioRouter\uC640 FinalDemoTuningProfile\uC744
+    \uD568\uAED8 \uBD05\uB2C8\uB2E4."
+  led: "\uC885, \uBE44, \uC774\uBA85 LED \uBC1D\uAE30\uC640 \uD558\uB4DC\uC6E8\uC5B4
+    \uCD9C\uB825\uC740 WorldLight_FinalDemo\uC758 FinalDemoLightRouter\uC5D0\uC11C
+    \uC870\uC808\uD569\uB2C8\uB2E4. \uC885 \uAD11\uB7C9\uC740 bell \uACC4\uC5F4 boost\uC640
+    maximum brightness\uB97C \uC6B0\uC120 \uD655\uC778\uD569\uB2C8\uB2E4."
+  bellRoute: "\uCD08\uAE30 \uC885 \uD68C\uC804 \uACBD\uB85C\uB294 FinalDemoTuningProfile\uC758
+    Bell Orbit Local Points\uB97C \uBD05\uB2C8\uB2E4. \uC2E4\uC81C \uCD94\uC801 \uAD6C\uAC04\uC740
+    BellFollowPath_Authoring \uB610\uB294 Bell Follow Target \uAC12\uC744 \uBD05\uB2C8\uB2E4."
+  padShake: "\uD328\uB4DC \uD754\uB4E4\uAE30 \uC885\uC18C\uB9AC \uC7AC\uC0DD \uAE30\uC900\uC740
+    Pad Shake \uC139\uC158\uC758 motion threshold, cooldown, narration cooldown\uC785\uB2C8\uB2E4."
+  rainAmbience: "\uC624\uD504\uB2DD \uC570\uBE44\uC5B8\uD2B8\uB294 OpeningAmbienceBed,
+    \uBE44\uB294 RainLightBed/RainStrongBed\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4.
+    \uB808\uC778\uC874 \uC9C4\uC785 \uD6C4 Rain Intensity Ramp Seconds \uB3D9\uC548
+    \uD398\uC774\uB4DC\uC778\uB429\uB2C8\uB2E4."
+  tinnitus: "\uC774\uBA85\uC740 \uC808\uCC28\uC74C\uACFC \uAE00\uB9AC\uCE58 \uD074\uB9BD\uC774
+    \uAC19\uC740 \uC6D4\uB4DC \uC704\uCE58\uC5D0\uC11C \uC7AC\uC0DD\uB429\uB2C8\uB2E4.
+    HRTF/software binaural\uC740 FinalDemoDirector\uC5D0\uC11C \uAE30\uBCF8 ON\uC785\uB2C8\uB2E4."
+  model: "\uC885/\uD328\uB4DC \uBAA8\uB378 \uAD50\uCCB4\uC640 \uD06C\uAE30 \uBCF4\uC815\uC740
+    FinalDemoModelPresenter\uC5D0\uC11C \uD569\uB2C8\uB2E4. \uD30C\uC774\uB110\uB370\uBAA8
+    \uC52C\uC5D0\uB9CC \uC801\uC6A9\uB429\uB2C8\uB2E4."
+--- !u!114 &635247279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 635247271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a19f104ed7b84419af59d7c9f571640c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bellVisual: {fileID: 655694890}
+  padVisual: {fileID: 186814578}
+  bellModelPrefab: {fileID: 0}
+  padModelPrefab: {fileID: 0}
+  bellModelResourcePath: FinalDemoModels/Bell/BellModel
+  padModelResourcePath: FinalDemoModels/Pad/PadGamepad
+  bellModelLocalPosition: {x: 0, y: -0.04, z: 0}
+  bellModelLocalEuler: {x: -180, y: 0, z: 0}
+  bellTargetMaxSize: 0.56
+  padModelLocalPosition: {x: 0, y: 0, z: 0}
+  padModelLocalEuler: {x: 0, y: 270, z: 0}
+  padTargetMaxSize: 0.72
+  padAlbedoTexture: {fileID: 2800000, guid: 9516c3debf2b279418637683ac4f24ac, type: 3}
+  padTextureResourcePath: FinalDemoModels/Pad/5
+  applyPadTextureMaterial: 1
+  applyWhitePadMaterial: 0
+  padWhite: {r: 1, g: 1, b: 1, a: 1}
+  showSinglePadModel: 1
+  padVisibleModelIndex: 0
+  applyOnAwake: 1
+  hidePlaceholderRenderers: 1
+  centerModelBoundsOnLocalPosition: 1
 --- !u!1 &654231705
 GameObject:
   m_ObjectHideFlags: 0
@@ -10170,6 +10280,89 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1062615888}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1084736547
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1084736548}
+  - component: {fileID: 1084736549}
+  m_Layer: 0
+  m_Name: FinalDemoViewportBlackBackdropCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1084736548
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1084736547}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 203800292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &1084736549
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1084736547}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 60
+  orthographic: 0
+  orthographic size: 5
+  m_Depth: -100
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 0
+  m_RenderingPath: -1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 0
+  m_AllowMSAA: 0
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 0
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
 --- !u!21 &1086421994
 Material:
   serializedVersion: 8
@@ -10714,7 +10907,7 @@ Transform:
   m_GameObject: {fileID: 1207336593}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.45, y: 1.45, z: 44.74}
+  m_LocalPosition: {x: 10.45, y: 1.45, z: 27.51}
   m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10936,6 +11129,8 @@ MonoBehaviour:
   bellBrightnessBoost: 0.87
   bellWaveBrightnessBoost: 0.43
   bellWaveMaximumBrightness: 0.21
+  tinnitusLightScale: 0.3
+  bossTinnitusLightScale: 0.3
   clearWhenMappedOutsideBoard: 1
 --- !u!1 &1266882791
 GameObject:
@@ -19938,6 +20133,9 @@ MonoBehaviour:
   defaultNarrationDuckSeconds: 2.5
   spatializerEnabled: 0
   softwareBinauralStrength: 1
+  bellDistanceReverbEnabled: 1
+  bellReverbStartDistance01: 0.35
+  bellReverbMaxWet01: 0.28
   masterGroup: {fileID: 0}
   bellGroup: {fileID: 0}
   rainWindGroup: {fileID: 0}
@@ -20389,7 +20587,7 @@ Transform:
   m_GameObject: {fileID: 1999968306}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.67, y: 1.379, z: 17.04}
+  m_LocalPosition: {x: -5.67, y: 1.379, z: 14.21}
   m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 0
   m_Children: []

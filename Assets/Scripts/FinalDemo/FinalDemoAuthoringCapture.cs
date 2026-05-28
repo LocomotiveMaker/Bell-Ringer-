@@ -22,7 +22,7 @@ namespace BellRinger.FinalDemo
             "Boss Path 3",
         };
 
-        private Rect _panelRect = new Rect(590f, 18f, 390f, 275f);
+        private Rect _panelRect = new Rect(590f, 18f, 390f, 335f);
 
         private void Awake()
         {
@@ -42,6 +42,20 @@ namespace BellRinger.FinalDemo
                 CapturePose(sceneReferences != null ? sceneReferences.TinnitusTwoHealMarker : null);
             }
 
+            if (Input.GetKeyDown(KeyCode.F7))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
+            }
+
+            if (Input.GetKeyDown(KeyCode.F8))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseTwoMarker : null);
+            }
+
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseThreeMarker : null);
+            }
         }
 
         private void OnGUI()
@@ -56,7 +70,7 @@ namespace BellRinger.FinalDemo
 
         private void DrawWindow(int id)
         {
-            GUILayout.Label("Pose hotkeys: F5 Tinnitus A, F6 Tinnitus B.");
+            GUILayout.Label("Pose hotkeys: F5/F6 Tinnitus, F7/F8/F9 Boss.");
             GUILayout.Label(BuildPadSummary());
 
             GUILayout.BeginHorizontal();
@@ -71,7 +85,24 @@ namespace BellRinger.FinalDemo
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Boss uses selected Boss Path waypoint position only. Rotation is ignored.");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Capture Boss 1"))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
+            }
+
+            if (GUILayout.Button("Capture Boss 2"))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseTwoMarker : null);
+            }
+
+            if (GUILayout.Button("Capture Boss 3"))
+            {
+                CapturePose(sceneReferences != null ? sceneReferences.BossPoseThreeMarker : null);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label("Boss uses selected Boss Path waypoints for position and Boss poses for rotation.");
 
             GUILayout.Space(6f);
             GUILayout.Label("Waypoint capture uses current pad camera-space position converted through player camera.");

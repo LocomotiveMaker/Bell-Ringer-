@@ -100,6 +100,15 @@ namespace BellRinger.Audio
             ConfigureSourceBinaural(_shortGlitchSource, listener, enabled, binauralStrength);
         }
 
+        public void SetSpatialRangeScale(float scale)
+        {
+            EnsureAudioSources();
+            float clampedScale = Mathf.Max(0.1f, scale);
+            ApplySpatialRange(_toneSource, clampedScale);
+            ApplySpatialRange(_continuousGlitchSource, clampedScale);
+            ApplySpatialRange(_shortGlitchSource, clampedScale);
+        }
+
         public void TriggerBurst(float intensity = 1f)
         {
             _triggeredBurst = Mathf.Max(_triggeredBurst, Mathf.Clamp01(intensity));
@@ -295,6 +304,17 @@ namespace BellRinger.Audio
             {
                 binaural.Configure(source, listener, false, binauralStrength);
             }
+        }
+
+        private static void ApplySpatialRange(AudioSource source, float scale)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            source.minDistance = 0.5f * scale;
+            source.maxDistance = 10f * scale;
         }
 
         private void UpdateGlitchClipPlayback()

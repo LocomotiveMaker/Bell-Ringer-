@@ -11,6 +11,7 @@ namespace BellRinger.Debug.Editor
         private const string TuningProfilePath = "Assets/ScriptableObjects/FinalDemo/FinalDemoTuningProfile.asset";
         private const string BellModelPath = "Assets/Resources/FinalDemoModels/Bell/BellModel.obj";
         private const string PadModelPath = "Assets/Resources/FinalDemoModels/Pad/PadGamepad.fbx";
+        private const string PadTexturePath = "Assets/Art/Models/Pad/gamepads/textures/5.png";
 
         [MenuItem("Bell Ringer/Final Demo/Apply Polish")]
         public static void ApplyFinalDemoPolish()
@@ -81,12 +82,17 @@ namespace BellRinger.Debug.Editor
             SetObject(serialized, "bellModelPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(BellModelPath));
             SetObject(serialized, "padModelPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(PadModelPath));
             SetVector3(serialized, "bellModelLocalPosition", new Vector3(0f, -0.04f, 0f));
-            SetVector3(serialized, "bellModelLocalEuler", new Vector3(-90f, 0f, 0f));
+            SetVector3(serialized, "bellModelLocalEuler", new Vector3(-180f, 0f, 0f));
             SetFloat(serialized, "bellTargetMaxSize", 0.56f);
             SetVector3(serialized, "padModelLocalPosition", Vector3.zero);
-            SetVector3(serialized, "padModelLocalEuler", new Vector3(0f, 180f, 0f));
+            SetVector3(serialized, "padModelLocalEuler", new Vector3(0f, 270f, 0f));
             SetFloat(serialized, "padTargetMaxSize", 0.72f);
-            SetBool(serialized, "applyWhitePadMaterial", true);
+            SetObject(serialized, "padAlbedoTexture", AssetDatabase.LoadAssetAtPath<Texture2D>(PadTexturePath));
+            SetBool(serialized, "applyPadTextureMaterial", true);
+            SetBool(serialized, "applyWhitePadMaterial", false);
+            SetBool(serialized, "showSinglePadModel", true);
+            SetInt(serialized, "padVisibleModelIndex", 0);
+            SetBool(serialized, "centerModelBoundsOnLocalPosition", true);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             presenter.ApplyModelVisuals();
             EditorUtility.SetDirty(presenter);
@@ -107,6 +113,15 @@ namespace BellRinger.Debug.Editor
             if (property != null)
             {
                 property.floatValue = value;
+            }
+        }
+
+        private static void SetInt(SerializedObject serialized, string propertyName, int value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+            {
+                property.intValue = value;
             }
         }
 

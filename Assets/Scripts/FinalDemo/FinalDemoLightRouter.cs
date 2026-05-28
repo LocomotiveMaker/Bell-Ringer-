@@ -22,6 +22,8 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0.25f, 3f)] private float bellBrightnessBoost = 0.87f;
         [SerializeField, Range(0.25f, 3f)] private float bellWaveBrightnessBoost = 0.43f;
         [SerializeField, Range(0.05f, 1f)] private float bellWaveMaximumBrightness = 0.21f;
+        [SerializeField, Range(0.05f, 1f)] private float tinnitusLightScale = 0.3f;
+        [SerializeField, Range(0.05f, 1f)] private float bossTinnitusLightScale = 0.3f;
         [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
@@ -151,7 +153,8 @@ namespace BellRinger.FinalDemo
 
         public void ShowTinnitusPoint(Vector3 worldPosition, float intensity = 0.65f, bool boss = false)
         {
-            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame))
+            float scaledIntensity = intensity * (boss ? bossTinnitusLightScale : tinnitusLightScale);
+            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame))
             {
                 ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} point out of board.");
                 return;
@@ -191,6 +194,7 @@ namespace BellRinger.FinalDemo
             float envelope = Mathf.Clamp01(envelope01);
             float onset = Mathf.Clamp01(onset01);
             float brightness = Mathf.Clamp01((0.12f + envelope * 0.62f + onset * 0.06f) * Mathf.Clamp01(intensityScale));
+            brightness *= boss ? bossTinnitusLightScale : tinnitusLightScale;
             if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
             {
                 ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} wave out of board.");
@@ -236,6 +240,54 @@ namespace BellRinger.FinalDemo
             RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
             HoldPriority(priority);
             _lastAction = $"{(boss ? "Boss" : "Tinnitus")} wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
+        }
+
+        public void ShowTinnitusPattern(Vector3 worldPosition, float intensity = 0.65f, float cleanseStability = 0f, bool boss = false, float rangeScale = 1f)
+        {
+            float scaledIntensity = Mathf.Clamp01(intensity) * (boss ? bossTinnitusLightScale : tinnitusLightScale);
+            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame, 1f, rangeScale))
+            {
+                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} pattern out of board.");
+                return;
+            }
+
+            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
+            if (!TryEmit(priority))
+            {
+                return;
+            }
+
+            float stability = Mathf.Clamp01(cleanseStability);
+            float pulse = EvaluateTinnitusPulse(Time.realtimeSinceStartup, boss ? 0.72f : 0.95f);
+            float softLevel = Mathf.Clamp01(0.48f + pulse * 0.52f);
+            Vector2 axis = boss ? new Vector2(1f, 0.42f).normalized : Vector2.right;
+            float coreSize = (boss ? 1.56f : 1.08f) * Mathf.Lerp(1f, 0.82f, stability);
+            float tearStrength = (boss ? 2.35f : 1.42f) * (1f - stability) * Mathf.Lerp(0.38f, 1f, pulse);
+            float level = Mathf.Clamp01(frame.brightnessNormalized * softLevel);
+            float instability = Mathf.Clamp01((1f - stability) * (boss ? 0.52f : 0.36f));
+            float smear = boss ? 2.35f : 1.55f;
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedTinnitus(
+                    frame.centerX,
+                    frame.centerY,
+                    coreSize,
+                    tearStrength,
+                    axis.x,
+                    axis.y,
+                    tinnitusColor,
+                    level,
+                    ++_seed,
+                    instability,
+                    smear,
+                    boss ? 1.45f : 1.18f);
+            }
+
+            RenderTinnitusPatternLogicalFrame(new Vector2(frame.x, frame.y), coreSize, tearStrength, axis, tinnitusColor, level, instability, smear);
+            HoldPriority(priority);
+            _lastAction = $"{(boss ? "Boss" : "Tinnitus")} pattern x={frame.x} y={frame.y} b={level:0.00}";
         }
 
         public void ShowWallNoise(float intensity = 0.3f)
@@ -292,7 +344,7 @@ namespace BellRinger.FinalDemo
             return _logicalFrame[(y * LogicalFrameWidth) + x];
         }
 
-        private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame, float brightnessBoost = 1f)
+        private bool TryMapWorldPosition(Vector3 worldPosition, float intensity, out BellRingerLedDotFrame frame, float brightnessBoost = 1f, float maxDistanceScale = 1f)
         {
             Transform listener = listenerTransform != null ? listenerTransform : Camera.main != null ? Camera.main.transform : null;
             if (listener == null)
@@ -308,7 +360,7 @@ namespace BellRinger.FinalDemo
             return BellRingerAudioLedMapper.TryMapFromLocalPosition(
                 localTargetPosition,
                 0.25f,
-                defaultMaxDistance,
+                defaultMaxDistance * Mathf.Max(0.1f, maxDistanceScale),
                 Mathf.Clamp01(intensity),
                 boost,
                 1f,
@@ -316,6 +368,13 @@ namespace BellRinger.FinalDemo
                 85f,
                 55f,
                 out frame);
+        }
+
+        private static float EvaluateTinnitusPulse(float time, float rate)
+        {
+            float phase = Mathf.Repeat(time * Mathf.Clamp(rate, 0.1f, 3f), 1f);
+            float wave = 0.5f - Mathf.Cos(phase * Mathf.PI * 2f) * 0.5f;
+            return Mathf.SmoothStep(0f, 1f, wave);
         }
 
         private void ClearMappedOutput(FinalDemoFeedbackPriority priority, string reason)
@@ -440,6 +499,37 @@ namespace BellRinger.FinalDemo
             AddPixel(frame.x - 2, frame.y + 1, color, center * 0.32f);
             AddPixel(frame.x + 2, frame.y - 1, color, center * 0.32f);
             AddPixel(frame.x, frame.y + 2, color, center * 0.24f);
+        }
+
+        private void RenderTinnitusPatternLogicalFrame(Vector2 center, float size, float tearStrength, Vector2 axis, Color color, float level, float effectiveInstability, float smearDecay)
+        {
+            ClearLogicalFrame();
+            Vector2 normalizedAxis = axis.sqrMagnitude <= 0.001f ? Vector2.right : axis.normalized;
+            Vector2 perpendicular = new Vector2(-normalizedAxis.y, normalizedAxis.x);
+            float coreSigma = Mathf.Max(0.18f, size);
+            float lobeSigma = Mathf.Lerp(0.35f, 0.7f, effectiveInstability);
+            float smear = Mathf.Max(0.1f, smearDecay);
+
+            for (int y = 0; y < LogicalFrameHeight; y++)
+            {
+                for (int x = 0; x < LogicalFrameWidth; x++)
+                {
+                    Vector2 offset = new Vector2(x, y) - center;
+                    float distanceSquared = offset.sqrMagnitude;
+                    float core = Mathf.Exp(-distanceSquared / (2f * coreSigma * coreSigma));
+                    float along = Vector2.Dot(offset, normalizedAxis);
+                    float across = Mathf.Abs(Vector2.Dot(offset, perpendicular));
+                    float splitDistance = Mathf.Abs(Mathf.Abs(along) - tearStrength);
+                    float tear = Mathf.Exp(-(splitDistance * splitDistance) / (2f * lobeSigma * lobeSigma)) *
+                                 Mathf.Exp(-(across * across) / (2f * 0.32f * 0.32f)) *
+                                 effectiveInstability;
+                    float residualSmear = Mathf.Exp(-Mathf.Abs(along) / Mathf.Max(0.1f, tearStrength + smear)) *
+                                          Mathf.Exp(-(across * across) / (2f * 0.75f * 0.75f)) *
+                                          effectiveInstability * 0.12f;
+                    float alpha = BellRingerLightStyle.ContrastAlpha(Mathf.Max(core, Mathf.Max(tear, residualSmear)), 1.2f) * level;
+                    AddPixel(x, y, color, alpha);
+                }
+            }
         }
 
         private void RenderWallNoiseLogicalFrame(float intensity)
