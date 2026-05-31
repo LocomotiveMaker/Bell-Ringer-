@@ -795,15 +795,30 @@ namespace BellRinger.FinalDemo
             float stageBoost = 0f;
             if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
             {
-                stageBoost = Mathf.Lerp(0.2f, 0.04f, GeneralTinnitusProgress01);
+                float range = Mathf.Max(0.12f, tuningProfile != null ? tuningProfile.GeneralTinnitusApproachRadius * 1.45f : 1f);
+                float proximity = 1f - Mathf.Clamp01(_currentGeneralTinnitusDistance / range);
+                if (_generalTinnitusPoseLocked)
+                {
+                    proximity = Mathf.Max(proximity, 0.72f);
+                }
+
+                stageBoost = proximity * Mathf.Lerp(0.12f, 0.035f, GeneralTinnitusProgress01);
             }
-            else if (bossStage)
+            else if (_currentStage == FinalDemoStage.BossApproach)
             {
-                stageBoost = _currentStage == FinalDemoStage.BossDefeat ? 0.12f : 0.26f;
+                float range = Mathf.Max(0.12f, tuningProfile != null ? tuningProfile.BossApproachRadius * 2.2f : 1.8f);
+                float proximity = 1f - Mathf.Clamp01(_currentBossApproachDistance / range);
+                stageBoost = proximity * 0.11f;
             }
-            else if (_currentStage == FinalDemoStage.BellFollowRain)
+            else if (_currentStage == FinalDemoStage.BossPatternOne ||
+                     _currentStage == FinalDemoStage.BossPatternTwo ||
+                     _currentStage == FinalDemoStage.BossPatternThree)
             {
-                stageBoost = _currentRainIntensity * 0.04f;
+                stageBoost = Mathf.Lerp(0.16f, 0.08f, _currentBossPatternProgress01);
+            }
+            else if (_currentStage == FinalDemoStage.BossDefeat)
+            {
+                stageBoost = 0.1f;
             }
 
             _globalGlitchOverlay.ApplyRuntimeState(stageBoost, bossStage);
@@ -1547,6 +1562,7 @@ namespace BellRinger.FinalDemo
             _wasTinnitusInsideTolerance = false;
             _poseMatchEvaluator?.ResetProgress();
             SetPlayerMovementLocked(true);
+            EnforceLockedPlayerPosition();
             hapticRouter?.TriggerTinnitusLockPulse();
             _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + 0.35f;
         }
@@ -2234,6 +2250,7 @@ namespace BellRinger.FinalDemo
             RemoveLegacyEnvironmentAuthoringObjects();
             EnsureEnvironmentPresenters();
             EnsureGlitchVisuals();
+            EnsureVisualHalos();
             EnsureGlobalGlitchOverlay();
         }
 
@@ -2255,6 +2272,28 @@ namespace BellRinger.FinalDemo
             }
 
             _globalGlitchOverlay.Initialize(playerCamera != null ? playerCamera : Camera.main);
+        }
+
+        private void EnsureVisualHalos()
+        {
+            AttachVisualHalo(sceneReferences != null ? sceneReferences.BellVisual : FindNamedTransform("FinalDemo_BellPlaceholder"), new Color(0.18f, 1f, 0.36f), new Vector3(0f, -0.02f, 0f), new Vector3(1.18f, 0.9f, 1.18f), false);
+            AttachVisualHalo(sceneReferences != null ? sceneReferences.PadVisual : FindNamedTransform("PadVisual_Authoring_FollowsPose"), new Color(1f, 0.72f, 0.16f), new Vector3(0f, -0.015f, 0f), new Vector3(1.55f, 0.52f, 0.9f), true);
+        }
+
+        private static void AttachVisualHalo(Transform target, Color color, Vector3 localOffset, Vector3 localScale, bool flattened)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            FinalDemoVisualHalo halo = target.GetComponent<FinalDemoVisualHalo>();
+            if (halo == null)
+            {
+                halo = target.gameObject.AddComponent<FinalDemoVisualHalo>();
+            }
+
+            halo.Configure(color, localOffset, localScale, flattened);
         }
 
         private static void AttachGlitchVisual(Transform target, bool boss)

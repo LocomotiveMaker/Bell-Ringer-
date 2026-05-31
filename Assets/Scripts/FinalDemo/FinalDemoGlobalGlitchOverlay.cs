@@ -55,7 +55,9 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            float totalIntensity = effectEnabled ? Mathf.Clamp01(baseIntensity + _stageBoost) : 0f;
+            float totalIntensity = effectEnabled && _stageBoost > 0.001f
+                ? Mathf.Clamp01(baseIntensity + _stageBoost)
+                : 0f;
             _renderer.enabled = totalIntensity > 0.001f;
             if (!_renderer.enabled)
             {

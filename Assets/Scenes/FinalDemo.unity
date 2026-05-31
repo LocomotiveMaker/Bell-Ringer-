@@ -6918,7 +6918,7 @@ MonoBehaviour:
   cameraYawReacquireStableToleranceDegrees: 8
   invertPitch: 1
   invertCameraSpacePositionX: 1
-  invertCameraSpacePositionZ: 1
+  invertCameraSpacePositionZ: 0
   cameraSpacePositionAxisScale: {x: 1.5, y: 1.25, z: 1.5}
   cameraSpacePositionOffset: {x: 0, y: 0.1, z: 0}
 --- !u!114 &351896314

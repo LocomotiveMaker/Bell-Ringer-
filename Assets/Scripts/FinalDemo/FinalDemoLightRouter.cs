@@ -107,7 +107,7 @@ namespace BellRinger.FinalDemo
         {
             if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame, padAnchorBrightnessBoost))
             {
-                ClearMappedOutput(FinalDemoFeedbackPriority.Pad, "Pad anchor out of board.");
+                ClearPadAnchor();
                 return;
             }
 
@@ -125,6 +125,49 @@ namespace BellRinger.FinalDemo
             RenderPadLogicalFrame(frame, padColor);
             HoldPriority(FinalDemoFeedbackPriority.Pad);
             _lastAction = $"Pad anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ShowPadAnchorLocal(Vector3 listenerLocalPosition, float intensity = 0.22f)
+        {
+            if (!TryMapLocalPosition(listenerLocalPosition, intensity, out BellRingerLedDotFrame frame, padAnchorBrightnessBoost))
+            {
+                ClearPadAnchor();
+                return;
+            }
+
+            if (!TryEmit(FinalDemoFeedbackPriority.Pad))
+            {
+                return;
+            }
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.24f, 0.34f, 0.42f, padColor, frame.brightnessNormalized, 1.08f);
+            }
+
+            RenderPadLogicalFrame(frame, padColor);
+            HoldPriority(FinalDemoFeedbackPriority.Pad);
+            _lastAction = $"Pad anchor local x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ClearPadAnchor()
+        {
+            bool higherPriorityHeld = Time.realtimeSinceStartup <= _holdUntilRealtime && _heldPriority > FinalDemoFeedbackPriority.Pad;
+            if (higherPriorityHeld)
+            {
+                return;
+            }
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.ClearLedDisplay();
+            }
+
+            _holdUntilRealtime = 0f;
+            ClearLogicalFrame();
+            _lastAction = "Pad anchor cleared.";
         }
 
         public void ShowBellWave(Vector3 worldPosition, float envelope01, float onset01, float intensityScale = 1f)
@@ -380,6 +423,11 @@ namespace BellRinger.FinalDemo
             }
 
             Vector3 localTargetPosition = listener.InverseTransformPoint(worldPosition);
+            return TryMapLocalPosition(localTargetPosition, intensity, out frame, brightnessBoost, maxDistanceScale);
+        }
+
+        private bool TryMapLocalPosition(Vector3 localTargetPosition, float intensity, out BellRingerLedDotFrame frame, float brightnessBoost = 1f, float maxDistanceScale = 1f)
+        {
             localTargetPosition.x *= Mathf.Max(0.1f, horizontalPositionWeight);
             float boost = finalDemoBrightnessBoost * Mathf.Max(0.1f, brightnessBoost);
 

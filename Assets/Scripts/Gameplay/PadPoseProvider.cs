@@ -22,7 +22,7 @@ namespace BellRinger.Gameplay
         [Header("Camera-Space Corrections")]
         [SerializeField] private bool invertPitch = true;
         [SerializeField] private bool invertCameraSpacePositionX = true;
-        [SerializeField] private bool invertCameraSpacePositionZ = true;
+        [SerializeField] private bool invertCameraSpacePositionZ;
         [SerializeField] private Vector3 cameraSpacePositionAxisScale = new Vector3(1.5f, 1.25f, 1.5f);
         [SerializeField] private Vector3 cameraSpacePositionOffset = new Vector3(0f, 0.1f, 0f);
 

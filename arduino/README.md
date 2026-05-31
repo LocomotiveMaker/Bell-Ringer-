@@ -3,6 +3,7 @@
 - VR/head ESP32-S3 upload target: `arduino/HeadMpu9250LedBridge/HeadMpu9250LedBridge.ino`
   - Combines WS2812B LED command handling and MPU9250 head telemetry on one COM port.
   - LED data pins use header `D6` = `GPIO9`, `D7` = `GPIO10`.
+  - LED physical mapping is a logical 16x8 board: `D6` is the left 8x8 panel and `D7` is the right 8x8 panel. Both current panels map local X/Y through a physical column mirror and top-to-bottom Y correction.
   - Do not use `HeadMpu9250Tilt.ino` for the VR/head final wiring; it is IMU-only and ignores LED commands.
 - Pad ESP32-S3 upload target: `arduino/PadMpu9250Orientation/PadMpu9250Orientation.ino`
   - Sends pad IMU pose telemetry at `230400`. Gamepad vibration is handled by Unity through the connected PC gamepad, not by this Arduino sketch.

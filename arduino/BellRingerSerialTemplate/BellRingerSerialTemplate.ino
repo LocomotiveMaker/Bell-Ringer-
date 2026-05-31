@@ -1020,7 +1020,8 @@ void setMappedPixelColor(int globalX, int globalY, uint32_t color) {
 }
 
 int mapLeftMatrixIndex(int localX, int localY) {
-  return (localX * 8) + localY;
+  int physicalColumn = 7 - localX;
+  return (physicalColumn * 8) + (7 - localY);
 }
 
 int mapRightMatrixIndex(int localX, int localY) {
