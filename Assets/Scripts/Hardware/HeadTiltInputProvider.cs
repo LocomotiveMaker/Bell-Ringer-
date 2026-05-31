@@ -11,8 +11,17 @@ namespace BellRinger.Hardware
             RollToYaw,
         }
 
+        private enum HeadAxisSource
+        {
+            PhysicalYaw,
+            PhysicalPitch,
+            PhysicalRoll,
+        }
+
         [SerializeField] private HeadImuReceiver headImuReceiver;
         [SerializeField] private YawInputMode yawInputMode = YawInputMode.PhysicalYaw;
+        [SerializeField] private HeadAxisSource yawAxisSource = HeadAxisSource.PhysicalYaw;
+        [SerializeField] private HeadAxisSource pitchAxisSource = HeadAxisSource.PhysicalRoll;
         [SerializeField] private float staleAfterSeconds = 0.25f;
         [SerializeField] private float yawDeadzoneDegrees = 1.2f;
         [SerializeField] private float pitchDeadzoneDegrees = 1.8f;
@@ -29,9 +38,12 @@ namespace BellRinger.Hardware
         [SerializeField] private float inferredStillFrameDeltaDegrees = 0.18f;
         [SerializeField] private float inferredStillMaxDegreesPerSecond = 8f;
         [SerializeField] private float stillnessPhysicalDriftToleranceDegrees = 0.7f;
-        [SerializeField] private float snapToNeutralVirtualDegrees = 0.18f;
+        [SerializeField] private float snapToNeutralVirtualDegrees = 0.3f;
+        [SerializeField] private float centerReturnSoftZoneDegrees = 4f;
+        [SerializeField, Range(0f, 1f)] private float centerReturnDamping = 0.55f;
+        [SerializeField] private bool holdPitchWhenStill;
         [SerializeField] private bool invertYaw = true;
-        [SerializeField] private bool invertPitch;
+        [SerializeField] private bool invertPitch = true;
         [SerializeField] private bool invertRollToYaw;
 
         private bool _hasNeutral;
@@ -128,9 +140,9 @@ namespace BellRinger.Hardware
                         _stillLockedRollDegrees = _physicalRollDegrees;
                         _hasStillLock = true;
                     }
-                    else if (Mathf.Abs(NormalizeSignedAngle(_physicalYawDegrees - _stillLockedYawDegrees)) > stillnessPhysicalDriftToleranceDegrees ||
-                             Mathf.Abs(NormalizeSignedAngle(_physicalPitchDegrees - _stillLockedPitchDegrees)) > stillnessPhysicalDriftToleranceDegrees ||
-                             Mathf.Abs(NormalizeSignedAngle(_physicalRollDegrees - _stillLockedRollDegrees)) > stillnessPhysicalDriftToleranceDegrees)
+                    else if (ShouldBreakStillLock(HeadAxisSource.PhysicalYaw, _physicalYawDegrees, _stillLockedYawDegrees) ||
+                             ShouldBreakStillLock(HeadAxisSource.PhysicalPitch, _physicalPitchDegrees, _stillLockedPitchDegrees) ||
+                             ShouldBreakStillLock(HeadAxisSource.PhysicalRoll, _physicalRollDegrees, _stillLockedRollDegrees))
                     {
                         isStill = false;
                     }
@@ -138,9 +150,9 @@ namespace BellRinger.Hardware
 
                 if (isStill)
                 {
-                    stableYawDegrees = _stillLockedYawDegrees;
-                    stablePitchDegrees = _stillLockedPitchDegrees;
-                    stableRollDegrees = _stillLockedRollDegrees;
+                    stableYawDegrees = ShouldHoldAxisWhenStill(HeadAxisSource.PhysicalYaw) ? _stillLockedYawDegrees : _physicalYawDegrees;
+                    stablePitchDegrees = ShouldHoldAxisWhenStill(HeadAxisSource.PhysicalPitch) ? _stillLockedPitchDegrees : _physicalPitchDegrees;
+                    stableRollDegrees = ShouldHoldAxisWhenStill(HeadAxisSource.PhysicalRoll) ? _stillLockedRollDegrees : _physicalRollDegrees;
                 }
                 else
                 {
@@ -151,32 +163,32 @@ namespace BellRinger.Hardware
                 float pitchDelta = NormalizeSignedAngle(stablePitchDegrees - _neutralPitchDegrees);
                 float rollDelta = NormalizeSignedAngle(stableRollDegrees - _neutralRollDegrees);
 
-                if (invertYaw)
-                {
-                    yawDelta = -yawDelta;
-                }
-
+                float pitchInputDelta = SelectAxisDelta(pitchAxisSource, yawDelta, pitchDelta, rollDelta);
                 if (invertPitch)
                 {
-                    pitchDelta = -pitchDelta;
+                    pitchInputDelta = -pitchInputDelta;
                 }
 
-                if (invertRollToYaw)
-                {
-                    rollDelta = -rollDelta;
-                }
-
-                targetPitch = Mathf.Clamp(ApplyDeadzone(pitchDelta, pitchDeadzoneDegrees) * pitchSensitivity, -maximumVirtualPitchDegrees, maximumVirtualPitchDegrees);
+                targetPitch = Mathf.Clamp(ApplyDeadzone(pitchInputDelta, pitchDeadzoneDegrees) * pitchSensitivity, -maximumVirtualPitchDegrees, maximumVirtualPitchDegrees);
                 if (yawInputMode == YawInputMode.PhysicalYaw)
                 {
-                    targetYaw = Mathf.Clamp(ApplyDeadzone(yawDelta, yawDeadzoneDegrees) * yawSensitivity, -maximumVirtualYawDegrees, maximumVirtualYawDegrees);
+                    float yawInputDelta = SelectAxisDelta(yawAxisSource, yawDelta, pitchDelta, rollDelta);
+                    if (invertYaw)
+                    {
+                        yawInputDelta = -yawInputDelta;
+                    }
+
+                    targetYaw = Mathf.Clamp(ApplyDeadzone(yawInputDelta, yawDeadzoneDegrees) * yawSensitivity, -maximumVirtualYawDegrees, maximumVirtualYawDegrees);
                 }
                 else
                 {
-                    targetYaw = Mathf.Clamp(ApplyDeadzone(rollDelta, rollDeadzoneDegrees) * rollToYawSensitivity, -maximumVirtualYawDegrees, maximumVirtualYawDegrees);
+                    float rollToYawDelta = invertRollToYaw ? -rollDelta : rollDelta;
+                    targetYaw = Mathf.Clamp(ApplyDeadzone(rollToYawDelta, rollDeadzoneDegrees) * rollToYawSensitivity, -maximumVirtualYawDegrees, maximumVirtualYawDegrees);
                 }
 
                 ApplyDiagonalAimBoost(ref targetYaw, ref targetPitch);
+                targetYaw = ApplyCenterReturnDamping(targetYaw, maximumVirtualYawDegrees);
+                targetPitch = ApplyCenterReturnDamping(targetPitch, maximumVirtualPitchDegrees);
             }
 
             _previousPhysicalYawDegrees = _physicalYawDegrees;
@@ -208,6 +220,66 @@ namespace BellRinger.Hardware
             }
 
             return Mathf.Sign(valueDegrees) * (absoluteValue - deadzoneDegrees);
+        }
+
+        private float SelectAxisDelta(HeadAxisSource axisSource, float yawDelta, float pitchDelta, float rollDelta)
+        {
+            return axisSource switch
+            {
+                HeadAxisSource.PhysicalPitch => pitchDelta,
+                HeadAxisSource.PhysicalRoll => rollDelta,
+                _ => yawDelta,
+            };
+        }
+
+        private bool ShouldHoldAxisWhenStill(HeadAxisSource axisSource)
+        {
+            if (!AxisAffectsOutput(axisSource))
+            {
+                return false;
+            }
+
+            return holdPitchWhenStill || pitchAxisSource != axisSource;
+        }
+
+        private bool ShouldBreakStillLock(HeadAxisSource axisSource, float physicalDegrees, float lockedDegrees)
+        {
+            return ShouldHoldAxisWhenStill(axisSource) &&
+                   Mathf.Abs(NormalizeSignedAngle(physicalDegrees - lockedDegrees)) > stillnessPhysicalDriftToleranceDegrees;
+        }
+
+        private bool AxisAffectsOutput(HeadAxisSource axisSource)
+        {
+            if (pitchAxisSource == axisSource)
+            {
+                return true;
+            }
+
+            if (yawInputMode == YawInputMode.PhysicalYaw)
+            {
+                return yawAxisSource == axisSource;
+            }
+
+            return axisSource == HeadAxisSource.PhysicalRoll;
+        }
+
+        private float ApplyCenterReturnDamping(float valueDegrees, float maximumDegrees)
+        {
+            float softZone = Mathf.Max(snapToNeutralVirtualDegrees, centerReturnSoftZoneDegrees);
+            float absoluteValue = Mathf.Abs(valueDegrees);
+            if (absoluteValue <= snapToNeutralVirtualDegrees)
+            {
+                return 0f;
+            }
+
+            if (absoluteValue >= softZone)
+            {
+                return valueDegrees;
+            }
+
+            float t = absoluteValue / softZone;
+            float damping = Mathf.Lerp(Mathf.Clamp01(centerReturnDamping), 1f, t * t);
+            return Mathf.Clamp(valueDegrees * damping, -maximumDegrees, maximumDegrees);
         }
 
         private static float NormalizeSignedAngle(float degrees)

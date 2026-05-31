@@ -5955,7 +5955,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   viewReference: {fileID: 203800292}
   padPoseProvider: {fileID: 351896313}
-  baseViewLocalPosition: {x: 0, y: -0.48, z: 0.92}
+  baseViewLocalPosition: {x: 0, y: -0.48, z: 0.62}
   cameraSpaceScale: {x: 1.15, y: 0.9, z: 0.62}
   minViewLocalPosition: {x: -0.95, y: -0.78, z: 0.55}
   maxViewLocalPosition: {x: 0.95, y: -0.18, z: 1.38}
@@ -6183,9 +6183,9 @@ MonoBehaviour:
   inferredStillFrameDeltaDegrees: 0.18
   inferredStillMaxDegreesPerSecond: 8
   stillnessPhysicalDriftToleranceDegrees: 0.7
-  snapToNeutralVirtualDegrees: 0.18
+  snapToNeutralVirtualDegrees: 0.3
   invertYaw: 1
-  invertPitch: 0
+  invertPitch: 1
   invertRollToYaw: 0
 --- !u!114 &203800290
 MonoBehaviour:

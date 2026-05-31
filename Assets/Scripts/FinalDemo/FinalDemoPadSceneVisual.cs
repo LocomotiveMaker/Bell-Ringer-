@@ -8,7 +8,7 @@ namespace BellRinger.FinalDemo
     {
         [SerializeField] private Transform viewReference;
         [SerializeField] private PadPoseProvider padPoseProvider;
-        [SerializeField] private Vector3 baseViewLocalPosition = new Vector3(0f, -0.48f, 0.92f);
+        [SerializeField] private Vector3 baseViewLocalPosition = new Vector3(0f, -0.48f, 0.62f);
         [SerializeField] private Vector3 cameraSpaceScale = new Vector3(1.15f, 0.9f, 0.62f);
         [SerializeField] private float referenceForwardMeters = 1.05f;
         [SerializeField] private float verticalLiftMultiplier = 2.15f;
@@ -16,7 +16,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float depthScaleMultiplier = 0.18f;
         [SerializeField] private float nearCameraSpaceZ = -0.25f;
         [SerializeField] private float farCameraSpaceZ = -1.15f;
-        [SerializeField] private Vector2 depthLocalZRange = new Vector2(0.48f, 1.95f);
+        [SerializeField] private Vector2 depthLocalZRange = new Vector2(0.34f, 0.82f);
         [SerializeField] private Vector2 depthScaleRange = new Vector2(1.2f, 0.82f);
         [SerializeField] private Vector3 minViewLocalPosition = new Vector3(-0.95f, -0.78f, 0.55f);
         [SerializeField] private Vector3 maxViewLocalPosition = new Vector3(0.95f, -0.18f, 1.38f);
@@ -67,7 +67,8 @@ namespace BellRinger.FinalDemo
             if (hasFreshPose)
             {
                 Vector3 cameraSpace = padPoseProvider.CameraSpacePosition;
-                float depth01 = ResolveDepth01(cameraSpace.z);
+                // FinalDemo should present pad depth with the user's perceived near/far direction.
+                float depth01 = 1f - ResolveDepth01(cameraSpace.z);
                 float depthPosition01 = ApplyDepthStrength(depth01, depthVisualMultiplier, 2.35f);
                 float depthScale01 = ApplyDepthStrength(depth01, depthScaleMultiplier, 0.18f);
                 targetLocal += new Vector3(
