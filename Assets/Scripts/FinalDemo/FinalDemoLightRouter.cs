@@ -11,6 +11,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private HardwareBridge hardwareBridge;
         [SerializeField] private bool outputToHardware = true;
         [SerializeField] private Color bellColor = new Color(0.08f, 1f, 0.15f);
+        [SerializeField] private Color padColor = new Color(1f, 0.54f, 0.05f);
         [SerializeField] private Color rainColor = new Color(0.02f, 0.08f, 1f);
         [SerializeField] private Color tinnitusColor = new Color(0.55f, 0.08f, 1f);
         [SerializeField] private Color wallNoiseColor = new Color(0.06f, 0.78f, 0.9f);
@@ -20,6 +21,7 @@ namespace BellRinger.FinalDemo
         [Header("LED / Final Demo Output")]
         [SerializeField, Range(0.25f, 3f)] private float finalDemoBrightnessBoost = 1.45f;
         [SerializeField, Range(0.25f, 3f)] private float bellBrightnessBoost = 0.87f;
+        [SerializeField, Range(0.05f, 1f)] private float padAnchorBrightnessBoost = 0.36f;
         [SerializeField, Range(0.25f, 3f)] private float bellWaveBrightnessBoost = 0.43f;
         [SerializeField, Range(0.05f, 1f)] private float bellWaveMaximumBrightness = 0.21f;
         [SerializeField, Range(0.05f, 1f)] private float tinnitusLightScale = 0.3f;
@@ -99,6 +101,30 @@ namespace BellRinger.FinalDemo
             RenderBellLogicalFrame(frame, false, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
+        }
+
+        public void ShowPadAnchor(Vector3 worldPosition, float intensity = 0.22f)
+        {
+            if (!TryMapWorldPosition(worldPosition, intensity, out BellRingerLedDotFrame frame, padAnchorBrightnessBoost))
+            {
+                ClearMappedOutput(FinalDemoFeedbackPriority.Pad, "Pad anchor out of board.");
+                return;
+            }
+
+            if (!TryEmit(FinalDemoFeedbackPriority.Pad))
+            {
+                return;
+            }
+
+            HardwareBridge bridge = ResolveBridge();
+            if (outputToHardware && bridge != null)
+            {
+                bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.22f, 0.34f, 0.46f, padColor, frame.brightnessNormalized, 1.05f);
+            }
+
+            RenderPadLogicalFrame(frame, padColor);
+            HoldPriority(FinalDemoFeedbackPriority.Pad);
+            _lastAction = $"Pad anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
         }
 
         public void ShowBellWave(Vector3 worldPosition, float envelope01, float onset01, float intensityScale = 1f)
@@ -454,6 +480,14 @@ namespace BellRinger.FinalDemo
                     AddPixel(x, y, color, brightness * alpha);
                 }
             }
+        }
+
+        private void RenderPadLogicalFrame(BellRingerLedDotFrame frame, Color color)
+        {
+            ClearLogicalFrame();
+            SetPixel(frame.x, frame.y, color, frame.brightnessNormalized);
+            AddPixel(frame.x - 1, frame.y, color, frame.brightnessNormalized * 0.18f);
+            AddPixel(frame.x + 1, frame.y, color, frame.brightnessNormalized * 0.18f);
         }
 
         private void RenderRainLogicalFrame(float intensity)

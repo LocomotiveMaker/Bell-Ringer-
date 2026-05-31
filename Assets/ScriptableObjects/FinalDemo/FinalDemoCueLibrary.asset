@@ -619,3 +619,51 @@ MonoBehaviour:
     lightBinding: 0
     hapticBinding: 0
     stopOnStageExit: 1
+  - id: 38
+    operatorLabel: Narration bell escaped
+    audioClip: {fileID: 8300000, guid: e9a41f7129cc263499b284ed3a40f3da, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 39
+    operatorLabel: Narration noise still exists
+    audioClip: {fileID: 8300000, guid: 1f2d25d29163ae549ab9c68228b19ecf, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 40
+    operatorLabel: Narration boss ahead
+    audioClip: {fileID: 8300000, guid: 0ff91e1d343a19b4796e9fd6ea321216, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1

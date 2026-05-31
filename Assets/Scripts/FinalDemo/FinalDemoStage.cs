@@ -69,6 +69,9 @@ namespace BellRinger.FinalDemo
         NarrApproachTinnitus = 35,
         NarrFindSoundOrigin = 36,
         OpeningAmbienceBed = 37,
+        NarrBellEscaped = 38,
+        NarrNoiseStillExists = 39,
+        NarrBossAhead = 40,
     }
 
     public enum FinalDemoAudioBus
@@ -110,6 +113,7 @@ namespace BellRinger.FinalDemo
 
     public enum FinalDemoFeedbackPriority
     {
+        Pad = 5,
         Rain = 10,
         WallNoise = 20,
         Tinnitus = 30,

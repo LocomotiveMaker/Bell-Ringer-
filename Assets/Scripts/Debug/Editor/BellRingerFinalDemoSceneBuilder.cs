@@ -173,18 +173,10 @@ namespace BellRinger.Debug.Editor
         private static void CreateWorldEnvironment(Transform root, out GameObject darkSky, out GameObject clearSky)
         {
             GameObject environment = CreateRoot(root, "Environment");
-            CreatePrimitive(environment.transform, "Ground_Grey_Authoring", PrimitiveType.Cube, new Vector3(0f, -0.04f, 4f), new Vector3(24f, 0.08f, 24f), new Color(0.34f, 0.36f, 0.38f));
-            CreatePrimitive(environment.transform, "BackWall_White_Authoring", PrimitiveType.Cube, new Vector3(0f, 2.15f, 9f), new Vector3(18f, 4.3f, 0.08f), new Color(0.86f, 0.90f, 0.93f));
-            CreatePrimitive(environment.transform, "LeftSoftWall_Authoring", PrimitiveType.Cube, new Vector3(-9f, 1.8f, 3.8f), new Vector3(0.08f, 3.6f, 10f), new Color(0.43f, 0.46f, 0.48f));
-            CreatePrimitive(environment.transform, "RightSoftWall_Authoring", PrimitiveType.Cube, new Vector3(9f, 1.8f, 3.8f), new Vector3(0.08f, 3.6f, 10f), new Color(0.43f, 0.46f, 0.48f));
+            environment.AddComponent<FinalDemoWorldFloorSurface>();
 
-            darkSky = CreateRoot(environment.transform, "DarkSkyAndFog_Authoring");
-            CreatePrimitive(darkSky.transform, "DarkSkyPlane", PrimitiveType.Cube, new Vector3(0f, 5.2f, 4.5f), new Vector3(22f, 0.04f, 20f), new Color(0.05f, 0.06f, 0.07f));
-            CreatePrimitive(darkSky.transform, "DistantFogBand", PrimitiveType.Cube, new Vector3(0f, 1.35f, 6.2f), new Vector3(14f, 1.4f, 0.08f), new Color(0.25f, 0.28f, 0.30f));
-
-            clearSky = CreateRoot(environment.transform, "ClearBlueSky_Forest_Authoring");
-            CreatePrimitive(clearSky.transform, "BlueSkyPlane", PrimitiveType.Cube, new Vector3(0f, 5.3f, 4.5f), new Vector3(22f, 0.04f, 20f), new Color(0.33f, 0.62f, 0.86f));
-            CreatePrimitive(clearSky.transform, "SoftHorizon", PrimitiveType.Cube, new Vector3(0f, 2.4f, 8.6f), new Vector3(16f, 1.5f, 0.08f), new Color(0.64f, 0.78f, 0.84f));
+            darkSky = null;
+            clearSky = null;
         }
 
         private static GameObject CreatePadVisual(Transform root, Transform viewReference, PadPoseProvider padPoseProvider)
@@ -268,13 +260,7 @@ namespace BellRinger.Debug.Editor
         {
             GameObject volume = CreateRoot(root, "RainVolume_Authoring");
             volume.transform.position = new Vector3(0f, 0f, 3.2f);
-            CreatePrimitive(volume.transform, "FinalDemo_RainFloor", PrimitiveType.Cube, new Vector3(0f, 0.01f, 0f), new Vector3(12f, 0.02f, 8f), new Color(0.12f, 0.15f, 0.18f));
-            CreatePrimitive(volume.transform, "RainGroundRippleGuide", PrimitiveType.Cylinder, new Vector3(-1.3f, 0.035f, -0.8f), new Vector3(0.7f, 0.006f, 0.7f), new Color(0.34f, 0.62f, 0.82f));
-            CreatePrimitive(volume.transform, "RainGroundRippleGuide_B", PrimitiveType.Cylinder, new Vector3(1.6f, 0.035f, 0.5f), new Vector3(0.95f, 0.006f, 0.95f), new Color(0.34f, 0.62f, 0.82f));
-            CreatePrimitive(volume.transform, "RainSkySheet", PrimitiveType.Cube, new Vector3(0f, 3.2f, 0f), new Vector3(10f, 0.04f, 7f), new Color(0.18f, 0.28f, 0.36f));
-            CreatePrimitive(volume.transform, "RainFogVolume", PrimitiveType.Cube, new Vector3(0f, 1.35f, 0.8f), new Vector3(10f, 1.5f, 5f), new Color(0.24f, 0.28f, 0.31f));
-            CreateRainParticleSystem(volume.transform, "RainSkyParticles", new Vector3(0f, 3.4f, 0f), 550f, 1.15f, new Vector3(9.5f, 0.1f, 6.5f));
-            CreateRippleParticleSystem(volume.transform, "RainGroundRippleParticles", new Vector3(0f, 0.06f, 0f));
+            volume.AddComponent<FinalDemoWorldRainEnvironment>();
         }
 
         private static void CreateTinnitusAuthoring(Transform root)

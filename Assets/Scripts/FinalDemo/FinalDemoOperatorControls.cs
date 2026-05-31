@@ -160,6 +160,13 @@ namespace BellRinger.FinalDemo
             }
             GUILayout.EndHorizontal();
 
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button($"Global Glitch: {(director.GlobalGlitchEnabled ? "On" : "Off")}"))
+            {
+                director.ToggleGlobalGlitch();
+            }
+            GUILayout.EndHorizontal();
+
             if (GUILayout.Button("Stop All Outputs"))
             {
                 director.StopAllOutputs();
@@ -237,6 +244,11 @@ namespace BellRinger.FinalDemo
             if (GUILayout.Button($"Assist: {director.AssistLevel}"))
             {
                 director.CycleAssistLevel();
+            }
+
+            if (GUILayout.Button($"Glitch: {(director.GlobalGlitchEnabled ? "On" : "Off")}"))
+            {
+                director.ToggleGlobalGlitch();
             }
 
             if (GUILayout.Button("Stop Outputs"))

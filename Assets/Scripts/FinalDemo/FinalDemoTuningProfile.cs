@@ -97,7 +97,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float rainIntensityRampSeconds = 3f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
-        [SerializeField] private float rainFocusBellNarrationDelaySeconds = 8f;
+        [SerializeField] private float rainFocusBellNarrationDelaySeconds = 3f;
         [SerializeField, Range(0f, 1f)] private float rainWindTextureMaxIntensity = 0.34f;
         [SerializeField, Range(0f, 1f)] private float rainAssistVolumeFloor = 0.24f;
         [SerializeField] private float rainCloseDropIntervalSeconds = 2.2f;

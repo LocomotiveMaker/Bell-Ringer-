@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using BellRinger.Audio;
 using UnityEngine;
@@ -216,6 +217,34 @@ namespace BellRinger.FinalDemo
             _loops.Clear();
             _recentOneShot.valid = false;
             _lastAction = "Stopped all audio cues.";
+        }
+
+        public void StopAllCuesExcept(params FinalDemoCueId[] preservedLoopIds)
+        {
+            HashSet<FinalDemoCueId> preserved = new HashSet<FinalDemoCueId>(preservedLoopIds ?? Array.Empty<FinalDemoCueId>());
+            List<FinalDemoCueId> removeIds = new List<FinalDemoCueId>();
+            foreach (KeyValuePair<FinalDemoCueId, ActiveLoop> pair in _loops)
+            {
+                if (preserved.Contains(pair.Key))
+                {
+                    continue;
+                }
+
+                if (pair.Value.source != null)
+                {
+                    Destroy(pair.Value.source.gameObject);
+                }
+
+                removeIds.Add(pair.Key);
+            }
+
+            foreach (FinalDemoCueId cueId in removeIds)
+            {
+                _loops.Remove(cueId);
+            }
+
+            _recentOneShot.valid = false;
+            _lastAction = preserved.Count > 0 ? "Stopped stage cues and preserved ambience." : "Stopped all audio cues.";
         }
 
         public string BuildStatusText()

@@ -2,6 +2,7 @@ using BellRinger.FinalDemo;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace BellRinger.Debug.Editor
 {
@@ -30,6 +31,9 @@ namespace BellRinger.Debug.Editor
             ApplyTuningProfileDefaults();
             ApplyRootGuide(root);
             ApplyModelPresenter(root);
+            ApplyEnvironmentRuntimeObjects(root);
+            ApplyGlitchVisuals(root);
+            RemoveOldAuthoringEnvironmentObjects(root.scene);
 
             EditorSceneManager.MarkSceneDirty(root.scene);
             EditorSceneManager.SaveScene(root.scene, ScenePath);
@@ -52,6 +56,7 @@ namespace BellRinger.Debug.Editor
             SetBool(serialized, "bellFollowProgressBlockerEnabled", true);
             SetFloat(serialized, "bellFollowBlockerMarginMeters", 0.35f);
             SetFloat(serialized, "rainIntensityRampSeconds", 3f);
+            SetFloat(serialized, "rainFocusBellNarrationDelaySeconds", 3f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
         }
@@ -96,6 +101,118 @@ namespace BellRinger.Debug.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
             presenter.ApplyModelVisuals();
             EditorUtility.SetDirty(presenter);
+        }
+
+        private static void ApplyEnvironmentRuntimeObjects(GameObject root)
+        {
+            FinalDemoSceneReferences sceneReferences = root.GetComponent<FinalDemoSceneReferences>();
+            Transform worldRoot = sceneReferences != null && sceneReferences.WorldRoot != null ? sceneReferences.WorldRoot : root.transform;
+            Transform rainRoot = sceneReferences != null && sceneReferences.RainRoot != null ? sceneReferences.RainRoot : worldRoot;
+            Transform forestRoot = sceneReferences != null && sceneReferences.ForestRoot != null ? sceneReferences.ForestRoot : worldRoot;
+
+            EnsureComponentChild<FinalDemoWorldRainEnvironment>(rainRoot, "FinalDemoWorldRainEnvironment");
+            EnsureComponentChild<FinalDemoForestEnvironment>(forestRoot, "FinalDemoForestEnvironment");
+            EnsureComponentChild<FinalDemoWorldFloorSurface>(worldRoot, "FinalDemoWorldFloorSurface");
+        }
+
+        private static void ApplyGlitchVisuals(GameObject root)
+        {
+            FinalDemoSceneReferences sceneReferences = root.GetComponent<FinalDemoSceneReferences>();
+            AttachGlitch(sceneReferences != null ? sceneReferences.TinnitusOneVisual : null, false);
+            AttachGlitch(sceneReferences != null ? sceneReferences.TinnitusTwoVisual : null, false);
+            AttachGlitch(sceneReferences != null ? sceneReferences.BossVisual : null, true);
+        }
+
+        private static void AttachGlitch(Transform target, bool boss)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            FinalDemoGlitchVisual glitch = target.GetComponent<FinalDemoGlitchVisual>();
+            if (glitch == null)
+            {
+                glitch = target.gameObject.AddComponent<FinalDemoGlitchVisual>();
+            }
+
+            glitch.Configure(boss);
+            EditorUtility.SetDirty(target.gameObject);
+        }
+
+        private static void RemoveOldAuthoringEnvironmentObjects(Scene scene)
+        {
+            string[] names =
+            {
+                "RainSkySheet",
+                "RainFogVolume",
+                "RainSkyParticles",
+                "RainGroundRippleParticles",
+                "ClearBlueSky_Forest_Authoring",
+                "BackWall_White_Authoring",
+                "LeftSoftWall_Authoring",
+                "RightSoftWall_Authoring",
+                "Ground_Grey_Authoring",
+                "DistantFogBand",
+                "DarkSkyPlane",
+            };
+
+            foreach (string objectName in names)
+            {
+                GameObject target = FindSceneObject(scene, objectName);
+                if (target != null)
+                {
+                    Object.DestroyImmediate(target);
+                }
+            }
+        }
+
+        private static T EnsureComponentChild<T>(Transform parent, string objectName) where T : Component
+        {
+            Transform existing = parent.Find(objectName);
+            GameObject target = existing != null ? existing.gameObject : new GameObject(objectName);
+            target.transform.SetParent(parent, false);
+            T component = target.GetComponent<T>();
+            if (component == null)
+            {
+                component = target.AddComponent<T>();
+            }
+
+            EditorUtility.SetDirty(target);
+            return component;
+        }
+
+        private static GameObject FindSceneObject(Scene scene, string objectName)
+        {
+            foreach (GameObject rootObject in scene.GetRootGameObjects())
+            {
+                Transform found = FindChildRecursive(rootObject.transform, objectName);
+                if (found != null)
+                {
+                    return found.gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindChildRecursive(Transform root, string objectName)
+        {
+            if (root.name == objectName)
+            {
+                return root;
+            }
+
+            for (int index = 0; index < root.childCount; index++)
+            {
+                Transform found = FindChildRecursive(root.GetChild(index), objectName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
         }
 
         private static void SetBool(SerializedObject serialized, string propertyName, bool value)

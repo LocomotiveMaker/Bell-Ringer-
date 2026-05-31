@@ -50,6 +50,7 @@ namespace BellRinger.FinalDemo
         private FinalDemoStage _currentStage = FinalDemoStage.Preflight;
         private float _stageStartedAtRealtime;
         private bool _playerMovementLocked;
+        private Vector3 _lockedPlayerWorldPosition;
         private bool _hasStarted;
         private bool _stageOneShotPlayed;
         private bool _stageNarrationPlayed;
@@ -94,6 +95,8 @@ namespace BellRinger.FinalDemo
         private float _nextTinnitusHapticAtRealtime;
         private float _currentTinnitusGazeAngleDegrees = 180f;
         private bool _generalTinnitusPoseLocked;
+        private bool _hasGeneralTinnitusStageWorldPosition;
+        private Vector3 _generalTinnitusStageWorldPosition;
         private float _currentGeneralTinnitusDistance = float.PositiveInfinity;
         private bool _bossWasInsideTolerance;
         private int _bossPatternFailureCount;
@@ -105,6 +108,11 @@ namespace BellRinger.FinalDemo
         private int _currentBossPatternIndex = -1;
         private float _nextForestBellAtRealtime;
         private float _currentForestDistance = float.PositiveInfinity;
+        private FinalDemoWorldRainEnvironment _worldRainEnvironment;
+        private FinalDemoForestEnvironment _forestEnvironment;
+        private FinalDemoWorldFloorSurface _worldFloorSurface;
+        private FinalDemoGlobalGlitchOverlay _globalGlitchOverlay;
+        private float _nextPadAnchorLightAtRealtime;
         private readonly Queue<NarrationRequest> _narrationQueue = new Queue<NarrationRequest>();
         private readonly HashSet<FinalDemoCueId> _queuedNarrationCueIds = new HashSet<FinalDemoCueId>();
         private readonly HashSet<FinalDemoCueId> _playedNarrationCueIds = new HashSet<FinalDemoCueId>();
@@ -118,6 +126,7 @@ namespace BellRinger.FinalDemo
             public FinalDemoStage stage;
             public bool requireCurrentStage;
             public bool oncePerRun;
+            public float notBeforeRealtime;
         }
 
         public FinalDemoStage CurrentStage => _currentStage;
@@ -128,6 +137,7 @@ namespace BellRinger.FinalDemo
         public bool IsComplete => _currentStage == FinalDemoStage.Complete;
         public FinalDemoAssistLevel AssistLevel { get; private set; } = FinalDemoAssistLevel.Gentle;
         public bool HrtfPreviewEnabled { get; private set; } = true;
+        public bool GlobalGlitchEnabled => _globalGlitchOverlay != null && _globalGlitchOverlay.EffectEnabled;
         public FinalDemoTuningProfile TuningProfile => tuningProfile;
         public FinalDemoCueLibrary CueLibrary => cueLibrary;
         public FinalDemoSceneReferences SceneReferences => sceneReferences;
@@ -180,12 +190,18 @@ namespace BellRinger.FinalDemo
 
         private void Update()
         {
+            EnforceLockedPlayerPosition();
+
             if (!_hasStarted && _currentStage != FinalDemoStage.Preflight)
             {
                 _hasStarted = true;
             }
 
             TickCurrentStage();
+            TickPersistentAmbience();
+            TickEnvironmentPresentation();
+            TickGlobalGlitchOverlay();
+            TickPadAnchorLight();
             ApplyBellFollowProgressBlocker();
             TickNarrationQueue();
 
@@ -257,6 +273,11 @@ namespace BellRinger.FinalDemo
         public void SetPlayerMovementLocked(bool locked)
         {
             _playerMovementLocked = locked;
+            if (locked && playerRig != null)
+            {
+                _lockedPlayerWorldPosition = playerRig.position;
+            }
+
             movementController ??= playerRig != null ? playerRig.GetComponent<BellRingerSimpleMoveLookController>() : FindFirstObjectByType<BellRingerSimpleMoveLookController>();
             if (movementController != null)
             {
@@ -280,6 +301,17 @@ namespace BellRinger.FinalDemo
             audioRouter ??= FindFirstObjectByType<FinalDemoAudioRouter>();
             audioRouter?.SetSpatializerEnabled(HrtfPreviewEnabled);
             _tinnitusAudioController?.SetBinauralPreview(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
+        }
+
+        public void ToggleGlobalGlitch()
+        {
+            EnsureGlobalGlitchOverlay();
+            if (_globalGlitchOverlay == null)
+            {
+                return;
+            }
+
+            _globalGlitchOverlay.SetEffectEnabled(!_globalGlitchOverlay.EffectEnabled);
         }
 
         public void RecenterHead()
@@ -313,6 +345,11 @@ namespace BellRinger.FinalDemo
 
         private void QueueNarration(FinalDemoCueId cueId, FinalDemoStage stage, bool requireCurrentStage = true, bool oncePerRun = true)
         {
+            QueueNarrationDelayed(cueId, stage, 0f, requireCurrentStage, oncePerRun);
+        }
+
+        private void QueueNarrationDelayed(FinalDemoCueId cueId, FinalDemoStage stage, float delaySeconds, bool requireCurrentStage = true, bool oncePerRun = true)
+        {
             if (cueId == FinalDemoCueId.None)
             {
                 return;
@@ -334,6 +371,7 @@ namespace BellRinger.FinalDemo
                 stage = stage,
                 requireCurrentStage = requireCurrentStage,
                 oncePerRun = oncePerRun,
+                notBeforeRealtime = Time.realtimeSinceStartup + Mathf.Max(0f, delaySeconds),
             });
             _queuedNarrationCueIds.Add(cueId);
         }
@@ -358,7 +396,13 @@ namespace BellRinger.FinalDemo
 
             while (_narrationQueue.Count > 0)
             {
-                NarrationRequest request = _narrationQueue.Dequeue();
+                NarrationRequest request = _narrationQueue.Peek();
+                if (Time.realtimeSinceStartup < request.notBeforeRealtime)
+                {
+                    return;
+                }
+
+                _narrationQueue.Dequeue();
                 _queuedNarrationCueIds.Remove(request.cueId);
                 if (!IsNarrationRequestStillValid(request))
                 {
@@ -486,7 +530,9 @@ namespace BellRinger.FinalDemo
         {
             if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
             {
-                worldPosition = ResolveGeneralTinnitusWorldPosition(_currentStage);
+                worldPosition = _hasGeneralTinnitusStageWorldPosition
+                    ? _generalTinnitusStageWorldPosition
+                    : ResolveGeneralTinnitusWorldPosition(_currentStage);
                 return true;
             }
 
@@ -499,7 +545,17 @@ namespace BellRinger.FinalDemo
             Vector3 previousBellPosition = GetBellPlaceholderPosition();
             _currentStage = nextStage;
             _stageStartedAtRealtime = Time.realtimeSinceStartup;
-            audioRouter?.StopAllCues();
+            if (audioRouter != null)
+            {
+                if (ShouldKeepOpeningAmbience(nextStage))
+                {
+                    audioRouter.StopAllCuesExcept(FinalDemoCueId.OpeningAmbienceBed);
+                }
+                else
+                {
+                    audioRouter.StopAllCues();
+                }
+            }
             hapticRouter?.StopAllHaptics();
             lightRouter?.Clear();
             StopProceduralTinnitus();
@@ -527,6 +583,7 @@ namespace BellRinger.FinalDemo
             _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup;
             _currentTinnitusGazeAngleDegrees = 180f;
             _generalTinnitusPoseLocked = false;
+            _hasGeneralTinnitusStageWorldPosition = false;
             _currentGeneralTinnitusDistance = float.PositiveInfinity;
             _bossWasInsideTolerance = false;
             _bossPatternFailureCount = 0;
@@ -540,6 +597,7 @@ namespace BellRinger.FinalDemo
             _currentForestDistance = float.PositiveInfinity;
             _nextBellCallAtRealtime = Time.realtimeSinceStartup;
             _nextBellOrbitAnchorAtRealtime = Time.realtimeSinceStartup;
+            _nextPadAnchorLightAtRealtime = Time.realtimeSinceStartup;
             _bellOrbitAnchorSuppressedUntilRealtime = 0f;
             _bellLightActiveUntilRealtime = 0f;
             _bellOrbitMovingToFirstFollow = false;
@@ -553,6 +611,8 @@ namespace BellRinger.FinalDemo
             }
             else if (nextStage == FinalDemoStage.BellFollowRain)
             {
+                BeginRainLayer();
+                QueueNarrationDelayed(FinalDemoCueId.NarrBellEscaped, FinalDemoStage.BellFollowRain, 2f);
                 BeginBellFollowRelocation(previousBellPosition, ResolveBellFollowTargetPosition(true));
             }
             else if (nextStage == FinalDemoStage.BellGaze)
@@ -577,6 +637,7 @@ namespace BellRinger.FinalDemo
             }
             else if (nextStage == FinalDemoStage.ForestEnding)
             {
+                audioRouter?.StopLoop(FinalDemoCueId.OpeningAmbienceBed);
                 BeginForestEnding();
             }
         }
@@ -644,6 +705,118 @@ namespace BellRinger.FinalDemo
             {
                 ForceNextStage();
             }
+        }
+
+        private void LateUpdate()
+        {
+            EnforceLockedPlayerPosition();
+        }
+
+        private void TickPersistentAmbience()
+        {
+            if (tuningProfile == null || audioRouter == null)
+            {
+                return;
+            }
+
+            if (ShouldKeepOpeningAmbience(_currentStage))
+            {
+                float scale = tuningProfile.OpeningAmbienceVolume;
+                if (_currentStage == FinalDemoStage.OpeningAmbience)
+                {
+                    float fade = Mathf.Clamp01(StageElapsedSeconds / tuningProfile.OpeningAmbienceFadeSeconds);
+                    scale *= fade;
+                }
+
+                Vector3 position = ResolvePlayerRelativePosition(Vector3.forward * 2f);
+                audioRouter.StartLoop(FinalDemoCueId.OpeningAmbienceBed, position, scale);
+                audioRouter.SetLoopVolumeScale(FinalDemoCueId.OpeningAmbienceBed, scale);
+                return;
+            }
+
+            audioRouter.StopLoop(FinalDemoCueId.OpeningAmbienceBed);
+        }
+
+        private void TickEnvironmentPresentation()
+        {
+            if (_worldRainEnvironment != null)
+            {
+                bool rainVisible = _currentStage == FinalDemoStage.BellFollowRain || _currentRainIntensity > 0.01f;
+                _worldRainEnvironment.Apply(_currentRainIntensity, playerRig, rainVisible);
+            }
+
+            if (_forestEnvironment != null)
+            {
+                bool forestVisible = _currentStage == FinalDemoStage.ForestEnding || _currentStage == FinalDemoStage.Complete;
+                Vector3 center = tuningProfile != null ? ResolveForestBellPosition() : ResolvePlayerRelativePosition(Vector3.forward * 3f);
+                float fade = forestVisible && tuningProfile != null
+                    ? Mathf.Clamp01(StageElapsedSeconds / tuningProfile.ForestBedFadeSeconds)
+                    : 0f;
+                _forestEnvironment.Apply(center, fade, forestVisible);
+            }
+
+            if (_worldFloorSurface != null)
+            {
+                bool forestVisible = _currentStage == FinalDemoStage.ForestEnding || _currentStage == FinalDemoStage.Complete;
+                _worldFloorSurface.Apply(_currentRainIntensity, forestVisible);
+            }
+        }
+
+        private void TickPadAnchorLight()
+        {
+            if (lightRouter == null || Time.realtimeSinceStartup < _nextPadAnchorLightAtRealtime)
+            {
+                return;
+            }
+
+            Transform pad = sceneReferences != null ? sceneReferences.PadVisual : null;
+            if (pad == null)
+            {
+                return;
+            }
+
+            lightRouter.ShowPadAnchor(pad.position, 0.22f);
+            _nextPadAnchorLightAtRealtime = Time.realtimeSinceStartup + 0.24f;
+        }
+
+        private void TickGlobalGlitchOverlay()
+        {
+            if (_globalGlitchOverlay == null)
+            {
+                return;
+            }
+
+            bool bossStage = _currentStage == FinalDemoStage.BossApproach ||
+                             _currentStage == FinalDemoStage.BossPatternOne ||
+                             _currentStage == FinalDemoStage.BossPatternTwo ||
+                             _currentStage == FinalDemoStage.BossPatternThree ||
+                             _currentStage == FinalDemoStage.BossDefeat;
+
+            float stageBoost = 0f;
+            if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
+            {
+                stageBoost = Mathf.Lerp(0.2f, 0.04f, GeneralTinnitusProgress01);
+            }
+            else if (bossStage)
+            {
+                stageBoost = _currentStage == FinalDemoStage.BossDefeat ? 0.12f : 0.26f;
+            }
+            else if (_currentStage == FinalDemoStage.BellFollowRain)
+            {
+                stageBoost = _currentRainIntensity * 0.04f;
+            }
+
+            _globalGlitchOverlay.ApplyRuntimeState(stageBoost, bossStage);
+        }
+
+        private void EnforceLockedPlayerPosition()
+        {
+            if (!_playerMovementLocked || playerRig == null)
+            {
+                return;
+            }
+
+            playerRig.position = new Vector3(_lockedPlayerWorldPosition.x, playerRig.position.y, _lockedPlayerWorldPosition.z);
         }
 
         private float ResolveCurrentObjectiveProgress01()
@@ -829,6 +1002,11 @@ namespace BellRinger.FinalDemo
 
             if (_bellFollowRelocating)
             {
+                if (rainStage)
+                {
+                    TickRainLayer();
+                }
+
                 TickBellFollowRelocation();
                 return;
             }
@@ -885,15 +1063,7 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            if (!_rainLoopStarted && ResolvePlanarDistance(playerRig.position, tuningProfile.RainZoneCenter) <= tuningProfile.RainZoneRadius)
-            {
-                _rainLoopStarted = true;
-                _rainStartedAtRealtime = Time.realtimeSinceStartup;
-                _nextRainDropAtRealtime = Time.realtimeSinceStartup;
-                _nextRainLightAtRealtime = Time.realtimeSinceStartup;
-                audioRouter?.StartLoop(FinalDemoCueId.RainLightBed, playerRig.position, 0f);
-                audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
-            }
+            BeginRainLayer();
 
             if (!_rainLoopStarted)
             {
@@ -934,6 +1104,21 @@ namespace BellRinger.FinalDemo
                 audioRouter?.PlayOneShot(FinalDemoCueId.RainCloseDrops, dropPosition, _currentRainIntensity);
                 _nextRainDropAtRealtime = Time.realtimeSinceStartup + tuningProfile.RainCloseDropIntervalSeconds;
             }
+        }
+
+        private void BeginRainLayer()
+        {
+            if (_rainLoopStarted || playerRig == null)
+            {
+                return;
+            }
+
+            _rainLoopStarted = true;
+            _rainStartedAtRealtime = Time.realtimeSinceStartup;
+            _nextRainDropAtRealtime = Time.realtimeSinceStartup;
+            _nextRainLightAtRealtime = Time.realtimeSinceStartup;
+            audioRouter?.StartLoop(FinalDemoCueId.RainLightBed, playerRig.position, 0f);
+            audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
         }
 
         private void PlayBellFollowCall(Vector3 targetPosition, bool assisted)
@@ -1262,6 +1447,8 @@ namespace BellRinger.FinalDemo
             }
 
             Vector3 targetWorldPosition = ResolveGeneralTinnitusWorldPosition(stage);
+            _generalTinnitusStageWorldPosition = targetWorldPosition;
+            _hasGeneralTinnitusStageWorldPosition = true;
             MoveGeneralTinnitusPlaceholder(stage, targetWorldPosition);
             StartProceduralTinnitus(targetWorldPosition);
 
@@ -1279,7 +1466,9 @@ namespace BellRinger.FinalDemo
             }
 
             EnsurePoseMatchEvaluator();
-            Vector3 targetWorldPosition = ResolveGeneralTinnitusWorldPosition(_currentStage);
+            Vector3 targetWorldPosition = _hasGeneralTinnitusStageWorldPosition
+                ? _generalTinnitusStageWorldPosition
+                : ResolveGeneralTinnitusWorldPosition(_currentStage);
             MoveGeneralTinnitusPlaceholder(_currentStage, targetWorldPosition);
             _currentGeneralTinnitusDistance = ResolvePlanarDistanceToPlayer(targetWorldPosition);
 
@@ -1421,11 +1610,20 @@ namespace BellRinger.FinalDemo
 
         private void CompleteGeneralTinnitus(Vector3 targetWorldPosition)
         {
+            FinalDemoStage completedStage = _currentStage;
             audioRouter?.StopLoop(FinalDemoCueId.TinnitusHealingLoop);
             StopProceduralTinnitus();
             PlayReactiveTinnitusCue(FinalDemoCueId.TinnitusResolve, targetWorldPosition, 1f, 0.85f, false);
             lightRouter?.Clear();
             ForceNextStage();
+            if (completedStage == FinalDemoStage.GeneralTinnitusOne)
+            {
+                QueueNarrationDelayed(FinalDemoCueId.NarrNoiseStillExists, _currentStage, 2f);
+            }
+            else if (completedStage == FinalDemoStage.GeneralTinnitusTwo)
+            {
+                QueueNarrationDelayed(FinalDemoCueId.NarrBossAhead, _currentStage, 2f);
+            }
         }
 
         private void BeginBossApproach()
@@ -2032,6 +2230,114 @@ namespace BellRinger.FinalDemo
                 sceneReferences != null ? sceneReferences.BellVisual : FindNamedTransform("FinalDemo_BellPlaceholder"),
                 sceneReferences != null ? sceneReferences.PadVisual : FindNamedTransform("PadVisual_Authoring_FollowsPose"));
             presenter.ApplyModelVisuals();
+
+            RemoveLegacyEnvironmentAuthoringObjects();
+            EnsureEnvironmentPresenters();
+            EnsureGlitchVisuals();
+            EnsureGlobalGlitchOverlay();
+        }
+
+        private void EnsureGlitchVisuals()
+        {
+            AttachGlitchVisual(sceneReferences != null ? sceneReferences.TinnitusOneVisual : FindNamedTransform("FinalDemo_TinnitusA"), false);
+            AttachGlitchVisual(sceneReferences != null ? sceneReferences.TinnitusTwoVisual : FindNamedTransform("FinalDemo_TinnitusB"), false);
+            AttachGlitchVisual(sceneReferences != null ? sceneReferences.BossVisual : FindNamedTransform("FinalDemo_BossTinnitus"), true);
+        }
+
+        private void EnsureGlobalGlitchOverlay()
+        {
+            _globalGlitchOverlay = FindFirstObjectByType<FinalDemoGlobalGlitchOverlay>();
+            if (_globalGlitchOverlay == null)
+            {
+                GameObject overlayObject = new GameObject("FinalDemoGlobalGlitchOverlay");
+                overlayObject.transform.SetParent(transform, false);
+                _globalGlitchOverlay = overlayObject.AddComponent<FinalDemoGlobalGlitchOverlay>();
+            }
+
+            _globalGlitchOverlay.Initialize(playerCamera != null ? playerCamera : Camera.main);
+        }
+
+        private static void AttachGlitchVisual(Transform target, bool boss)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            FinalDemoGlitchVisual glitch = target.GetComponent<FinalDemoGlitchVisual>();
+            if (glitch == null)
+            {
+                glitch = target.gameObject.AddComponent<FinalDemoGlitchVisual>();
+            }
+
+            glitch.Configure(boss);
+        }
+
+        private void RemoveLegacyEnvironmentAuthoringObjects()
+        {
+            string[] objectNames =
+            {
+                "RainSkySheet",
+                "RainFogVolume",
+                "RainSkyParticles",
+                "RainGroundRippleParticles",
+                "ClearBlueSky_Forest_Authoring",
+                "BackWall_White_Authoring",
+                "LeftSoftWall_Authoring",
+                "RightSoftWall_Authoring",
+                "Ground_Grey_Authoring",
+                "DistantFogBand",
+                "DarkSkyPlane",
+            };
+
+            foreach (string objectName in objectNames)
+            {
+                Transform target = FindNamedTransform(objectName);
+                if (target == null)
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Destroy(target.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(target.gameObject);
+                }
+            }
+        }
+
+        private void EnsureEnvironmentPresenters()
+        {
+            Transform rainRoot = sceneReferences != null ? sceneReferences.RainRoot : null;
+            Transform forestRoot = sceneReferences != null ? sceneReferences.ForestRoot : null;
+            Transform worldRoot = sceneReferences != null ? sceneReferences.WorldRoot : transform;
+
+            _worldRainEnvironment = FindFirstObjectByType<FinalDemoWorldRainEnvironment>();
+            if (_worldRainEnvironment == null)
+            {
+                GameObject rainObject = new GameObject("FinalDemoWorldRainEnvironment");
+                rainObject.transform.SetParent(rainRoot != null ? rainRoot : worldRoot, false);
+                _worldRainEnvironment = rainObject.AddComponent<FinalDemoWorldRainEnvironment>();
+            }
+
+            _forestEnvironment = FindFirstObjectByType<FinalDemoForestEnvironment>();
+            if (_forestEnvironment == null)
+            {
+                GameObject forestObject = new GameObject("FinalDemoForestEnvironment");
+                forestObject.transform.SetParent(forestRoot != null ? forestRoot : worldRoot, false);
+                _forestEnvironment = forestObject.AddComponent<FinalDemoForestEnvironment>();
+            }
+
+            _worldFloorSurface = FindFirstObjectByType<FinalDemoWorldFloorSurface>();
+            if (_worldFloorSurface == null)
+            {
+                GameObject floorObject = new GameObject("FinalDemoWorldFloorSurface");
+                floorObject.transform.SetParent(worldRoot, false);
+                _worldFloorSurface = floorObject.AddComponent<FinalDemoWorldFloorSurface>();
+            }
         }
 
         private void EnsurePlaceholderWorld()
@@ -2635,6 +2941,11 @@ namespace BellRinger.FinalDemo
                 FinalDemoStage.Complete => true,
                 _ => false,
             };
+        }
+
+        private static bool ShouldKeepOpeningAmbience(FinalDemoStage stage)
+        {
+            return stage >= FinalDemoStage.OpeningAmbience && stage <= FinalDemoStage.BossDefeat;
         }
 
         private static bool IsImplementedTimedStage(FinalDemoStage stage)
