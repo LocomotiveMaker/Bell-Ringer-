@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1800" viewBox="0 0 900 1800" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+        <rect x="18" y="18" width="864" height="1764" rx="68" fill="#FFFFFF" stroke="#19B39E" stroke-width="10"/>
+        <rect x="96" y="88" width="708" height="580" rx="56" fill="#EAFBF3" />
+        
+    <g stroke="#19B39E" stroke-width="22.44" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 256.2 370 C 337.8 288.4, 562.2 288.4, 643.8 370" />
+      <path d="M 286.8 404.68 C 353.1 459.76, 546.9 459.76, 613.2 404.68" />
+      <path d="M 356.15999999999997 245.56 L 325.56 204.76" />
+      <path d="M 427.56 227.2 L 427.56 172.12" />
+      <path d="M 543.84 245.56 L 574.44 204.76" />
+    </g>
+    
+        <text x="450" y="860" text-anchor="middle" class="title">이 게임은</text>
+        <text x="450" y="980" text-anchor="middle" class="title">눈 감고</text>
+        <text x="450" y="1100" text-anchor="middle" class="title">플레이합니다!</text>
+        <text x="450" y="1276" text-anchor="middle" class="body">청각 · 빛 · 진동 단서</text>
+        <text x="450" y="1338" text-anchor="middle" class="body">중심의 감각 플레이</text>
+        <text x="450" y="1498" text-anchor="middle" class="small">실제 판단은 눈앞 LED와 공간 음향,</text>
+        <text x="450" y="1552" text-anchor="middle" class="small">패드 위치/회전, 진동으로 이루어집니다.</text>
+        
+</svg>

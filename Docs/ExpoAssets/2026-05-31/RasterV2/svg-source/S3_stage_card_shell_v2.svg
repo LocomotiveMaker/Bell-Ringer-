@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1120" viewBox="0 0 900 1120" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="22" y="22" width="856" height="1076" rx="34" fill="#FFFFFF" stroke="#D0DDE2" stroke-width="4"/>
+    <rect x="58" y="144" width="784" height="360" rx="28" fill="#EDF2F5"/>
+    <rect x="58" y="558" width="784" height="316" rx="28" fill="#F7FBFC" stroke="#D7E3E8" stroke-width="4"/>
+    <rect x="58" y="934" width="784" height="114" rx="26" fill="#ECF5F4"/>
+    <line x1="126" y1="102" x2="374" y2="102" stroke="#D9E5E9" stroke-width="6" stroke-linecap="round"/>
+    
+</svg>

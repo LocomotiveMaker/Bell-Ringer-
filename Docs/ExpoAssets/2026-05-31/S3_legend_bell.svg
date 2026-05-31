@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="180" viewBox="0 0 760 180" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+            <rect x="12" y="12" width="736" height="156" rx="30" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+            <circle cx="92" cy="90" r="32" fill="#05FF1F"/>
+            <text x="150" y="82" class="body">종(초록)</text>
+            <text x="150" y="122" class="small">방향 / 목표 위치</text>
+            
+</svg>

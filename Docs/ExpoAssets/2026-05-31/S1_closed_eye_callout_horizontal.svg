@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="700" viewBox="0 0 2400 700" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+        <rect x="18" y="18" width="2364" height="664" rx="64" fill="#FFFFFF" stroke="#19B39E" stroke-width="10"/>
+        <rect x="72" y="72" width="538" height="556" rx="42" fill="#EAFBF3" />
+        
+    <g stroke="#19B39E" stroke-width="19.36" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 173.8 332 C 244.2 261.6, 437.8 261.6, 508.2 332" />
+      <path d="M 200.2 361.92 C 257.4 409.44, 424.6 409.44, 481.8 361.92" />
+      <path d="M 260.04 224.64 L 233.64 189.44" />
+      <path d="M 321.64 208.8 L 321.64 161.28" />
+      <path d="M 421.96 224.64 L 448.36 189.44" />
+    </g>
+    
+        <text x="690" y="262" class="title" fill="#0E6F66">이 게임은</text>
+        <text x="690" y="382" class="title" fill="#0E6F66">눈 감고 플레이합니다!</text>
+        <text x="690" y="510" class="body">시야를 차단한 상태에서 소리, 빛, 진동 단서를 따라 이동합니다.</text>
+        <text x="690" y="568" class="small">관람용 화면과 실제 플레이 감각은 분리되어 있습니다.</text>
+        <circle cx="2200" cy="192" r="20" fill="#05FF1F"/>
+        <circle cx="2254" cy="192" r="20" fill="#05D9FF"/>
+        <circle cx="2308" cy="192" r="20" fill="#0514FF"/>
+        
+</svg>

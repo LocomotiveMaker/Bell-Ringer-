@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1100" viewBox="0 0 2200 1100" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+        <rect x="24" y="24" width="2152" height="1052" rx="56" fill="#FFFFFF" stroke="#D6E5E4" stroke-width="6"/>
+        <text x="88" y="126" class="h2">배경 및 목적</text>
+        <text x="88" y="198" class="small">시각을 줄였을 때 다른 감각이 전면으로 올라오는 과정을 게임으로 만들고자 했다.</text>
+        <rect x="88" y="256" width="956" height="614" rx="42" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="136" y="336" class="h3">출발점</text>
+        
+    <g stroke="#19B39E" stroke-width="10.559999999999999" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 214.8 524 C 253.2 485.6, 358.8 485.6, 397.2 524" />
+      <path d="M 229.2 540.32 C 260.4 566.24, 351.6 566.24, 382.8 540.32" />
+      <path d="M 261.84000000000003 465.44 L 247.44 446.24" />
+      <path d="M 295.44 456.8 L 295.44 430.88" />
+      <path d="M 350.15999999999997 465.44 L 364.56 446.24" />
+    </g>
+    
+        
+    <path d="M 452 524 L 594 524" stroke="#19B39E" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 552 496 L 594 524 L 552 552" stroke="#19B39E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    
+        <g stroke="#19B39E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 648 510 C 688 448, 764 448, 804 510" />
+          <path d="M 648 538 C 688 600, 764 600, 804 538" />
+          <path d="M 714 478 L 714 572" />
+        </g>
+        <text x="136" y="702" class="body">눈을 감으면 방향과 존재를 확인하는 기준이</text>
+        <text x="136" y="760" class="body">소리 · 빛 · 진동으로 이동한다.</text>
+        <text x="136" y="830" class="small">이 프로젝트는 접근성 해결보다</text>
+        <text x="136" y="878" class="small">재미있는 감각 전환 자체에서 출발했다.</text>
+        <rect x="1116" y="256" width="972" height="614" rx="42" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="1164" y="336" class="h3">구현 목표</text>
+        <g>
+          <circle cx="1280" cy="520" r="72" fill="#EAFBF3" stroke="#05FF1F" stroke-width="10"/>
+          <circle cx="1462" cy="520" r="72" fill="#EDF1FF" stroke="#0514FF" stroke-width="10"/>
+          <circle cx="1644" cy="520" r="72" fill="#E8FAFF" stroke="#05D9FF" stroke-width="10"/>
+          <circle cx="1826" cy="520" r="72" fill="#F4EEFF" stroke="#750DFF" stroke-width="10"/>
+        </g>
+        
+    <g stroke="#05FF1F" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 1252.0 537.2
+               C 1252.0 514.0, 1262.8 488.8, 1280 483.2
+               C 1297.2 488.8, 1308.0 514.0, 1308.0 537.2" />
+      <path d="M 1244.4 540.4 H 1315.6" />
+      <path d="M 1266.4 540.4 C 1274.4 552.4, 1285.6 552.4, 1293.6 540.4" />
+      <circle cx="1280" cy="546.0" r="3.2" fill="#05FF1F" stroke="none"/>
+      <path d="M 1231.6 511.6 C 1218.4 521.6, 1218.4 542.8, 1231.6 552.8" />
+      <path d="M 1328.4 511.6 C 1341.6 521.6, 1341.6 542.8, 1328.4 552.8" />
+    </g>
+    
+        
+    <g stroke="#0514FF" stroke-width="3.74" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 1433.44 516.08
+               C 1427.66 501.8, 1440.58 487.52, 1456.9 490.58
+               C 1462.34 477.32, 1481.04 473.24, 1493.96 484.8
+               C 1508.24 485.48, 1515.72 501.46, 1506.54 515.4
+               Z" />
+      <path d="M 1431.06 538.52 L 1441.94 555.86" />
+      <path d="M 1456.56 538.52 L 1467.44 555.86" />
+      <path d="M 1482.06 538.52 L 1492.94 555.86" />
+      <path d="M 1423.24 563.6800000000001 C 1433.44 559.26, 1445.68 559.26, 1455.88 563.6800000000001" />
+      <path d="M 1468.46 563.6800000000001 C 1478.66 559.26, 1490.9 559.26, 1501.1 563.6800000000001" />
+    </g>
+    
+        
+    <g stroke="#05D9FF" stroke-width="3.08" stroke-linejoin="round" stroke-linecap="round" fill="none">
+      <rect x="1611.0" y="503.96" width="20.24" height="14.96" rx="2.64" />
+      <rect x="1634.32" y="503.96" width="20.24" height="14.96" rx="2.64" />
+      <rect x="1657.64" y="503.96" width="20.24" height="14.96" rx="2.64" />
+      <rect x="1622.88" y="523.32" width="20.24" height="14.96" rx="2.64" />
+      <rect x="1646.2" y="523.32" width="20.24" height="14.96" rx="2.64" />
+    </g>
+    
+        
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="1826" cy="520" r="46.44" fill="#F4EEFF"/>
+      <circle cx="1826" cy="520" r="46.44" stroke="#750DFF" stroke-width="3.2399999999999998" fill="none"/>
+      <circle cx="1826" cy="520" r="33.839999999999996" stroke="#750DFF" stroke-width="2.16" fill="none" opacity="0.38"/>
+      <path d="M 1784.24 520
+               C 1791.44 520, 1793.96 503.44, 1803.32 503.44
+               C 1812.68 503.44, 1811.24 540.16, 1822.76 540.16
+               C 1833.56 540.16, 1831.4 498.76, 1842.56 498.76
+               C 1852.28 498.76, 1853.72 520, 1867.04 520" stroke="#750DFF" stroke-width="4.32" fill="none"/>
+      <path d="M 1768.04 495.88 L 1780.28 486.52" stroke="#750DFF" stroke-width="2.88" opacity="0.55"/>
+      <path d="M 1872.44 553.12 L 1884.68 544.12" stroke="#750DFF" stroke-width="2.88" opacity="0.55"/>
+      
+    </g>
+    
+        <text x="1196" y="708" class="body">종, 비, 벽, 이명을</text>
+        <text x="1196" y="766" class="body">각기 다른 색과 패턴으로 구분하고,</text>
+        <text x="1196" y="824" class="body">머리 회전과 패드 자세를 통해 상호작용한다.</text>
+        <text x="1196" y="892" class="small">시선 차단 상태에서도 플레이 흐름을 이해할 수 있는 감각 체계를 목표로 한다.</text>
+        <rect x="88" y="910" width="2000" height="112" rx="34" fill="#FFF2EA" stroke="#FFD7C3" stroke-width="4"/>
+        <text x="132" y="980" class="body">핵심 문장</text>
+        <text x="352" y="980" class="body">“보지 못해도 진행할 수 있는가”보다 “보지 않을 때 더 낯설고 재미있는가”에 초점을 맞췄다.</text>
+        
+</svg>

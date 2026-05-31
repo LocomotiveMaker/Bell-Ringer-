@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+    <path d="M 30 60 L 286 60" stroke="#19B39E" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 244 32 L 286 60 L 244 88" stroke="#19B39E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    
+</svg>

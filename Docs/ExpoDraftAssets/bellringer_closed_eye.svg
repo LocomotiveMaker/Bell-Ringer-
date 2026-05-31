@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+
+    
+  <rect x="0" y="0" width="1600" height="960" rx="42" fill="#171A24"/>
+  <rect x="36" y="36" width="1528" height="888" rx="30" fill="#202434" stroke="#3A415A" stroke-width="3"/>
+  <text x="86" y="126" font-size="52" font-weight="700" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">눈을 감고 플레이하는 구조</text>
+  <line x1="86" y1="154" x2="1514" y2="154" stroke="#3A415A" stroke-width="3"/>
+  
+    <text x="86" y="220" font-size="30" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">플레이어는 시각 UI가 아닌 소리, 빛, 진동, 머리 회전만으로 다음 행동을 결정한다.</text>
+    <circle cx="360" cy="500" r="150" fill="#111520" stroke="#3A415A" stroke-width="4"/>
+    <path d="M305 458 Q360 410 415 458" fill="none" stroke="#F3F5F9" stroke-width="10" stroke-linecap="round"/>
+    <line x1="315" y1="465" x2="405" y2="445" stroke="#1DAF88" stroke-width="6" stroke-linecap="round"/>
+    <rect x="248" y="438" width="30" height="120" rx="12" fill="#3A415A"/>
+    <rect x="442" y="438" width="30" height="120" rx="12" fill="#3A415A"/>
+    <path d="M250 436 Q360 330 470 436" fill="none" stroke="#3A415A" stroke-width="16"/>
+    <circle cx="770" cy="320" r="84" fill="#F6D44A" opacity="0.18"/>
+    <circle cx="770" cy="320" r="58" fill="#F6D44A"/>
+    <path d="M 770 290.24 C 748.4 290.24, 745.04 311.36, 745.04 328.64 L 736.4 343.04 L 803.6 343.04 L 794.96 328.64 C 794.96 311.36, 791.6 290.24, 770 290.24 Z" fill="#171A24"/><circle cx="770" cy="348.8" r="5.76" fill="#171A24"/>
+    <text x="860" y="300" font-size="34" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">공간 음향</text>
+    <text x="860" y="340" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">종 방향, 이명 위치, 숲 엔딩 전환</text>
+    <circle cx="770" cy="500" r="84" fill="#1DAF88" opacity="0.18"/>
+    <circle cx="770" cy="500" r="58" fill="#1DAF88"/>
+    <circle cx="770" cy="500" r="8.64" fill="#171A24"/><circle cx="770" cy="500" r="20.16" fill="none" stroke="#171A24" stroke-width="4.800000000000001" opacity="0.8"/><circle cx="770" cy="500" r="30.72" fill="none" stroke="#171A24" stroke-width="3.84" opacity="0.45"/>
+    <text x="860" y="480" font-size="34" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">LED 빛</text>
+    <text x="860" y="520" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">초록 종, 보라 이명, 파란 비, 시안 벽 노이즈</text>
+    <circle cx="770" cy="680" r="84" fill="#F4C15A" opacity="0.18"/>
+    <circle cx="770" cy="680" r="58" fill="#F4C15A"/>
+    <rect x="735.44" y="663.68" width="69.12" height="34.56" rx="10.56" fill="none" stroke="#171A24" stroke-width="5.76"/><line x1="754.64" y1="680" x2="769.04" y2="680" stroke="#171A24" stroke-width="5.76" stroke-linecap="round"/><line x1="761.84" y1="672.8" x2="761.84" y2="687.2" stroke="#171A24" stroke-width="5.76" stroke-linecap="round"/><circle cx="781.52" cy="676.16" r="3.84" fill="#171A24"/><circle cx="789.2" cy="683.84" r="3.84" fill="#171A24"/>
+    <text x="860" y="660" font-size="34" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">패드 진동</text>
+    <text x="860" y="700" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">종 탐지 보조, 이명 lock, 보스 이동 방향 안내</text>
+    <rect x="86" y="780" width="1428" height="90" rx="20" fill="#111520" stroke="#3A415A" stroke-width="2"/>
+    <text x="126" y="838" font-size="26" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">핵심: "눈을 감고도 다음 행동이 느껴지는가?"가 이 프로젝트의 가장 중요한 기준이다.</text>
+  
+</svg>

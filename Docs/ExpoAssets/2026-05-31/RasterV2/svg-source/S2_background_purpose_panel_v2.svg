@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="1460" viewBox="0 0 2600 1460" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="24" y="24" width="2552" height="1412" rx="56" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="6"/>
+    <text x="96" y="136" class="h2">배경 및 목적</text>
+    <text x="96" y="206" class="small">시각 보조를 목표로 하기보다, 시야를 막았을 때 생기는 감각 규칙 자체를 게임으로 만들고자 했다.</text>
+
+    <rect x="96" y="274" width="1140" height="858" rx="42" fill="#F7FBFC" stroke="#D7E3E8" stroke-width="4"/>
+    <text x="154" y="356" class="h3">배경</text>
+    
+    <circle cx="1040" cy="368" r="60.8" fill="#F4F8FA" stroke="#D0DDE2" stroke-width="4.75"/>
+    <path d="M 998.2 368 C 1024.8 343.3, 1055.2 343.3, 1081.8 368" fill="none" stroke="#17323B" stroke-width="6.6499999999999995" stroke-linecap="round"/>
+    <path d="M 998.2 385.1 C 1022.9 407.9, 1057.1 407.9, 1081.8 385.1" fill="none" stroke="#1DAF88" stroke-width="6.6499999999999995" stroke-linecap="round"/>
+  
+    
+      <circle cx="154" cy="434" r="10" fill="#1DAF88"/>
+      <path d="M 150 434 L 153 439 L 160 428" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="182" y="446" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">시각이 거의 사라졌을 때 방향감과 존재감을 무엇으로 대체할 수 있는지에서 시작했다.</text>
+      <circle cx="154" cy="520" r="10" fill="#1DAF88"/>
+      <path d="M 150 520 L 153 525 L 160 514" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="182" y="532" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">시각 보조보다, 눈을 감은 채 공간을 탐색할 때 생기는 낯선 감각 경험 자체에 집중했다.</text>
+      <circle cx="154" cy="606" r="10" fill="#1DAF88"/>
+      <path d="M 150 606 L 153 611 L 160 600" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="182" y="618" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">소리와 빛이 연결된 단서가 되고, 플레이어는 그 연결을 학습하며 게임을 진행한다.</text>
+    <rect x="154" y="910" width="1020" height="170" rx="28" fill="#DFF7FB" stroke="#C7EAF2" stroke-width="3"/>
+    <text x="196" y="980" class="body">핵심 질문</text>
+    <text x="196" y="1040" class="small">보는 행위를 거의 제거해도, 소리·빛·진동만으로 감각 규칙을 만들 수 있는가?</text>
+
+    <rect x="1368" y="274" width="1136" height="858" rx="42" fill="#F7FBFC" stroke="#D7E3E8" stroke-width="4"/>
+    <text x="1426" y="356" class="h3">목적과 구현 포인트</text>
+    
+      <circle cx="1426" cy="434" r="10" fill="#05FF1F"/>
+      <path d="M 1422 434 L 1425 439 L 1432 428" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1454" y="446" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">ArUco 기반 패드 위치 추적</text>
+      <circle cx="1426" cy="512" r="10" fill="#05FF1F"/>
+      <path d="M 1422 512 L 1425 517 L 1432 506" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1454" y="524" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">카메라 pose yaw + IMU pitch/roll 결합</text>
+      <circle cx="1426" cy="590" r="10" fill="#05FF1F"/>
+      <path d="M 1422 590 L 1425 595 L 1432 584" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1454" y="602" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">ESP32-S3 x2 / MPU-9250 x2 / WS LED x2</text>
+      <circle cx="1426" cy="668" r="10" fill="#05FF1F"/>
+      <path d="M 1422 668 L 1425 673 L 1432 662" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1454" y="680" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">머리 회전, 패드 위치·회전, LED, 진동을 하나의 루프로 통합</text>
+      <circle cx="1426" cy="746" r="10" fill="#05FF1F"/>
+      <path d="M 1422 746 L 1425 751 L 1432 740" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="1454" y="758" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="28" font-weight="600" fill="#26424B">폐안 상태에서 구별이 쉬운 빛 색을 직접 선정해 적용</text>
+    
+    <rect x="1436" y="914" width="188" height="110" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="1478" cy="961" r="16" fill="#05FF1F"/>
+    <text x="1510" y="967" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">종</text>
+    <text x="1510" y="1003" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">초록</text>
+  
+    
+    <rect x="1646" y="914" width="188" height="110" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="1688" cy="961" r="16" fill="#05D9FF"/>
+    <text x="1720" y="967" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">벽</text>
+    <text x="1720" y="1003" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">시안</text>
+  
+    
+    <rect x="1856" y="914" width="188" height="110" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="1898" cy="961" r="16" fill="#0514FF"/>
+    <text x="1930" y="967" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">비</text>
+    <text x="1930" y="1003" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">딥 블루</text>
+  
+    
+    <rect x="2066" y="914" width="188" height="110" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="2108" cy="961" r="16" fill="#750DFF"/>
+    <text x="2140" y="967" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">이명</text>
+    <text x="2140" y="1003" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">바이올렛</text>
+  
+    
+    <rect x="1538" y="1040" width="614" height="110" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="1580" cy="1087" r="16" fill="#FF4705"/>
+    <text x="1612" y="1093" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">패드</text>
+    <text x="1612" y="1129" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">런타임 기준 오렌지골드</text>
+  
+    
+</svg>

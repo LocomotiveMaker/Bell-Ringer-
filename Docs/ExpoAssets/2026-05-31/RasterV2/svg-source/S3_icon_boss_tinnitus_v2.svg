@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="146" y="188" width="732" height="648" rx="84" fill="#F4EEFF" stroke="#E2D7FB" stroke-width="8"/>
+    <circle cx="512" cy="508" r="214" fill="#EEE2FF"/>
+    <circle cx="512" cy="508" r="182" fill="none" stroke="#750DFF" stroke-width="18" opacity="0.92"/>
+    <circle cx="512" cy="508" r="120" fill="none" stroke="#750DFF" stroke-width="12" opacity="0.52"/>
+    <path d="M 300 508 C 352 508, 376 422, 428 422 C 474 422, 478 612, 520 612 C 572 612, 572 380, 620 380 C 668 380, 684 508, 738 508" fill="none" stroke="#750DFF" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 312 390 L 372 344" stroke="#D33A58" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 682 690 L 746 642" stroke="#D33A58" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 438 318 L 470 394" stroke="#750DFF" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 604 648 L 646 742" stroke="#750DFF" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
+    <circle cx="512" cy="508" r="22" fill="#750DFF" filter="url(#softGlow)"/>
+    
+</svg>

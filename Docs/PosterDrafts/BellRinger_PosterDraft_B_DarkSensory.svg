@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2540" viewBox="0 0 1800 2540">
+  <style>
+    text { font-family: "Malgun Gothic", Arial, sans-serif; }
+  </style>
+  
+    <defs>
+      <linearGradient id="posterB-bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#09111F"/>
+        <stop offset="100%" stop-color="#15264A"/>
+      </linearGradient>
+      <radialGradient id="posterB-glowA" cx="50%" cy="35%" r="58%">
+        <stop offset="0%" stop-color="rgba(51,224,170,0.26)"/>
+        <stop offset="100%" stop-color="rgba(51,224,170,0)"/>
+      </radialGradient>
+      <radialGradient id="posterB-glowB" cx="50%" cy="50%" r="58%">
+        <stop offset="0%" stop-color="rgba(179,141,255,0.22)"/>
+        <stop offset="100%" stop-color="rgba(179,141,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1800" height="2540" fill="url(#posterB-bg)"/>
+    <circle cx="1310" cy="340" r="380" fill="url(#posterB-glowA)"/>
+    <circle cx="300" cy="1740" r="440" fill="url(#posterB-glowB)"/>
+    <circle cx="1428" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="96" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1428" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="118" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1428" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="140" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1428" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="162" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1428" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="184" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1428" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1450" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1472" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1494" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1516" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1538" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1560" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/><circle cx="1582" cy="206" r="3.5" fill="rgba(255,255,255,0.18)"/>
+
+    <text x="110" y="118" fill="#33E0AA" font-size="30" font-weight="800">MD / 체감기술(고급)</text>
+    <text x="110" y="216" fill="#F3F7FF" font-size="92" font-weight="900">Bell Ringer</text>
+    <text x="110" y="278" fill="#A7B6D8" font-size="35" font-weight="700">눈을 감고 종소리와 빛, 진동만으로 길을 찾는 감각 중심 전시 게임</text>
+
+    
+    <rect x="84" y="360" width="1632" height="336" rx="32" fill="#10192D" stroke="#2A3959" stroke-width="2"/>
+    <rect x="84" y="360" width="1632" height="72" rx="32" fill="#142038"/>
+    <text x="118" y="408" fill="#F3F7FF" font-size="30" font-weight="900">01  개요</text>
+    
+      <text x="134" y="456" fill="#F3F7FF" font-size="54" font-weight="900">보이지 않아도 따라갈 수 있는가?</text>
+      <text x="134" y="520" fill="#A7B6D8" font-size="29">종은 공간의 방향을 만들고, 비바람은 방해가 되며, 패드는 이명을 정화하는 도구가 된다.</text>
+      
+    <rect x="134" y="574" width="250" height="60" rx="30" fill="#142B2B" stroke="#33E0AA" stroke-width="2"/>
+    <text x="259" y="614" text-anchor="middle" fill="#33E0AA" font-size="25" font-weight="800">눈 감고 플레이</text>
+  
+      
+    <rect x="402" y="574" width="250" height="60" rx="30" fill="#14233A" stroke="#52A5FF" stroke-width="2"/>
+    <text x="527" y="614" text-anchor="middle" fill="#52A5FF" font-size="25" font-weight="800">종소리 추적</text>
+  
+      
+    <rect x="670" y="574" width="250" height="60" rx="30" fill="#261B39" stroke="#B38DFF" stroke-width="2"/>
+    <text x="795" y="614" text-anchor="middle" fill="#B38DFF" font-size="25" font-weight="800">이명 정화</text>
+  
+      
+    <rect x="938" y="574" width="250" height="60" rx="30" fill="#312516" stroke="#FFC46A" stroke-width="2"/>
+    <text x="1063" y="614" text-anchor="middle" fill="#FFC46A" font-size="25" font-weight="800">보스 패턴</text>
+  
+      
+    <rect x="1206" y="574" width="250" height="60" rx="30" fill="#162834" stroke="#89E4F2" stroke-width="2"/>
+    <text x="1331" y="614" text-anchor="middle" fill="#89E4F2" font-size="25" font-weight="800">숲 엔딩</text>
+  
+    
+  
+
+    
+    <rect x="84" y="728" width="1632" height="410" rx="32" fill="#10192D" stroke="#2A3959" stroke-width="2"/>
+    <rect x="84" y="728" width="1632" height="72" rx="32" fill="#142038"/>
+    <text x="118" y="776" fill="#F3F7FF" font-size="30" font-weight="900">02  배경 및 목적</text>
+    
+      <text x="134" y="826" fill="#F3F7FF" font-size="50" font-weight="900">시각 대신 감각 결합을 전면에 세운다</text>
+      
+        <circle cx="146" cy="882" r="10" fill="#FFD45D"/>
+        <text x="176" y="894" fill="#F3F7FF" font-size="29">소리의 위치, LED 빛의 점멸, 진동의 세기가 한 덩어리의 감각처럼 동작하도록 설계했다.</text>
+      
+        <circle cx="146" cy="948" r="10" fill="#FFD45D"/>
+        <text x="176" y="960" fill="#A7B6D8" font-size="29">플레이어는 눈을 감은 상태에서 체감 정보만 받아들이고, 관람자는 화면으로 그 과정을 이해한다.</text>
+      
+        <circle cx="146" cy="1014" r="10" fill="#FFD45D"/>
+        <text x="176" y="1026" fill="#A7B6D8" font-size="29">조작은 복잡하지 않지만 감각 해석은 깊게 남도록, 종 추적과 이명 정화의 대비를 핵심으로 잡았다.</text>
+      
+      
+    <rect x="1238" y="824" width="380" height="270" rx="28" fill="#0E1628" stroke="#33E0AA" stroke-width="2"/>
+    <circle cx="1428" cy="926" r="76" fill="#09111F" stroke="#33E0AA" stroke-width="2"/>
+    <path d="M 1368 910 Q 1428 856 1488 910" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+    <line x1="1382" y1="914" x2="1474" y2="896" stroke="#33E0AA" stroke-width="7" stroke-linecap="round"/>
+    
+    <circle cx="1312" cy="1032" r="5.3999999999999995" fill="#33E0AA"/>
+    <circle cx="1312" cy="1032" r="15.84" fill="none" stroke="#33E0AA" stroke-width="3.2399999999999998"/>
+    <circle cx="1312" cy="1032" r="25.56" fill="none" stroke="#33E0AA" stroke-width="2.16"/>
+  
+    <text x="1344" y="1036" fill="#F3F7FF" font-size="28" font-weight="800">감각 규칙</text>
+    <text x="1344" y="1072" fill="#A7B6D8" font-size="23">소리, 빛, 진동의 의미를</text>
+    <text x="1344" y="1102" fill="#A7B6D8" font-size="23">단계마다 명확히 분리</text>
+  
+    
+  
+
+    
+    <rect x="84" y="1170" width="1632" height="610" rx="32" fill="#10192D" stroke="#2A3959" stroke-width="2"/>
+    <rect x="84" y="1170" width="1632" height="72" rx="32" fill="#142038"/>
+    <text x="118" y="1218" fill="#F3F7FF" font-size="30" font-weight="900">03  내용</text>
+    
+      <text x="134" y="1266" fill="#F3F7FF" font-size="50" font-weight="900">주요 플레이 흐름</text>
+      <text x="134" y="1318" fill="#A7B6D8" font-size="28">단계마다 감각 역할이 달라진다</text>
+      
+        <line x1="248" y1="1414" x2="248" y2="1472" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1414" r="18" fill="rgba(255,212,93,0.18)" stroke="#FFD45D" stroke-width="3"/>
+        
+    <path d="M 248 1400.8 C 237 1400.8, 234.36 1412.02, 234.36 1420.16 L 230.84 1428.96 L 265.16 1428.96 L 261.64 1420.16 C 261.64 1412.02, 259 1400.8, 248 1400.8 Z" fill="#FFD45D"/>
+    <circle cx="248" cy="1432.7" r="3.96" fill="#FFD45D"/>
+  
+        <text x="294" y="1410" fill="#F3F7FF" font-size="28" font-weight="800">시작</text>
+        <text x="484" y="1410" fill="#A7B6D8" font-size="24">왼편 종소리로 깨어남</text>
+      
+        <line x1="248" y1="1472" x2="248" y2="1530" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1472" r="18" fill="rgba(51,224,170,0.18)" stroke="#33E0AA" stroke-width="3"/>
+        
+    <circle cx="248" cy="1462.1" r="4.62" fill="#33E0AA"/>
+    <line x1="248" y1="1466.94" x2="248" y2="1478.82" stroke="#33E0AA" stroke-width="3.74" stroke-linecap="round"/>
+    <line x1="248" y1="1471.78" x2="238.32" y2="1475.08" stroke="#33E0AA" stroke-width="3.08" stroke-linecap="round"/>
+    <line x1="248" y1="1471.78" x2="257.02" y2="1473.76" stroke="#33E0AA" stroke-width="3.08" stroke-linecap="round"/>
+    <line x1="248" y1="1478.82" x2="239.64" y2="1489.6" stroke="#33E0AA" stroke-width="3.08" stroke-linecap="round"/>
+    <line x1="248" y1="1478.82" x2="257.46" y2="1488.28" stroke="#33E0AA" stroke-width="3.08" stroke-linecap="round"/>
+  
+        <text x="294" y="1468" fill="#F3F7FF" font-size="28" font-weight="800">종 추적</text>
+        <text x="484" y="1468" fill="#A7B6D8" font-size="24">이동하며 종을 쫓음</text>
+      
+        <line x1="248" y1="1530" x2="248" y2="1588" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1530" r="18" fill="rgba(82,165,255,0.18)" stroke="#52A5FF" stroke-width="3"/>
+        
+    <line x1="237" y1="1516.8" x2="234.14" y2="1528.9" stroke="#52A5FF" stroke-width="2.42" stroke-linecap="round"/>
+    <line x1="248" y1="1515.7" x2="245.14" y2="1528.68" stroke="#52A5FF" stroke-width="2.42" stroke-linecap="round"/>
+    <line x1="259" y1="1516.8" x2="256.14" y2="1528.9" stroke="#52A5FF" stroke-width="2.42" stroke-linecap="round"/>
+    <path d="M 232.6 1534.18 Q 239.2 1527.8 248 1534.18" fill="none" stroke="#52A5FF" stroke-width="2.2"/>
+    <path d="M 242.94 1539.46 Q 248 1532.2 253.06 1539.46" fill="none" stroke="#52A5FF" stroke-width="2.2"/>
+    <path d="M 255.04 1534.18 Q 261.2 1527.8 267.8 1534.18" fill="none" stroke="#52A5FF" stroke-width="2.2"/>
+  
+        <text x="294" y="1526" fill="#F3F7FF" font-size="28" font-weight="800">비·바람</text>
+        <text x="484" y="1526" fill="#A7B6D8" font-size="24">소리 분리 집중</text>
+      
+        <line x1="248" y1="1588" x2="248" y2="1646" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1588" r="18" fill="rgba(51,224,170,0.18)" stroke="#33E0AA" stroke-width="3"/>
+        
+    <path d="M 228.2 1588 Q 248 1573.7 267.8 1588 Q 248 1602.3 228.2 1588" fill="none" stroke="#33E0AA" stroke-width="2.8600000000000003" stroke-linecap="round"/>
+    <circle cx="248" cy="1588" r="6.38" fill="#33E0AA"/>
+  
+        <text x="294" y="1584" fill="#F3F7FF" font-size="28" font-weight="800">종 바라보기</text>
+        <text x="484" y="1584" fill="#A7B6D8" font-size="24">종 위치를 바라보기</text>
+      
+        <line x1="248" y1="1646" x2="248" y2="1704" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1646" r="18" fill="rgba(179,141,255,0.18)" stroke="#B38DFF" stroke-width="3"/>
+        
+    <circle cx="248" cy="1646" r="3.52" fill="#B38DFF"/>
+    <path d="M 238.1 1636.1 A 13.86 13.86 0 0 0 238.1 1655.9" fill="none" stroke="#B38DFF" stroke-width="1.98" stroke-linecap="round"/>
+    <path d="M 257.9 1636.1 A 13.86 13.86 0 0 1 257.9 1655.9" fill="none" stroke="#B38DFF" stroke-width="1.98" stroke-linecap="round"/>
+    <path d="M 231.28 1631.26 A 22.880000000000003 22.880000000000003 0 0 0 231.28 1660.74" fill="none" stroke="#B38DFF" stroke-width="1.54" stroke-linecap="round"/>
+    <path d="M 264.72 1631.26 A 22.880000000000003 22.880000000000003 0 0 1 264.72 1660.74" fill="none" stroke="#B38DFF" stroke-width="1.54" stroke-linecap="round"/>
+  
+        <text x="294" y="1642" fill="#F3F7FF" font-size="28" font-weight="800">일반 이명</text>
+        <text x="484" y="1642" fill="#A7B6D8" font-size="24">패드 pose로 4초 정화</text>
+      
+        <line x1="248" y1="1704" x2="248" y2="1762" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1704" r="18" fill="rgba(255,196,106,0.18)" stroke="#FFC46A" stroke-width="3"/>
+        
+    <circle cx="248" cy="1704" r="8.58" fill="none" stroke="#FFC46A" stroke-width="2.42"/>
+    <path d="M 248 1688.6 L 251.74 1694.76 L 260.98 1691.02 L 257.24 1700.26 L 263.4 1704 L 257.24 1707.74 L 260.98 1716.98 L 251.74 1713.24 L 248 1719.4 L 244.26 1713.24 L 235.02 1716.98 L 238.76 1707.74 L 232.6 1704 L 238.76 1700.26 L 235.02 1691.02 L 244.26 1694.76 Z" fill="rgba(255,196,106,0.26)" stroke="#FFC46A" stroke-width="1.76" stroke-linejoin="round"/>
+  
+        <text x="294" y="1700" fill="#F3F7FF" font-size="28" font-weight="800">보스 이명</text>
+        <text x="484" y="1700" fill="#A7B6D8" font-size="24">움직이는 약점 추적</text>
+      
+        <line x1="248" y1="1762" x2="248" y2="1820" stroke="#41567E" stroke-width="4"/>
+        <circle cx="248" cy="1762" r="18" fill="rgba(137,228,242,0.18)" stroke="#89E4F2" stroke-width="3"/>
+        
+    <polygon points="248,1743.3 235.46,1758.92 242.94,1758.92 233.48,1772.12 243.6,1772.12 243.6,1780.92 252.4,1780.92 252.4,1772.12 262.52,1772.12 253.06,1758.92 260.54,1758.92" fill="#89E4F2"/>
+  
+        <text x="294" y="1758" fill="#F3F7FF" font-size="28" font-weight="800">숲 엔딩</text>
+        <text x="484" y="1758" fill="#A7B6D8" font-size="24">숲 소리와 종소리 회귀</text>
+      
+    
+  
+
+    
+    <rect x="84" y="1812" width="1632" height="474" rx="32" fill="#10192D" stroke="#2A3959" stroke-width="2"/>
+    <rect x="84" y="1812" width="1632" height="72" rx="32" fill="#142038"/>
+    <text x="118" y="1860" fill="#F3F7FF" font-size="30" font-weight="900">04  결과</text>
+    
+      
+    <rect x="134" y="1914" width="354" height="240" rx="24" fill="#0E1728" stroke="#2A3959" stroke-width="2"/>
+    <rect x="154" y="1934" width="78" height="78" rx="18" fill="rgba(255,212,93,0.14)"/>
+    
+    <path d="M 202 1960.4 C 168.96 1960.4, 168.96 2027.6, 202 2027.6 C 217.68 2027.6, 230.56 2014.16, 230.56 1995.68 C 230.56 1981.68, 220.48 1972.72, 209.28 1972.72" fill="none" stroke="#FFD45D" stroke-width="5.6000000000000005" stroke-linecap="round"/>
+    <path d="M 208.16 1988.4 C 193.6 1990.64, 192.48 2009.12, 204.8 2011.92" fill="none" stroke="#FFD45D" stroke-width="5.04" stroke-linecap="round"/>
+  
+    <text x="250" y="1976" fill="#F3F7FF" font-size="30" font-weight="800">청각 몰입</text>
+    <text x="158" y="2060" fill="#A7B6D8" font-size="22">화면 없이도 공간 목표를 추적한다.</text>
+  
+      
+    <rect x="520" y="1914" width="354" height="240" rx="24" fill="#0E1728" stroke="#2A3959" stroke-width="2"/>
+    <rect x="540" y="1934" width="78" height="78" rx="18" fill="rgba(51,224,170,0.14)"/>
+    
+    <circle cx="588" cy="1994" r="8.4" fill="#33E0AA"/>
+    <circle cx="588" cy="1994" r="24.64" fill="none" stroke="#33E0AA" stroke-width="5.04"/>
+    <circle cx="588" cy="1994" r="39.76" fill="none" stroke="#33E0AA" stroke-width="3.36"/>
+  
+    <text x="636" y="1976" fill="#F3F7FF" font-size="30" font-weight="800">직관성</text>
+    <text x="544" y="2060" fill="#A7B6D8" font-size="22">멀리서도 읽히는 아이콘형 흐름을 만든다.</text>
+  
+      
+    <rect x="906" y="1914" width="354" height="240" rx="24" fill="#0E1728" stroke="#2A3959" stroke-width="2"/>
+    <rect x="926" y="1934" width="78" height="78" rx="18" fill="rgba(179,141,255,0.14)"/>
+    
+    <path d="M 929.2 1999.6 Q 943.2 1962.64 974 1962.64 Q 1004.8 1962.64 1018.8 1999.6 Q 1012.64 2025.92 993.6 2025.92 L 954.4 2025.92 Q 935.36 2025.92 929.2 1999.6 Z" fill="none" stroke="#B38DFF" stroke-width="6.16"/>
+    <line x1="952.72" y1="1994" x2="967.84" y2="1994" stroke="#B38DFF" stroke-width="6.16" stroke-linecap="round"/>
+    <line x1="960.28" y1="1986.16" x2="960.28" y2="2001.84" stroke="#B38DFF" stroke-width="6.16" stroke-linecap="round"/>
+    <circle cx="990.8" cy="1988.4" r="5.04" fill="#B38DFF"/>
+    <circle cx="999.76" cy="1997.92" r="5.04" fill="#B38DFF"/>
+  
+    <text x="1022" y="1976" fill="#F3F7FF" font-size="30" font-weight="800">체감 상호작용</text>
+    <text x="930" y="2060" fill="#A7B6D8" font-size="22">패드 위치·회전·진동이 정화 조작이 된다.</text>
+  
+      
+    <rect x="1292" y="1914" width="354" height="240" rx="24" fill="#0E1728" stroke="#2A3959" stroke-width="2"/>
+    <rect x="1312" y="1934" width="78" height="78" rx="18" fill="rgba(137,228,242,0.14)"/>
+    
+    <path d="M 1360 1954.8 L 1368.4 1984.48 L 1393.6 1971.04 L 1375.68 1998.48 L 1397.52 2006.32 L 1369.52 2012.48 L 1363.36 2033.2 L 1356.64 2012.48 L 1332 2020.88 L 1344.32 1997.36 L 1322.48 1987.28 L 1349.36 1982.24 Z" fill="#89E4F2"/>
+  
+    <text x="1408" y="1976" fill="#F3F7FF" font-size="30" font-weight="800">발전 방향</text>
+    <text x="1316" y="2060" fill="#A7B6D8" font-size="22">HRTF와 빛 패턴 보강으로 더 확장 가능하다.</text>
+  
+    
+  
+    
+</svg>

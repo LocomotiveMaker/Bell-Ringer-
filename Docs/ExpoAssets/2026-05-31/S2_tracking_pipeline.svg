@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1180" viewBox="0 0 2400 1180" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+        <rect x="24" y="24" width="2352" height="1132" rx="56" fill="#FFFFFF" stroke="#D6E5E4" stroke-width="6"/>
+        <text x="88" y="126" class="h2">하드웨어 / 기술 구성</text>
+        <text x="88" y="198" class="small">게임 진행에 필요한 위치, 회전, LED, 진동 피드백을 하나의 루프로 묶는다.</text>
+
+        <rect x="96" y="280" width="456" height="340" rx="40" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="142" y="360" class="h3">Head Unit</text>
+        <text x="142" y="430" class="body">ESP32-S3</text>
+        <text x="142" y="486" class="small">MPU-9250 IMU</text>
+        <text x="142" y="538" class="small">WS LED x2</text>
+        <text x="142" y="598" class="tiny">머리 회전 + LED 출력</text>
+        <g stroke="#19B39E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="380" y="390" width="96" height="96" rx="20" />
+          <path d="M 392 448 H 464" />
+          <path d="M 428 412 V 484" />
+          <circle cx="428" cy="548" r="18" fill="#05FF1F" stroke="none"/>
+          <circle cx="470" cy="548" r="18" fill="#05D9FF" stroke="none"/>
+        </g>
+
+        <rect x="644" y="280" width="456" height="340" rx="40" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="690" y="360" class="h3">Pad Unit</text>
+        <text x="690" y="430" class="body">ESP32-S3</text>
+        <text x="690" y="486" class="small">MPU-9250 IMU</text>
+        <text x="690" y="538" class="small">Gamepad Rumble</text>
+        <text x="690" y="598" class="tiny">pitch / roll + 진동 피드백</text>
+        <g stroke="#FF4705" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="944" y="396" width="96" height="72" rx="24" />
+          <circle cx="970" cy="432" r="8" fill="#FF4705" stroke="none"/>
+          <circle cx="1012" cy="432" r="8" fill="#FF4705" stroke="none"/>
+          <path d="M 960 518 C 980 566, 1000 566, 1020 518" />
+        </g>
+
+        <rect x="1192" y="280" width="456" height="340" rx="40" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="1238" y="360" class="h3">AruCo Camera</text>
+        <text x="1238" y="430" class="body">패드 위치 추정</text>
+        <text x="1238" y="486" class="small">카메라 기반 yaw</text>
+        <text x="1238" y="538" class="small">ArUco marker tracking</text>
+        <text x="1238" y="598" class="tiny">position + yaw</text>
+        <g stroke="#14252B" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1494" y="394" width="98" height="74" rx="14" />
+          <rect x="1514" y="412" width="58" height="38" rx="4" />
+          <path d="M 1524 422 H 1544 V 442 H 1524 Z M 1548 422 H 1568 V 442 H 1548 Z" />
+        </g>
+
+        <rect x="1740" y="280" width="548" height="340" rx="40" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="1786" y="360" class="h3">Unity Runtime</text>
+        <text x="1786" y="430" class="body">오디오 · 빛 · 진동 통합 제어</text>
+        <text x="1786" y="486" class="small">Bell / Rain / Wall / Tinnitus</text>
+        <text x="1786" y="538" class="small">게임 상태에 따라 cue / pattern / rumble 출력</text>
+        <text x="1786" y="598" class="tiny">FinalDemo tuning + cue routing</text>
+
+        
+    <path d="M 552 452 L 644 452" stroke="#19B39E" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 602 424 L 644 452 L 602 480" stroke="#19B39E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    
+        
+    <path d="M 1100 452 L 1192 452" stroke="#19B39E" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 1150 424 L 1192 452 L 1150 480" stroke="#19B39E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    
+        
+    <path d="M 1648 452 L 1740 452" stroke="#19B39E" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 1698 424 L 1740 452 L 1698 480" stroke="#19B39E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    
+
+        <rect x="96" y="710" width="2192" height="376" rx="40" fill="#F7FBFB" stroke="#D6E5E4" stroke-width="4"/>
+        <text x="142" y="784" class="h3">데이터 결합 규칙</text>
+        <text x="142" y="854" class="body">패드 위치 = ArUco 카메라</text>
+        <text x="142" y="912" class="body">패드 yaw = 카메라 우선</text>
+        <text x="142" y="970" class="body">패드 pitch / roll = MPU-9250 IMU</text>
+        <text x="142" y="1028" class="body">머리 회전 = Head MPU-9250 IMU</text>
+        <text x="1160" y="854" class="body">LED 색 선정 = 폐안 상태 구분성 기준 직접 조정</text>
+        <text x="1160" y="912" class="body">종 = 초록 / 벽 = 시안 / 비 = 딥 블루 / 이명 = 바이올렛 / 패드 = 오렌지</text>
+        <text x="1160" y="970" class="body">진동 = 탐색, 근접, 정답 잠금, 보스 추적 상태 피드백</text>
+        <text x="1160" y="1028" class="small">현재 코드 기준 패드 색은 노랑이 아니라 오렌지에 가깝게 설정되어 있다.</text>
+        
+</svg>

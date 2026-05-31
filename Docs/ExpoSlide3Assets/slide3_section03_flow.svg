@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="4200" height="1890" viewBox="0 0 4200 1890">
+    <rect width="4200" height="1890" rx="40" fill="#F7FBFC"/>
+    <rect x="24" y="24" width="4152" height="1842" rx="28" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <text x="88" y="90" font-size="54" font-weight="700" fill="#1C3843" font-family="Malgun Gothic, Pretendard, Arial">데모 진행 흐름</text>
+    <text x="88" y="142" font-size="28" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">종 탐색에서 숲 엔딩까지, 감각 규칙이 어떻게 단계별로 바뀌는지 한 장에 정리했습니다.</text>
+    
+    <rect x="88" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="134" cy="270" r="28" fill="#1DAF88"/>
+    <text x="124" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">1</text>
+    <text x="178" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">종 오리엔테이션</text>
+    <rect x="122" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <circle cx="358" cy="446" r="82" fill="none" stroke="#1DAF88" stroke-width="10"/>
+    <path d="M 306 430 C 338 392, 378 392, 410 430" fill="none" stroke="#1DAF88" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 316 482 C 348 504, 368 504, 400 482" fill="none" stroke="#1DAF88" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 468 402 L 506 436 L 468 470" fill="none" stroke="#1DAF88" stroke-width="10" stroke-linecap="round"/>
+  
+    
+    <text x="132" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">왼쪽 가까운 종으로 시작</text>
+  
+    <text x="132" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">소리와 빛이 연결된 감각 소개</text>
+  
+    <rect x="122" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="146" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="146" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">첫 종은 왼쪽 가까이에서 시작</text>
+    <text x="146" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">플레이어는 고개를 돌리며 종의 위치를 인지</text>
+    <text x="146" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">소리와 빛이 함께 반응한다는 규칙을 소개</text>
+    <rect x="122" y="1052" width="472" height="66" rx="18" fill="#1DAF88" opacity="0.12"/>
+    <text x="146" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">도입</text>
+    
+    <rect x="656" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="702" cy="270" r="28" fill="#05FF1F"/>
+    <text x="692" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">2</text>
+    <text x="746" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">종 추적 / 비바람</text>
+    <rect x="690" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <path d="M 864 432 H 988 L 1012 544 H 840 Z" fill="#05FF1F" opacity="0.92"/>
+    <rect x="908" y="364" width="36" height="46" rx="16" fill="#05FF1F" opacity="0.92"/>
+    <path d="M 842 558 C 842 588, 884 608, 926 608 C 968 608, 1010 588, 1010 558" fill="none" stroke="#05FF1F" stroke-width="12" stroke-linecap="round"/>
+  
+    
+    <text x="700" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">종 방향으로 이동</text>
+  
+    <text x="700" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">비와 바람 속에서도 분리 추적</text>
+  
+    <rect x="690" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="714" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="714" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">왼쪽 스틱으로 실제 이동</text>
+    <text x="714" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">특정 구역에 들어가면 비·바람이 자동 시작</text>
+    <text x="714" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">패드를 흔들면 종소리가 다시 또렷해짐</text>
+    <rect x="690" y="1052" width="472" height="66" rx="18" fill="#05FF1F" opacity="0.12"/>
+    <text x="714" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">추적</text>
+    
+    <rect x="1224" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="1270" cy="270" r="28" fill="#0514FF"/>
+    <text x="1260" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">3</text>
+    <text x="1314" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">종 바라보기 ×3</text>
+    <rect x="1258" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <ellipse cx="1494" cy="466" rx="96" ry="56" fill="#0514FF" opacity="0.20"/>
+    <circle cx="1436" cy="436" r="34" fill="#0514FF" opacity="0.86"/>
+    <circle cx="1492" cy="418" r="42" fill="#0514FF" opacity="0.86"/>
+    <circle cx="1548" cy="438" r="34" fill="#0514FF" opacity="0.86"/>
+    <path d="M 1440 504 L 1420 564" stroke="#0514FF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 1494 512 L 1476 572" stroke="#0514FF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 1548 504 L 1518 566" stroke="#0514FF" stroke-width="12" stroke-linecap="round"/>
+  
+    
+    <text x="1268" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">머리 회전으로 종을 응시</text>
+  
+    <text x="1268" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">잠깐 벗어나도 진행도 유지</text>
+  
+    <rect x="1258" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="1282" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="1282" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">머리 회전으로 종을 일정 시간 바라보기</text>
+    <text x="1282" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">시선이 벗어나도 진행도는 유지</text>
+    <text x="1282" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">총 3회 성공 + 2회 종 이동</text>
+    <rect x="1258" y="1052" width="472" height="66" rx="18" fill="#0514FF" opacity="0.12"/>
+    <text x="1282" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">시선</text>
+    
+    <rect x="1792" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="1838" cy="270" r="28" fill="#F2B733"/>
+    <text x="1828" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">4</text>
+    <text x="1882" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">종 획득</text>
+    <rect x="1826" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <rect x="1988" y="338" width="24" height="232" rx="12" fill="#F2B733"/>
+    <rect x="2112" y="338" width="24" height="232" rx="12" fill="#F2B733"/>
+    <rect x="1976" y="318" width="176" height="26" rx="12" fill="#F2B733"/>
+    <path d="M 2020 430 H 2104 L 2122 536 H 2002 Z" fill="#05FF1F" opacity="0.95"/>
+  
+    
+    <text x="1836" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">짧은 정적과 진동</text>
+  
+    <text x="1836" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">정화 단계로 규칙 전환</text>
+  
+    <rect x="1826" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="1850" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="1850" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">짧은 정적과 진동으로 규칙 전환</text>
+    <text x="1850" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">이후부터 패드가 정화 장치 역할 수행</text>
+    <text x="1850" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">종은 길잡이이자 정화 감각의 상징</text>
+    <rect x="1826" y="1052" width="472" height="66" rx="18" fill="#F2B733" opacity="0.12"/>
+    <text x="1850" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">획득</text>
+    
+    <rect x="2360" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="2406" cy="270" r="28" fill="#05D9FF"/>
+    <text x="2396" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">5</text>
+    <text x="2450" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">일반 이명 ×2</text>
+    <rect x="2394" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <line x1="2534" y1="446" x2="2588" y2="446" stroke="#05D9FF" stroke-width="12" stroke-linecap="round"/>
+    <line x1="2612" y1="404" x2="2612" y2="488" stroke="#05D9FF" stroke-width="12" stroke-linecap="round"/>
+    <line x1="2648" y1="372" x2="2648" y2="520" stroke="#05D9FF" stroke-width="12" stroke-linecap="round"/>
+    <line x1="2684" y1="410" x2="2684" y2="482" stroke="#05D9FF" stroke-width="12" stroke-linecap="round"/>
+    <line x1="2718" y1="446" x2="2750" y2="446" stroke="#05D9FF" stroke-width="12" stroke-linecap="round"/>
+  
+    
+    <text x="2404" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">패드 위치 + 회전 pose 맞춤</text>
+  
+    <text x="2404" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">4초 유지로 정화</text>
+  
+    <rect x="2394" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="2418" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="2418" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">이명은 머리로 볼 때만 LED 표시</text>
+    <text x="2418" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">패드 pose를 맞추면 4초 동안 정화</text>
+    <text x="2418" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">범위를 벗어나면 일시정지되지만 초기화는 안 됨</text>
+    <rect x="2394" y="1052" width="472" height="66" rx="18" fill="#05D9FF" opacity="0.12"/>
+    <text x="2418" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">정화</text>
+    
+    <rect x="2928" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="2974" cy="270" r="28" fill="#750DFF"/>
+    <text x="2964" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">6</text>
+    <text x="3018" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">보스 이명 ×3</text>
+    <rect x="2962" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <path d="M 3106 524 C 3080 426, 3134 334, 3198 334 C 3262 334, 3316 426, 3290 524 Z" fill="#750DFF" opacity="0.92"/>
+    <path d="M 3156 436 L 3188 418 L 3196 456 Z" fill="#FFFFFF"/>
+    <path d="M 3240 436 L 3208 418 L 3200 456 Z" fill="#FFFFFF"/>
+    <path d="M 3162 492 C 3188 516, 3208 516, 3234 492" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  
+    
+    <text x="2972" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">2초 고정 + 느린 이동 추적</text>
+  
+    <text x="2972" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">실패 시 해당 패턴 리셋</text>
+  
+    <rect x="2962" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="2986" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="2986" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">2초 고정 후 아주 느리게 이동</text>
+    <text x="2986" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">허용 범위를 벗어나면 패턴 처음으로 리셋</text>
+    <text x="2986" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">총 3개 패턴(8.0 / 8.5 / 9.0초)</text>
+    <rect x="2962" y="1052" width="472" height="66" rx="18" fill="#750DFF" opacity="0.12"/>
+    <text x="2986" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">보스</text>
+    
+    <rect x="3496" y="224" width="540" height="902" rx="28" fill="#FFFFFF" stroke="#DCE6EB" stroke-width="3"/>
+    <circle cx="3542" cy="270" r="28" fill="#5DAD73"/>
+    <text x="3532" y="280" font-size="28" font-weight="700" fill="#FFFFFF" font-family="Malgun Gothic, Pretendard, Arial">7</text>
+    <text x="3586" y="282" font-size="34" font-weight="700" fill="#1E3944" font-family="Malgun Gothic, Pretendard, Arial">숲 엔딩</text>
+    <rect x="3530" y="322" width="472" height="244" rx="24" fill="#F4F9FA"/>
+    
+    <path d="M 3694 556 L 3738 420 L 3784 556 Z" fill="#235B38"/>
+    <path d="M 3748 556 L 3798 390 L 3848 556 Z" fill="#2B6B43"/>
+    <rect x="3722" y="556" width="18" height="48" rx="6" fill="#4B3824"/>
+    <rect x="3786" y="556" width="18" height="48" rx="6" fill="#4B3824"/>
+    <path d="M 3888 588 C 3838 564, 3798 534, 3754 488 C 3720 452, 3688 416, 3640 380" fill="none" stroke="#7DAA7A" stroke-width="14" stroke-linecap="round"/>
+  
+    
+    <text x="3540" y="612" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">정적 후 숲 소리 전환</text>
+  
+    <text x="3540" y="652" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">앞쪽 종소리를 따라 마무리</text>
+  
+    <rect x="3530" y="692" width="472" height="338" rx="22" fill="#F7FBFC" stroke="#DDE7EC" stroke-width="3"/>
+    <text x="3554" y="756" font-size="26" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">핵심 규칙</text>
+    <text x="3554" y="808" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">대왕 이명 해소 후 짧은 정적</text>
+    <text x="3554" y="850" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">숲 소리와 새 소리가 서서히 등장</text>
+    <text x="3554" y="892" font-size="24" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">앞쪽 종소리를 따라가거나 10초 뒤 자동 종료</text>
+    <rect x="3530" y="1052" width="472" height="66" rx="18" fill="#5DAD73" opacity="0.12"/>
+    <text x="3554" y="1094" font-size="23" fill="#365461" font-family="Malgun Gothic, Pretendard, Arial">엔딩</text>
+    
+    <rect x="88" y="1188" width="4024" height="194" rx="26" fill="#F4F9FA" stroke="#DCE7EC" stroke-width="3"/>
+    <text x="132" y="1260" font-size="34" font-weight="700" fill="#20404A" font-family="Malgun Gothic, Pretendard, Arial">빛과 색 규칙</text>
+    
+    <rect x="132" y="1304" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="174" cy="1356" r="18" fill="#05FF1F"/>
+    <text x="210" y="1350" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">종</text>
+    <text x="210" y="1384" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">초록</text>
+  
+    
+    <rect x="672" y="1304" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="714" cy="1356" r="18" fill="#05D9FF"/>
+    <text x="750" y="1350" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">벽</text>
+    <text x="750" y="1384" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">시안</text>
+  
+    
+    <rect x="1212" y="1304" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="1254" cy="1356" r="18" fill="#0514FF"/>
+    <text x="1290" y="1350" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">비</text>
+    <text x="1290" y="1384" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">딥 블루</text>
+  
+    
+    <rect x="1752" y="1304" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="1794" cy="1356" r="18" fill="#750DFF"/>
+    <text x="1830" y="1350" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">이명</text>
+    <text x="1830" y="1384" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">바이올렛</text>
+  
+    
+    <rect x="2292" y="1304" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="2334" cy="1356" r="18" fill="#F2B733"/>
+    <text x="2370" y="1350" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">패드</text>
+    <text x="2370" y="1384" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">노랑·골드</text>
+  
+
+    <rect x="88" y="1416" width="4024" height="350" rx="26" fill="#132128"/>
+    <text x="132" y="1494" font-size="36" font-weight="700" fill="#F0F6F8" font-family="Malgun Gothic, Pretendard, Arial">입력과 피드백 구조</text>
+    <text x="132" y="1558" font-size="28" fill="#C2D2D8" font-family="Malgun Gothic, Pretendard, Arial">입력: 종·비·바람·이명의 3D 공간 음향 / 머리 회전 / 패드 위치·yaw·pitch·roll</text>
+    <text x="132" y="1616" font-size="28" fill="#C2D2D8" font-family="Malgun Gothic, Pretendard, Arial">피드백: 눈앞 LED, 패드 진동, 관람자 화면, 그리고 단계마다 바뀌는 종·이명·엔딩 사운드</text>
+    <text x="132" y="1674" font-size="28" fill="#C2D2D8" font-family="Malgun Gothic, Pretendard, Arial">핵심 구현: ArUco 기반 패드 위치 추적 + IMU 회전 보정 + ESP32-S3 LED·진동 출력</text>
+    
+</svg>

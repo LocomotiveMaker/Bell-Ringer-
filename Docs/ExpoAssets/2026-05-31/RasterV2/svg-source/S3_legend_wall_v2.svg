@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="180" viewBox="0 0 760 180" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="10" y="10" width="740" height="160" rx="32" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="4"/>
+    <circle cx="66" cy="90" r="22" fill="#05D9FF"/>
+    <text x="106" y="82" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="34" font-weight="800" fill="#17323B">벽</text>
+    <text x="106" y="122" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="24" font-weight="700" fill="#667B85">시안</text>
+    
+</svg>

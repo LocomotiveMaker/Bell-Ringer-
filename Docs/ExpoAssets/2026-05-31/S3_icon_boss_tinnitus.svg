@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="512" cy="512" r="287.04" fill="#FFF0F3"/>
+      <circle cx="512" cy="512" r="287.04" stroke="#D43B4F" stroke-width="18.400000000000002" fill="none"/>
+      <circle cx="512" cy="512" r="172.96" stroke="#750DFF" stroke-width="11.040000000000001" fill="none" opacity="0.38"/>
+      <path d="M 298.56 512
+               C 335.36 512, 348.24 414.664, 396.08 414.664
+               C 443.92 414.664, 436.56 630.496, 495.44 630.496
+               C 550.64 630.496, 539.6 387.156, 596.64 387.156
+               C 646.3199999999999 387.156, 653.6800000000001 512, 721.76 512" stroke="#750DFF" stroke-width="22.080000000000002" fill="none"/>
+      <path d="M 215.76 388.72 L 278.32 340.88" stroke="#D43B4F" stroke-width="14.72" opacity="0.9"/>
+      <path d="M 749.36 681.28 L 811.9200000000001 635.28" stroke="#D43B4F" stroke-width="14.72" opacity="0.9"/>
+      <path d='M 512 142 L 560 236 L 666 236 L 588 306 L 618 412 L 512 354 L 406 412 L 436 306 L 358 236 L 464 236 Z' fill='#D43B4F' opacity='0.18'/>
+    </g>
+    
+</svg>

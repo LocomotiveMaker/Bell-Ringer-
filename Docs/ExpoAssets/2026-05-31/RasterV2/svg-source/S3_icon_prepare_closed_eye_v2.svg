@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="168" y="204" width="688" height="616" rx="82" fill="#EAFBF0" stroke="#CFE6DF" stroke-width="8"/>
+    
+    <circle cx="512" cy="470" r="146.32" fill="#FFFFFF" stroke="#CFE0E5" stroke-width="11.799999999999999"/>
+    <path d="M 424.68 455.84 C 467.16 403.92, 556.84 403.92, 599.3199999999999 455.84" fill="none" stroke="#1DAF88" stroke-width="18.88" stroke-linecap="round"/>
+    <path d="M 424.68 503.04 C 476.6 554.96, 547.4 554.96, 599.3199999999999 503.04" fill="none" stroke="#1DAF88" stroke-width="18.88" stroke-linecap="round"/>
+    <path d="M 467.16 597.44 L 490.76 625.76" stroke="#17323B" stroke-width="11.799999999999999" stroke-linecap="round"/>
+    <path d="M 512 597.44 L 512 630.48" stroke="#17323B" stroke-width="11.799999999999999" stroke-linecap="round"/>
+    <path d="M 556.84 597.44 L 533.24 625.76" stroke="#17323B" stroke-width="11.799999999999999" stroke-linecap="round"/>
+  
+    <path d="M 248 706 C 318 652, 430 640, 512 640 C 594 640, 706 652, 776 706" fill="none" stroke="#1DAF88" stroke-width="18" stroke-linecap="round"/>
+    <path d="M 360 766 H 664" stroke="#1DAF88" stroke-width="16" stroke-linecap="round" opacity="0.8"/>
+    
+</svg>

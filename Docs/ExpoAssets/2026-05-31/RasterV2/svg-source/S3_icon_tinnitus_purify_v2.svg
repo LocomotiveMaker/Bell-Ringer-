@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect x="146" y="188" width="732" height="648" rx="84" fill="#F4EEFF" stroke="#E2D7FB" stroke-width="8"/>
+    <circle cx="498" cy="504" r="124" fill="none" stroke="#750DFF" stroke-width="16"/>
+    <path d="M 350 504 H 404 M 592 504 H 646" stroke="#750DFF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 440 504 C 458 504, 458 446, 474 446 C 490 446, 492 568, 512 568 C 534 568, 532 420, 552 420 C 570 420, 576 504, 600 504" fill="none" stroke="#750DFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="618" y="612" width="154" height="94" rx="26" fill="#FFF3D8" stroke="#F2B733" stroke-width="8"/>
+    <circle cx="662" cy="659" r="18" fill="#2E3135"/>
+    <circle cx="726" cy="659" r="18" fill="#2E3135"/>
+    <rect x="676" y="644" width="34" height="10" rx="5" fill="#F2B733"/>
+    <path d="M 594 578 L 636 616" stroke="#F2B733" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 578 632 C 612 646, 648 646, 680 632" fill="none" stroke="#F2B733" stroke-width="10" stroke-linecap="round"/>
+    
+</svg>

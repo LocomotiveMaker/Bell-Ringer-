@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 306.20000000000005 711.4 L 306.20000000000005 446.8" stroke="#2D8A55" stroke-width="17.64"/>
+      <path d="M 512 731.0 L 512 358.6" stroke="#2D8A55" stroke-width="17.64"/>
+      <path d="M 723.6800000000001 701.6 L 723.6800000000001 466.4" stroke="#2D8A55" stroke-width="17.64"/>
+      <path d="M 192.51999999999998 515.4 L 306.20000000000005 280.20000000000005 L 419.88 515.4 Z" fill="#EAFBF3" stroke="#2D8A55" stroke-width="15.68"/>
+      <path d="M 382.64 444.84000000000003 L 512 205.72000000000003 L 641.36 444.84000000000003 Z" fill="#EAFBF3" stroke="#2D8A55" stroke-width="15.68"/>
+      <path d="M 611.96 523.24 L 723.6800000000001 321.36 L 835.4 523.24 Z" fill="#EAFBF3" stroke="#2D8A55" stroke-width="15.68"/>
+      <path d="M 455.16 813.3199999999999
+               C 490.44 717.28, 586.48 638.88, 684.48 605.56"
+            stroke="#0E6F66" stroke-width="23.52" fill="none"/>
+    </g>
+    
+</svg>

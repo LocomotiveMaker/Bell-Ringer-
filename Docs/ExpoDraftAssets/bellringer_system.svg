@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+
+    
+  <rect x="0" y="0" width="1600" height="960" rx="42" fill="#171A24"/>
+  <rect x="36" y="36" width="1528" height="888" rx="30" fill="#202434" stroke="#3A415A" stroke-width="3"/>
+  <text x="86" y="126" font-size="52" font-weight="700" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">하드웨어 / 트래킹 구조</text>
+  <line x1="86" y1="154" x2="1514" y2="154" stroke="#3A415A" stroke-width="3"/>
+  
+    <text x="86" y="220" font-size="30" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">머리, 패드, 카메라, 관람 화면이 하나의 루프로 연결되어 플레이와 관람을 동시에 지원한다.</text>
+    <rect x="120" y="320" width="300" height="170" rx="28" fill="#111520" stroke="#1DAF88" stroke-width="3"/>
+    <text x="150" y="392" font-size="36" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">Head Module</text>
+    <text x="150" y="438" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">LED 2장 + IMU</text>
+    <rect x="520" y="320" width="300" height="170" rx="28" fill="#111520" stroke="#F4C15A" stroke-width="3"/>
+    <text x="550" y="392" font-size="36" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">Pad</text>
+    <text x="550" y="438" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">IMU + Vibration</text>
+    <rect x="920" y="320" width="300" height="170" rx="28" fill="#111520" stroke="#4BA7FF" stroke-width="3"/>
+    <text x="950" y="392" font-size="36" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">Camera</text>
+    <text x="950" y="438" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">ArUco pose tracking</text>
+    <rect x="1320" y="320" width="170" height="170" rx="28" fill="#111520" stroke="#F3F5F9" stroke-width="3"/>
+    <text x="1354" y="392" font-size="30" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">Observer</text>
+    <text x="1354" y="432" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">Display</text>
+    <line x1="420" y1="405" x2="520" y2="405" stroke="#A9B2C7" stroke-width="8" stroke-linecap="round"/>
+    <line x1="820" y1="405" x2="920" y2="405" stroke="#A9B2C7" stroke-width="8" stroke-linecap="round"/>
+    <line x1="1220" y1="405" x2="1320" y2="405" stroke="#A9B2C7" stroke-width="8" stroke-linecap="round"/>
+    <polygon points="500,388 520,405 500,422" fill="#A9B2C7"/>
+    <polygon points="900,388 920,405 900,422" fill="#A9B2C7"/>
+    <polygon points="1300,388 1320,405 1300,422" fill="#A9B2C7"/>
+    <rect x="160" y="610" width="1280" height="180" rx="28" fill="#111520" stroke="#3A415A" stroke-width="2"/>
+    <text x="210" y="678" font-size="30" fill="#F3F5F9" font-family="Malgun Gothic, Pretendard, Arial">Unity Demo Loop</text>
+    <text x="210" y="726" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">입력 수집 → 상태 판정 → 공간 음향 / 빛 / 진동 출력 → 관람 화면 갱신</text>
+    <text x="210" y="766" font-size="24" fill="#A9B2C7" font-family="Malgun Gothic, Pretendard, Arial">테스트 씬에서 검증한 입력·오디오·빛·보스 추적 로직을 Final Demo에 통합한다.</text>
+  
+</svg>

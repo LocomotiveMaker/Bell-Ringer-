@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="512" cy="512" r="237.36" fill="#F4EEFF"/>
+      <circle cx="512" cy="512" r="237.36" stroke="#750DFF" stroke-width="16.560000000000002" fill="none"/>
+      <circle cx="512" cy="512" r="172.96" stroke="#750DFF" stroke-width="11.040000000000001" fill="none" opacity="0.38"/>
+      <path d="M 298.56 512
+               C 335.36 512, 348.24 427.36, 396.08 427.36
+               C 443.92 427.36, 436.56 615.04, 495.44 615.04
+               C 550.64 615.04, 539.6 403.44, 596.64 403.44
+               C 646.3199999999999 403.44, 653.6800000000001 512, 721.76 512" stroke="#750DFF" stroke-width="22.080000000000002" fill="none"/>
+      <path d="M 215.76 388.72 L 278.32 340.88" stroke="#750DFF" stroke-width="14.72" opacity="0.55"/>
+      <path d="M 749.36 681.28 L 811.9200000000001 635.28" stroke="#750DFF" stroke-width="14.72" opacity="0.55"/>
+      
+    </g>
+    
+</svg>

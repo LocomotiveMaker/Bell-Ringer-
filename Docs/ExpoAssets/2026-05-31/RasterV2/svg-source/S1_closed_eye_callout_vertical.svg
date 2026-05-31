@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1800" viewBox="0 0 1100 1800" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 90px; font-weight: 800; fill: #17323B; }
+      .h2 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 62px; font-weight: 800; fill: #17323B; }
+      .h3 { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 44px; font-weight: 800; fill: #17323B; }
+      .body { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #26424B; }
+      .small { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #667B85; }
+      .tiny { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #667B85; }
+      .badge { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: white; text-anchor: middle; dominant-baseline: middle; }
+      .mono { font-family: 'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif; font-size: 26px; font-weight: 700; fill: #17323B; }
+    </style>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+    <rect width="1100" height="1800" rx="56" fill="#F7FBFC"/>
+    <rect x="28" y="28" width="1044" height="1744" rx="52" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="6"/>
+    <rect x="92" y="96" width="916" height="560" rx="50" fill="#EAFBF0" stroke="#BFEFCA" stroke-width="4"/>
+    
+    <circle cx="550" cy="374" r="155" fill="#FFFFFF" stroke="#CFE0E5" stroke-width="12.5"/>
+    <path d="M 457.5 359 C 502.5 304, 597.5 304, 642.5 359" fill="none" stroke="#1DAF88" stroke-width="20" stroke-linecap="round"/>
+    <path d="M 457.5 409 C 512.5 464, 587.5 464, 642.5 409" fill="none" stroke="#1DAF88" stroke-width="20" stroke-linecap="round"/>
+    <path d="M 502.5 509 L 527.5 539" stroke="#17323B" stroke-width="12.5" stroke-linecap="round"/>
+    <path d="M 550 509 L 550 544" stroke="#17323B" stroke-width="12.5" stroke-linecap="round"/>
+    <path d="M 597.5 509 L 572.5 539" stroke="#17323B" stroke-width="12.5" stroke-linecap="round"/>
+  
+    <text x="110" y="802" class="h2">이 게임은</text>
+    <text x="110" y="884" class="h2">눈을 감고 플레이합니다!</text>
+    <text x="110" y="1000" class="body">플레이 판단은 소리, 빛, 진동,</text>
+    <text x="110" y="1058" class="body">머리 회전, 패드 위치·회전으로 이루어집니다.</text>
+    <text x="110" y="1168" class="small">시야 대신 감각 규칙을 배우며 진행하는 구조입니다.</text>
+    
+    <rect x="110" y="1260" width="404" height="116" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="152" cy="1310" r="16" fill="#1DAF88"/>
+    <text x="184" y="1316" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">소리</text>
+    <text x="184" y="1352" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">3D 방향 단서</text>
+  
+    
+    <rect x="566" y="1260" width="404" height="116" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="608" cy="1310" r="16" fill="#05FF1F"/>
+    <text x="640" y="1316" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">빛</text>
+    <text x="640" y="1352" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">폐안 상태 단서</text>
+  
+    
+    <rect x="110" y="1412" width="404" height="116" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="152" cy="1462" r="16" fill="#F2B733"/>
+    <text x="184" y="1468" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">진동</text>
+    <text x="184" y="1504" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">정답 피드백</text>
+  
+    
+    <rect x="566" y="1412" width="404" height="116" rx="28" fill="#FFFFFF" stroke="#D7E3E8" stroke-width="3"/>
+    <circle cx="608" cy="1462" r="16" fill="#05D9FF"/>
+    <text x="640" y="1468" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="30" font-weight="800" fill="#17323B">회전</text>
+    <text x="640" y="1504" font-family="'Malgun Gothic','Pretendard','Apple SD Gothic Neo',Arial,sans-serif" font-size="22" font-weight="700" fill="#667B85">머리·패드 입력</text>
+  
+    
+</svg>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3200" height="1100" viewBox="0 0 3200 1100">
+    <rect width="3200" height="1100" rx="44" fill="#F8FBFC"/>
+    <rect x="18" y="18" width="3164" height="1064" rx="34" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <text x="78" y="110" font-size="50" font-weight="700" fill="#1B3945" font-family="Malgun Gothic, Pretendard, Arial">구현 핵심</text>
+    <text x="78" y="162" font-size="28" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">소리, 빛, 진동, 추적 장치를 하나의 플레이 루프로 묶기 위해 사용한 요소</text>
+    
+      <rect x="74" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="140" cy="258" r="28" fill="#05FF1F" opacity="0.18"/>
+      <circle cx="140" cy="258" r="18" fill="#05FF1F"/>
+      <text x="186" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">ArUco 위치</text>
+      <text x="186" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">패드 위치 추적</text>
+      <rect x="584" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="650" cy="258" r="28" fill="#F2B733" opacity="0.18"/>
+      <circle cx="650" cy="258" r="18" fill="#F2B733"/>
+      <text x="696" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">IMU 회전</text>
+      <text x="696" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">머리·패드 회전 인식</text>
+      <rect x="1094" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="1160" cy="258" r="28" fill="#05D9FF" opacity="0.18"/>
+      <circle cx="1160" cy="258" r="18" fill="#05D9FF"/>
+      <text x="1206" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">폐안 LED 색</text>
+      <text x="1206" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">종·벽·비·이명·패드 분리</text>
+      <rect x="1604" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="1670" cy="258" r="28" fill="#0514FF" opacity="0.18"/>
+      <circle cx="1670" cy="258" r="18" fill="#0514FF"/>
+      <text x="1716" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">3D 공간 음향</text>
+      <text x="1716" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">방향과 거리 인지</text>
+      <rect x="2114" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="2180" cy="258" r="28" fill="#750DFF" opacity="0.18"/>
+      <circle cx="2180" cy="258" r="18" fill="#750DFF"/>
+      <text x="2226" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">진동 피드백</text>
+      <text x="2226" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">lock·치유·보스 추적</text>
+      <rect x="2624" y="196" width="430" height="246" rx="34" fill="#FFFFFF" stroke="#D8E5EA" stroke-width="3"/>
+      <circle cx="2690" cy="258" r="28" fill="#1DAF88" opacity="0.18"/>
+      <circle cx="2690" cy="258" r="18" fill="#1DAF88"/>
+      <text x="2736" y="252" font-size="38" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">관람자 화면</text>
+      <text x="2736" y="312" font-size="28" fill="#56707C" font-family="Malgun Gothic, Pretendard, Arial">상태와 감각 규칙 확인</text>
+    <rect x="74" y="518" width="3052" height="480" rx="32" fill="#F4F9FA" stroke="#DCE7EC" stroke-width="3"/>
+    <text x="118" y="588" font-size="34" font-weight="700" fill="#21424C" font-family="Malgun Gothic, Pretendard, Arial">색 선택 근거</text>
+    <text x="118" y="638" font-size="26" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">폐안 상태에서 서로 겹쳐 보이지 않도록, 색보다도 위치와 패턴이 먼저 읽히도록 조합했습니다.</text>
+    
+    <rect x="122" y="704" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="164" cy="756" r="18" fill="#05FF1F"/>
+    <text x="200" y="750" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">종</text>
+    <text x="200" y="784" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">초록</text>
+  
+    
+    <rect x="622" y="704" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="664" cy="756" r="18" fill="#05D9FF"/>
+    <text x="700" y="750" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">벽</text>
+    <text x="700" y="784" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">시안</text>
+  
+    
+    <rect x="1122" y="704" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="1164" cy="756" r="18" fill="#0514FF"/>
+    <text x="1200" y="750" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">비</text>
+    <text x="1200" y="784" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">딥 블루</text>
+  
+    
+    <rect x="1622" y="704" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="1664" cy="756" r="18" fill="#750DFF"/>
+    <text x="1700" y="750" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">이명</text>
+    <text x="1700" y="784" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">바이올렛</text>
+  
+    
+    <rect x="2122" y="704" width="420" height="104" rx="22" fill="#FFFFFF" stroke="#D9E4EA" stroke-width="3"/>
+    <circle cx="2164" cy="756" r="18" fill="#F2B733"/>
+    <text x="2200" y="750" font-size="30" font-weight="700" fill="#1D3A45" font-family="Malgun Gothic, Pretendard, Arial">패드</text>
+    <text x="2200" y="784" font-size="22" fill="#627583" font-family="Malgun Gothic, Pretendard, Arial">노랑·골드</text>
+  
+    <text x="120" y="906" font-size="24" fill="#60727E" font-family="Malgun Gothic, Pretendard, Arial">패드는 런타임 구현상 주황 계열 값도 존재하지만, 발표 및 관람자 화면에서는 노랑·골드 계열이 더 읽기 좋아 그 방향으로 설명합니다.</text>
+    
+</svg>

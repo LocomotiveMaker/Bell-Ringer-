@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <style>
+      .title { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 82px; font-weight: 800; fill: #14252B; }
+      .h2 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 54px; font-weight: 800; fill: #14252B; }
+      .h3 { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 40px; font-weight: 800; fill: #14252B; }
+      .body { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 600; fill: #14252B; }
+      .small { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 28px; font-weight: 600; fill: #5B6B73; }
+      .tiny { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 24px; font-weight: 600; fill: #5B6B73; }
+      .num { font-family: 'Pretendard','Paperlogy','Malgun Gothic','Apple SD Gothic Neo',Arial,sans-serif; font-size: 34px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+  
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="512" cy="512" r="216.2" stroke="#D6E5E4" stroke-width="16.919999999999998" fill="none"/>
+      <circle cx="512" cy="512" r="127.83999999999999" stroke="#19B39E" stroke-width="11.28" fill="none" opacity="0.35"/>
+      <path d="M 214.96000000000004 314.6 C 314.6 239.40000000000003, 421.76 263.84000000000003, 508.24 355.96000000000004" stroke="#05FF1F" stroke-width="16.919999999999998" fill="none" stroke-dasharray="26.32 22.56"/>
+      <path d="M 809.04 705.64 C 701.88 767.68, 589.08 745.12, 513.88 666.16" stroke="#05FF1F" stroke-width="16.919999999999998" fill="none" stroke-dasharray="26.32 22.56"/>
+      
+    <g stroke="#05FF1F" stroke-width="11.167200000000001" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 440.936 555.6536
+               C 440.936 496.772, 468.3464 432.8144, 512 418.60159999999996
+               C 555.6536 432.8144, 583.064 496.772, 583.064 555.6536" />
+      <path d="M 421.6472 563.7752 H 602.3528" />
+      <path d="M 477.4832 563.7752 C 497.7872 594.2312, 526.2128 594.2312, 546.5168 563.7752" />
+      <circle cx="512" cy="577.988" r="8.1216" fill="#05FF1F" stroke="none"/>
+      <path d="M 389.1608 490.6808 C 355.6592 516.0608, 355.6592 569.8664, 389.1608 595.2464" />
+      <path d="M 634.8392 490.6808 C 668.3408 516.0608, 668.3408 569.8664, 634.8392 595.2464" />
+    </g>
+    
+      <path d="M 205.56 337.15999999999997 L 273.24 337.15999999999997" stroke="#05FF1F" stroke-width="15.04"/>
+      <path d="M 754.52 686.84 L 822.2 686.84" stroke="#05FF1F" stroke-width="15.04"/>
+    </g>
+    
+</svg>
