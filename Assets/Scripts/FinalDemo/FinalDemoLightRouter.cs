@@ -32,7 +32,7 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusBoardRangeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float tinnitusPatternSizeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusPatternSizeScale = 0.5f;
-        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.3f;
+        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.25f;
         [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
@@ -40,10 +40,7 @@ namespace BellRinger.FinalDemo
         private int _seed;
         private string _lastAction = "(idle)";
         private readonly Color[] _logicalFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
-        private readonly Color[] _hardwareFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
         private int _logicalFrameVersion;
-        private float _rainCompositeIntensity;
-        private float _rainCompositeUntilRealtime;
 
         public bool OutputToHardware => outputToHardware;
         public string LastAction => _lastAction;
@@ -102,24 +99,13 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            bool compositeRain = IsRainCompositeActive();
             HardwareBridge bridge = ResolveBridge();
-            if (outputToHardware && bridge != null && !compositeRain)
+            if (outputToHardware && bridge != null)
             {
                 bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellColor, frame.brightnessNormalized, 1.15f);
             }
 
-            if (compositeRain)
-            {
-                RenderRainLogicalFrame(_rainCompositeIntensity);
-                RenderBellLogicalFrame(frame, false, bellColor, false);
-                SendLogicalFrameToHardware(bridge, true);
-            }
-            else
-            {
-                RenderBellLogicalFrame(frame, false, bellColor);
-            }
-
+            RenderBellLogicalFrame(frame, false, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
         }
@@ -212,38 +198,22 @@ namespace BellRinger.FinalDemo
             float core = Mathf.Lerp(0.28f, 0.52f, envelope);
             float width = Mathf.Lerp(1.15f, 2.15f, Mathf.Clamp01(envelope + onset * 0.04f));
 
-            bool compositeRain = IsRainCompositeActive();
             HardwareBridge bridge = ResolveBridge();
-            if (outputToHardware && bridge != null && !compositeRain)
+            if (outputToHardware && bridge != null)
             {
                 bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.62f + onset * 0.04f);
             }
 
-            if (compositeRain)
-            {
-                RenderRainLogicalFrame(_rainCompositeIntensity);
-                RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness, false);
-                SendLogicalFrameToHardware(bridge, true);
-            }
-            else
-            {
-                RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
-            }
-
+            RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
         }
 
         public void ShowRainFloorBand(float intensity = 0.45f)
         {
-            _rainCompositeIntensity = Mathf.Clamp01(intensity);
-            _rainCompositeUntilRealtime = Time.realtimeSinceStartup + 0.35f;
             if (!TryEmit(FinalDemoFeedbackPriority.Rain))
             {
-                HardwareBridge heldBridge = ResolveBridge();
-                CompositeRainUnderExistingLogicalFrame(_rainCompositeIntensity);
-                SendLogicalFrameToHardware(heldBridge, true);
-                _lastAction = $"Rain composited under {HeldPriority} b={_rainCompositeIntensity:0.00}.";
+                _lastAction = $"Rain skipped under {HeldPriority}.";
                 return;
             }
 
@@ -500,15 +470,6 @@ namespace BellRinger.FinalDemo
 
         private void ClearMappedOutput(FinalDemoFeedbackPriority priority, string reason)
         {
-            if (priority == FinalDemoFeedbackPriority.Bell && IsRainCompositeActive())
-            {
-                HardwareBridge rainBridge = ResolveBridge();
-                RenderRainLogicalFrame(_rainCompositeIntensity);
-                SendLogicalFrameToHardware(rainBridge, true);
-                _lastAction = $"{reason} Rain kept.";
-                return;
-            }
-
             if (!clearWhenMappedOutsideBoard || !TryEmit(priority))
             {
                 _lastAction = reason;
@@ -545,44 +506,6 @@ namespace BellRinger.FinalDemo
             }
 
             _logicalFrameVersion++;
-        }
-
-        private bool IsRainCompositeActive()
-        {
-            return _rainCompositeIntensity > 0.001f && Time.realtimeSinceStartup <= _rainCompositeUntilRealtime;
-        }
-
-        private void SendLogicalFrameToHardware(HardwareBridge bridge, bool scaleRainForHardware)
-        {
-            if (outputToHardware && bridge != null)
-            {
-                if (!scaleRainForHardware)
-                {
-                    bridge.SendLedFrame(_logicalFrame);
-                    return;
-                }
-
-                for (int i = 0; i < _logicalFrame.Length; i++)
-                {
-                    Color original = _logicalFrame[i];
-                    Color hardware = original;
-                    bool rainDominant = original.b >= original.g && original.b >= original.r;
-                    if (rainDominant)
-                    {
-                        hardware.r *= rainHardwareBrightnessMultiplier;
-                        hardware.g *= rainHardwareBrightnessMultiplier;
-                        hardware.b *= rainHardwareBrightnessMultiplier;
-                    }
-                    else
-                    {
-                        hardware.b *= rainHardwareBrightnessMultiplier;
-                    }
-
-                    _hardwareFrame[i] = hardware;
-                }
-
-                bridge.SendLedFrame(_hardwareFrame);
-            }
         }
 
         private void RenderBellLogicalFrame(BellRingerLedDotFrame frame, bool miniRipple, Color color, bool clear = true)
@@ -656,36 +579,6 @@ namespace BellRinger.FinalDemo
                     SetPixel(x, y, rainColor, ResolveRainPixelBrightness(x, y, intensity, rowWeight));
                 }
             }
-        }
-
-        private void CompositeRainUnderExistingLogicalFrame(float intensity)
-        {
-            for (int y = 0; y < LogicalFrameHeight; y++)
-            {
-                float rowWeight = ResolveRainRowWeight(y);
-                if (rowWeight <= 0f)
-                {
-                    continue;
-                }
-
-                for (int x = 0; x < LogicalFrameWidth; x++)
-                {
-                    int index = (y * LogicalFrameWidth) + x;
-                    Color current = _logicalFrame[index];
-                    bool currentIsRainOrEmpty = current.maxColorComponent <= 0.001f ||
-                                                (current.b >= current.g && current.b >= current.r);
-                    if (!currentIsRainOrEmpty)
-                    {
-                        continue;
-                    }
-
-                    Color pixel = rainColor * ResolveRainPixelBrightness(x, y, intensity, rowWeight);
-                    pixel.a = 1f;
-                    _logicalFrame[index] = pixel;
-                }
-            }
-
-            _logicalFrameVersion++;
         }
 
         private static float ResolveRainRowWeight(int y)

@@ -13898,7 +13898,7 @@ MonoBehaviour:
   bossTinnitusBoardRangeScale: 0.5
   tinnitusPatternSizeScale: 0.5
   bossTinnitusPatternSizeScale: 0.5
-  rainHardwareBrightnessMultiplier: 0.3
+  rainHardwareBrightnessMultiplier: 0.25
   clearWhenMappedOutsideBoard: 1
 --- !u!1 &1261298735
 GameObject:

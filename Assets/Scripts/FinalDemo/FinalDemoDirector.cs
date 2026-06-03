@@ -135,7 +135,6 @@ namespace BellRinger.FinalDemo
         private bool _bossWasInsideTolerance;
         private int _bossPatternFailureCount;
         private float _nextBossLightAtRealtime;
-        private float _nextBossHapticAtRealtime;
         private float _currentBossApproachDistance = float.PositiveInfinity;
         private float _currentBossPatternProgress01;
         private float _currentBossPatternTargetMatch01;
@@ -673,7 +672,6 @@ namespace BellRinger.FinalDemo
             _bossWasInsideTolerance = false;
             _bossPatternFailureCount = 0;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
-            _nextBossHapticAtRealtime = Time.realtimeSinceStartup;
             _currentBossApproachDistance = float.PositiveInfinity;
             _currentBossPatternProgress01 = 0f;
             _currentBossPatternTargetMatch01 = 0f;
@@ -979,7 +977,6 @@ namespace BellRinger.FinalDemo
             if (!_stageOneShotPlayed)
             {
                 PlayReactiveBellCue(FinalDemoCueId.BellDistantCall, bellPosition, tuningProfile.OpeningCloseBellVolume, tuningProfile.OpeningCloseBellLedIntensity);
-                hapticRouter?.TriggerBellAssistPulse();
                 _stageOneShotPlayed = true;
             }
 
@@ -1160,11 +1157,14 @@ namespace BellRinger.FinalDemo
             float soundLightRange01 = ResolveSoundLightRange01(
                 rainStage ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne,
                 targetPosition);
-            TickBellContinuousAnchor(
-                targetPosition,
-                tuningProfile.BellFollowLedIntensity * 0.42f * ResolveBellLedRangeScale(soundLightRange01),
-                1f,
-                false);
+            if (!rainStage)
+            {
+                TickBellContinuousAnchor(
+                    targetPosition,
+                    tuningProfile.BellFollowLedIntensity * 0.42f * ResolveBellLedRangeScale(soundLightRange01),
+                    1f,
+                    false);
+            }
 
             if (rainStage)
             {
@@ -1197,6 +1197,7 @@ namespace BellRinger.FinalDemo
 
             if (_currentBellFollowDistance <= tuningProfile.BellArrivalRadius)
             {
+                hapticRouter?.TriggerBellAssistPulse();
                 if (rainStage)
                 {
                     BeginRainArrivalOutro();
@@ -1359,7 +1360,6 @@ namespace BellRinger.FinalDemo
             AudioSource source = PlayReactiveBellCue(cueId, targetPosition, volume, intensity);
             ApplyAudioSourceRange(source, _currentStage == FinalDemoStage.BellFollowRain ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne);
             DelayNextBellFollowCallAfterAssist(cueId);
-            hapticRouter?.TriggerBellAssistPulse();
         }
 
         private void TryPadShakeBellAssist(Vector3 targetPosition)
@@ -1701,7 +1701,6 @@ namespace BellRinger.FinalDemo
         {
             _bellGazeSuccessCount++;
             PlayReactiveBellCue(FinalDemoCueId.BellGazeSuccess, bellPosition, 1f, 1f);
-            hapticRouter?.TriggerBellAssistPulse();
 
             int required = tuningProfile != null ? tuningProfile.BellGazeRequiredSuccesses : 3;
             if (_bellGazeSuccessCount >= required)
@@ -1843,12 +1842,12 @@ namespace BellRinger.FinalDemo
                 true,
                 ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), targetWorldPosition));
             TickTinnitusPadBellFeedback(_poseMatchEvaluator.PositionMatch01);
-            TickPoseMatchGuidanceHaptics(isInsideTolerance, false, ref _nextTinnitusHapticAtRealtime);
             if (isInsideTolerance && !_wasTinnitusInsideTolerance)
             {
                 audioRouter?.PlayOneShot(FinalDemoCueId.TinnitusPoseLock, targetWorldPosition, 1f);
                 _tinnitusAudioController?.TriggerBurst(0.45f);
                 hapticRouter?.TriggerTinnitusLockPulse();
+                _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + 0.24f;
                 if (_currentStage == FinalDemoStage.GeneralTinnitusOne)
                 {
                     QueueNarration(FinalDemoCueId.NarrHoldPose, FinalDemoStage.GeneralTinnitusOne);
@@ -1870,8 +1869,7 @@ namespace BellRinger.FinalDemo
 
             if (isInsideTolerance && Time.realtimeSinceStartup >= _nextTinnitusHapticAtRealtime)
             {
-                float intensity = Mathf.Lerp(0.3f, 0.75f, cleanseProgress);
-                hapticRouter?.StartTinnitusCleanseHum(intensity, tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
+                hapticRouter?.StartLowestTinnitusCleanseHum(tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
                 _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds;
             }
 
@@ -1893,50 +1891,7 @@ namespace BellRinger.FinalDemo
 
             SetPlayerMovementLocked(true);
             EnforceLockedPlayerPosition();
-            hapticRouter?.TriggerTinnitusLockPulse();
             _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup + 0.35f;
-        }
-
-        private void TickPoseMatchGuidanceHaptics(bool insideTolerance, bool boss, ref float nextHapticAtRealtime)
-        {
-            if (_poseMatchEvaluator == null || Time.realtimeSinceStartup < nextHapticAtRealtime)
-            {
-                return;
-            }
-
-            if (insideTolerance)
-            {
-                float progress = _poseMatchEvaluator.Progress01;
-                float intensity = Mathf.Lerp(0.3f, 0.75f, progress);
-                if (boss)
-                {
-                    hapticRouter?.TriggerBossTrackingPulse();
-                    nextHapticAtRealtime = Time.realtimeSinceStartup + 0.75f;
-                    return;
-                }
-
-                hapticRouter?.StartTinnitusCleanseHum(intensity, tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
-                nextHapticAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds;
-                return;
-            }
-
-            float match = Mathf.Clamp01(_poseMatchEvaluator.TotalMatch01);
-            if (match < 0.18f)
-            {
-                nextHapticAtRealtime = Time.realtimeSinceStartup + 0.18f;
-                return;
-            }
-
-            float guidance = Mathf.InverseLerp(0.18f, 0.78f, match);
-            if (boss)
-            {
-                hapticRouter?.TriggerBossTrackingPulse();
-                nextHapticAtRealtime = Time.realtimeSinceStartup + Mathf.Lerp(0.72f, 0.32f, guidance);
-                return;
-            }
-
-            hapticRouter?.StartTinnitusCleanseHum(Mathf.Lerp(0.18f, 0.52f, guidance), Mathf.Lerp(0.18f, 0.38f, guidance));
-            nextHapticAtRealtime = Time.realtimeSinceStartup + Mathf.Lerp(0.85f, 0.28f, guidance);
         }
 
         private bool UpdateTinnitusLookAndLight(Vector3 targetWorldPosition, float cleanseProgress)
@@ -2020,7 +1975,6 @@ namespace BellRinger.FinalDemo
             _bossWasInsideTolerance = false;
             _bossPatternFailureCount = 0;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
-            _nextBossHapticAtRealtime = Time.realtimeSinceStartup;
 
             EnsurePoseMatchEvaluator();
             if (_poseMatchEvaluator != null)
@@ -2040,10 +1994,6 @@ namespace BellRinger.FinalDemo
             if (stage == FinalDemoStage.BossPatternOne)
             {
                 QueueNarration(FinalDemoCueId.NarrFindSoundOrigin, FinalDemoStage.BossPatternOne);
-            }
-            else
-            {
-                hapticRouter?.TriggerBossTrackingPulse();
             }
         }
 
@@ -2079,8 +2029,13 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
+            bool enteredTolerance = insideTolerance && !_bossWasInsideTolerance;
             _bossWasInsideTolerance = insideTolerance;
-            TickPoseMatchGuidanceHaptics(insideTolerance, true, ref _nextBossHapticAtRealtime);
+            if (enteredTolerance)
+            {
+                hapticRouter?.TriggerBossHitPulse();
+            }
+
             UpdateMatchToneFeedback(
                 _currentBossWeakpointWorldPosition != Vector3.zero ? _currentBossWeakpointWorldPosition : bossPosition,
                 _poseMatchEvaluator.PositionMatch01,
@@ -2166,13 +2121,11 @@ namespace BellRinger.FinalDemo
             _poseMatchEvaluator.ResetProgress();
             UpdateBossPatternTarget();
             PlayReactiveTinnitusCue(FinalDemoCueId.BossGlitchBurst, bossPosition, 0.75f, 1f, true);
-            hapticRouter?.TriggerBossFailurePulse();
         }
 
         private void CompleteBossPattern(Vector3 bossPosition)
         {
             PlayReactiveTinnitusCue(FinalDemoCueId.BossHit, bossPosition, 1f, 1f, true);
-            hapticRouter?.TriggerBossHitPulse();
             ForceNextStage();
         }
 
@@ -2183,7 +2136,6 @@ namespace BellRinger.FinalDemo
             lightRouter?.Clear();
             PlayReactiveTinnitusCue(FinalDemoCueId.BossDefeatRise, bossPosition, 1f, 1f, true);
             audioRouter?.PlayOneShot(FinalDemoCueId.BossDefeatAir, ResolvePlayerRelativePosition(Vector3.forward * 1.5f), 0.85f);
-            hapticRouter?.TriggerBossHitPulse();
         }
 
         private void TickBossDefeat()

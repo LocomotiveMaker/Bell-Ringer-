@@ -76,6 +76,12 @@ namespace BellRinger.FinalDemo
             _continuous = true;
         }
 
+        public void StartLowestTinnitusCleanseHum(float seconds = 1.8f)
+        {
+            Pulse(0.08f, 0.02f, seconds, FinalDemoFeedbackPriority.CriticalPad, "lowest tinnitus cleanse hum", true);
+            _continuous = true;
+        }
+
         public void TriggerBossTrackingPulse()
         {
             Pulse(0.42f, 0.62f, 0.22f, FinalDemoFeedbackPriority.CriticalPad, "boss tracking pulse");
