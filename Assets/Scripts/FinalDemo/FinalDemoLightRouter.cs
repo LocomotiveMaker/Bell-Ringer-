@@ -26,6 +26,12 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0.05f, 1f)] private float bellWaveMaximumBrightness = 0.21f;
         [SerializeField, Range(0.05f, 1f)] private float tinnitusLightScale = 0.3f;
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusLightScale = 0.3f;
+        [SerializeField, Range(0.05f, 1f)] private float tinnitusIntensityMultiplier = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float bossTinnitusIntensityMultiplier = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float tinnitusBoardRangeScale = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float bossTinnitusBoardRangeScale = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float tinnitusPatternSizeScale = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] private float bossTinnitusPatternSizeScale = 0.5f;
         [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
@@ -222,14 +228,18 @@ namespace BellRinger.FinalDemo
 
         public void ShowTinnitusPoint(Vector3 worldPosition, float intensity = 0.65f, bool boss = false)
         {
-            float scaledIntensity = intensity * (boss ? bossTinnitusLightScale : tinnitusLightScale);
-            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame))
+            float lightScale = boss ? bossTinnitusLightScale : tinnitusLightScale;
+            float intensityMultiplier = boss ? bossTinnitusIntensityMultiplier : tinnitusIntensityMultiplier;
+            float boardRangeScale = boss ? bossTinnitusBoardRangeScale : tinnitusBoardRangeScale;
+            float sizeScale = boss ? bossTinnitusPatternSizeScale : tinnitusPatternSizeScale;
+            float scaledIntensity = intensity * lightScale * intensityMultiplier;
+            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
+            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame, 1f, boardRangeScale))
             {
-                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} point out of board.");
+                ClearMappedOutput(priority, $"{(boss ? "Boss" : "Tinnitus")} point out of board.");
                 return;
             }
 
-            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
             if (!TryEmit(priority))
             {
                 return;
@@ -241,19 +251,19 @@ namespace BellRinger.FinalDemo
                 bridge.SendLedTinnitus(
                     frame.centerX,
                     frame.centerY,
-                    boss ? 1.65f : 1.05f,
-                    boss ? 3.2f : 1.6f,
+                    (boss ? 1.65f : 1.05f) * sizeScale,
+                    (boss ? 3.2f : 1.6f) * sizeScale,
                     boss ? 0.65f : 1f,
                     boss ? 0.35f : 0f,
                     tinnitusColor,
                     frame.brightnessNormalized,
                     ++_seed,
                     boss ? 0.78f : 0.45f,
-                    boss ? 2.6f : 1.6f,
+                    (boss ? 2.6f : 1.6f) * sizeScale,
                     boss ? 1.85f : 1.35f);
             }
 
-            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
+            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor, sizeScale);
             HoldPriority(priority);
             _lastAction = $"{(boss ? "Boss" : "Tinnitus")} light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
         }
@@ -263,30 +273,32 @@ namespace BellRinger.FinalDemo
             float envelope = Mathf.Clamp01(envelope01);
             float onset = Mathf.Clamp01(onset01);
             float brightness = Mathf.Clamp01((0.12f + envelope * 0.62f + onset * 0.06f) * Mathf.Clamp01(intensityScale));
-            brightness *= boss ? bossTinnitusLightScale : tinnitusLightScale;
-            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame))
+            brightness *= (boss ? bossTinnitusLightScale : tinnitusLightScale) * (boss ? bossTinnitusIntensityMultiplier : tinnitusIntensityMultiplier);
+            float boardRangeScale = boss ? bossTinnitusBoardRangeScale : tinnitusBoardRangeScale;
+            float sizeScale = boss ? bossTinnitusPatternSizeScale : tinnitusPatternSizeScale;
+            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
+            if (!TryMapWorldPosition(worldPosition, brightness, out BellRingerLedDotFrame frame, 1f, boardRangeScale))
             {
-                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} wave out of board.");
+                ClearMappedOutput(priority, $"{(boss ? "Boss" : "Tinnitus")} wave out of board.");
                 return;
             }
             brightness = frame.brightnessNormalized;
 
-            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
             if (!TryEmit(priority))
             {
                 return;
             }
 
-            float coreSize = boss
+            float coreSize = (boss
                 ? Mathf.Lerp(1.2f, 2.35f, envelope)
-                : Mathf.Lerp(0.65f, 1.28f, envelope);
-            float tearAmount = boss
+                : Mathf.Lerp(0.65f, 1.28f, envelope)) * sizeScale;
+            float tearAmount = (boss
                 ? Mathf.Lerp(0.9f, 3.15f, envelope) + onset * 0.35f
-                : Mathf.Lerp(0.35f, 1.55f, envelope) + onset * 0.22f;
+                : Mathf.Lerp(0.35f, 1.55f, envelope) + onset * 0.22f) * sizeScale;
             float instability = Mathf.Clamp01(envelope * 0.55f + onset * 0.16f);
             float axisX = Mathf.Sin((_seed + 1) * 0.73f);
             float axisY = boss ? Mathf.Cos((_seed + 3) * 0.47f) * 0.55f : 0f;
-            float smear = boss ? Mathf.Lerp(1.7f, 3.4f, envelope) : Mathf.Lerp(1.1f, 2.2f, envelope);
+            float smear = (boss ? Mathf.Lerp(1.7f, 3.4f, envelope) : Mathf.Lerp(1.1f, 2.2f, envelope)) * sizeScale;
 
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
@@ -306,21 +318,25 @@ namespace BellRinger.FinalDemo
                     boss ? 1.85f : 1.35f);
             }
 
-            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor);
+            RenderTinnitusLogicalFrame(frame, boss, tinnitusColor, sizeScale);
             HoldPriority(priority);
             _lastAction = $"{(boss ? "Boss" : "Tinnitus")} wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
         }
 
         public void ShowTinnitusPattern(Vector3 worldPosition, float intensity = 0.65f, float cleanseStability = 0f, bool boss = false, float rangeScale = 1f)
         {
-            float scaledIntensity = Mathf.Clamp01(intensity) * (boss ? bossTinnitusLightScale : tinnitusLightScale);
-            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame, 1f, rangeScale))
+            float lightScale = boss ? bossTinnitusLightScale : tinnitusLightScale;
+            float intensityMultiplier = boss ? bossTinnitusIntensityMultiplier : tinnitusIntensityMultiplier;
+            float boardRangeScale = Mathf.Max(0.05f, rangeScale * (boss ? bossTinnitusBoardRangeScale : tinnitusBoardRangeScale));
+            float sizeScale = boss ? bossTinnitusPatternSizeScale : tinnitusPatternSizeScale;
+            float scaledIntensity = Mathf.Clamp01(intensity) * lightScale * intensityMultiplier;
+            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
+            if (!TryMapWorldPosition(worldPosition, scaledIntensity, out BellRingerLedDotFrame frame, 1f, boardRangeScale))
             {
-                ClearMappedOutput(boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus, $"{(boss ? "Boss" : "Tinnitus")} pattern out of board.");
+                ClearMappedOutput(priority, $"{(boss ? "Boss" : "Tinnitus")} pattern out of board.");
                 return;
             }
 
-            FinalDemoFeedbackPriority priority = boss ? FinalDemoFeedbackPriority.CriticalPad : FinalDemoFeedbackPriority.Tinnitus;
             if (!TryEmit(priority))
             {
                 return;
@@ -330,11 +346,11 @@ namespace BellRinger.FinalDemo
             float pulse = EvaluateTinnitusPulse(Time.realtimeSinceStartup, boss ? 0.72f : 0.95f);
             float softLevel = Mathf.Clamp01(0.48f + pulse * 0.52f);
             Vector2 axis = boss ? new Vector2(1f, 0.42f).normalized : Vector2.right;
-            float coreSize = (boss ? 1.56f : 1.08f) * Mathf.Lerp(1f, 0.82f, stability);
-            float tearStrength = (boss ? 2.35f : 1.42f) * (1f - stability) * Mathf.Lerp(0.38f, 1f, pulse);
+            float coreSize = (boss ? 1.56f : 1.08f) * Mathf.Lerp(1f, 0.82f, stability) * sizeScale;
+            float tearStrength = (boss ? 2.35f : 1.42f) * (1f - stability) * Mathf.Lerp(0.38f, 1f, pulse) * sizeScale;
             float level = Mathf.Clamp01(frame.brightnessNormalized * softLevel);
             float instability = Mathf.Clamp01((1f - stability) * (boss ? 0.52f : 0.36f));
-            float smear = boss ? 2.35f : 1.55f;
+            float smear = (boss ? 2.35f : 1.55f) * sizeScale;
 
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
@@ -564,23 +580,28 @@ namespace BellRinger.FinalDemo
             }
         }
 
-        private void RenderTinnitusLogicalFrame(BellRingerLedDotFrame frame, bool boss, Color color)
+        private void RenderTinnitusLogicalFrame(BellRingerLedDotFrame frame, bool boss, Color color, float sizeScale)
         {
             ClearLogicalFrame();
             float center = frame.brightnessNormalized;
             SetPixel(frame.x, frame.y, color, center);
-            AddPixel(frame.x - 1, frame.y, color, center * (boss ? 0.55f : 0.35f));
-            AddPixel(frame.x + 1, frame.y, color, center * (boss ? 0.55f : 0.35f));
-            AddPixel(frame.x, frame.y - 1, color, center * (boss ? 0.45f : 0.25f));
-            AddPixel(frame.x, frame.y + 1, color, center * (boss ? 0.45f : 0.25f));
-            if (!boss)
+            if (sizeScale <= 0.01f)
             {
                 return;
             }
 
-            AddPixel(frame.x - 2, frame.y + 1, color, center * 0.32f);
-            AddPixel(frame.x + 2, frame.y - 1, color, center * 0.32f);
-            AddPixel(frame.x, frame.y + 2, color, center * 0.24f);
+            AddPixel(frame.x - 1, frame.y, color, center * (boss ? 0.55f : 0.35f) * sizeScale);
+            AddPixel(frame.x + 1, frame.y, color, center * (boss ? 0.55f : 0.35f) * sizeScale);
+            AddPixel(frame.x, frame.y - 1, color, center * (boss ? 0.45f : 0.25f) * sizeScale);
+            AddPixel(frame.x, frame.y + 1, color, center * (boss ? 0.45f : 0.25f) * sizeScale);
+            if (!boss || sizeScale < 0.75f)
+            {
+                return;
+            }
+
+            AddPixel(frame.x - 2, frame.y + 1, color, center * 0.32f * sizeScale);
+            AddPixel(frame.x + 2, frame.y - 1, color, center * 0.32f * sizeScale);
+            AddPixel(frame.x, frame.y + 2, color, center * 0.24f * sizeScale);
         }
 
         private void RenderTinnitusPatternLogicalFrame(Vector2 center, float size, float tearStrength, Vector2 axis, Color color, float level, float effectiveInstability, float smearDecay)

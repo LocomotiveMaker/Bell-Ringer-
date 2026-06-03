@@ -55,7 +55,7 @@ namespace BellRinger.Debug.Editor
             SetFloat(serialized, "bellOrbitCallIntervalSeconds", 0.39f);
             SetBool(serialized, "bellFollowProgressBlockerEnabled", true);
             SetFloat(serialized, "bellFollowBlockerMarginMeters", 0.35f);
-            SetFloat(serialized, "rainIntensityRampSeconds", 3f);
+            SetFloat(serialized, "rainIntensityRampSeconds", 5f);
             SetFloat(serialized, "rainFocusBellNarrationDelaySeconds", 3f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);

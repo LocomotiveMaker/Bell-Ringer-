@@ -16,6 +16,9 @@ namespace BellRinger.FinalDemo
         public bool OverrideTolerances => overrideTolerances;
         public float PositionToleranceMeters => Mathf.Max(0.01f, positionToleranceMeters);
         public float RotationToleranceDegrees => Mathf.Max(1f, rotationToleranceDegrees);
+        public bool UseTransformLocalPose => useTransformLocalPose;
+        public Vector3 StoredTargetCameraSpacePosition => targetCameraSpacePosition;
+        public Vector3 StoredTargetYawPitchRollDegrees => targetYawPitchRollDegrees;
 
         public Vector3 TargetCameraSpacePosition => useTransformLocalPose ? transform.localPosition : targetCameraSpacePosition;
         public Vector3 TargetYawPitchRollDegrees => useTransformLocalPose ? ResolveYawPitchRollFromTransform() : targetYawPitchRollDegrees;

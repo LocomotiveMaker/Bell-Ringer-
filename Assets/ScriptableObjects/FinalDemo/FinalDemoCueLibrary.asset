@@ -81,7 +81,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 5
     operatorLabel: Bell pad shake response
-    audioClip: {fileID: 8300000, guid: 171470e9b0bafd94582a2cde89763632, type: 3}
+    audioClip: {fileID: 8300000, guid: 8644e9873098d3e4bbe92538a2c1ad79, type: 3}
     alternateClips: []
     bus: 1
     defaultVolume: 0.58

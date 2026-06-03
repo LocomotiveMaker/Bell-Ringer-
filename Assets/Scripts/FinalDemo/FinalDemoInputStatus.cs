@@ -87,6 +87,16 @@ namespace BellRinger.FinalDemo
             }
 
             builder.AppendLine($"Pad IMU: connected={Bool(padImuReceiver != null && padImuReceiver.IsConnected)} fresh={Bool(PadImuFresh)} port={(padImuReceiver != null ? padImuReceiver.ActivePortName : "(none)")}");
+            if (padImuReceiver != null)
+            {
+                builder.AppendLine($"Pad IMU motion: {padImuReceiver.MotionIntensity01:0.00}");
+            }
+
+            if (director != null)
+            {
+                builder.AppendLine($"Pad shake bell: {director.LastPadShakeAssistStatus}");
+            }
+
             if (padPoseProvider != null)
             {
                 builder.AppendLine($"Pad resolved y/p/r: {padPoseProvider.ResolvedYawDegrees:0.0}, {padPoseProvider.ResolvedPitchDegrees:0.0}, {padPoseProvider.ResolvedRollDegrees:0.0}");

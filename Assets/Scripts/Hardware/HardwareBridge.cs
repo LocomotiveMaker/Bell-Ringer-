@@ -313,9 +313,43 @@ namespace BellRinger.Hardware
             SendCommand(command);
         }
 
+        public void SendLedFrame(Color[] pixels)
+        {
+            if (pixels == null || pixels.Length == 0)
+            {
+                return;
+            }
+
+            const int framePixelCount = 16 * 8;
+            int pixelCount = Mathf.Min(framePixelCount, pixels.Length);
+            StringBuilder encoded = new StringBuilder(framePixelCount * 3);
+            for (int i = 0; i < pixelCount; i++)
+            {
+                Color pixel = pixels[i];
+                encoded.Append(ToHexNibble(pixel.r));
+                encoded.Append(ToHexNibble(pixel.g));
+                encoded.Append(ToHexNibble(pixel.b));
+            }
+
+            for (int i = pixelCount; i < framePixelCount; i++)
+            {
+                encoded.Append('0');
+                encoded.Append('0');
+                encoded.Append('0');
+            }
+
+            SendCommand($"LED frame rgb={encoded}");
+        }
+
         public void ClearLedDisplay()
         {
             SendCommand("LED clear");
+        }
+
+        private static char ToHexNibble(float normalized)
+        {
+            int value = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(normalized) * 15f), 0, 15);
+            return (char)(value < 10 ? ('0' + value) : ('A' + (value - 10)));
         }
 
         public static string BuildEnvironmentSummary()

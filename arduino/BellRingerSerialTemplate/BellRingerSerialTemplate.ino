@@ -4,6 +4,8 @@
 const unsigned long kBaudRate = 115200;
 const unsigned long kTelemetryIntervalMs = 10;
 const int kPixelsPerMatrix = 64;
+const int kLogicalDisplayWidth = 16;
+const int kLogicalDisplayHeight = 8;
 const unsigned long kImuSampleIntervalUs = 10000UL;
 const uint16_t kGyroCalibrationSamples = 300;
 const float kAccelScale = 16384.0f;
@@ -488,6 +490,8 @@ void handleCommand(const String& command) {
     handleLedWallCommand(command);
   } else if (command.startsWith("LED rain")) {
     handleLedRainCommand(command);
+  } else if (command.startsWith("LED frame")) {
+    handleLedFrameCommand(command);
   } else if (command.startsWith("LED tinnitus")) {
     handleLedTinnitusCommand(command);
   } else if (command.startsWith("LED fill")) {
@@ -1001,6 +1005,57 @@ void tryParseOptionalFloat(const String& source, const char* token, float& value
   if (tryParseFloat(source, token, parsedValue)) {
     value = parsedValue;
   }
+}
+
+int parseHexNibble(char value) {
+  if (value >= '0' && value <= '9') {
+    return value - '0';
+  }
+
+  if (value >= 'a' && value <= 'f') {
+    return 10 + (value - 'a');
+  }
+
+  if (value >= 'A' && value <= 'F') {
+    return 10 + (value - 'A');
+  }
+
+  return -1;
+}
+
+void handleLedFrameCommand(const String& command) {
+  const String token = "rgb=";
+  int rgbIndex = command.indexOf(token);
+  if (rgbIndex < 0) {
+    return;
+  }
+
+  String encoded = command.substring(rgbIndex + token.length());
+  encoded.trim();
+  const int expectedLength = kLogicalDisplayWidth * kLogicalDisplayHeight * 3;
+  if (encoded.length() < expectedLength) {
+    return;
+  }
+
+  clearMatrices();
+
+  for (int index = 0; index < (kLogicalDisplayWidth * kLogicalDisplayHeight); index++) {
+    int offset = index * 3;
+    int red4 = parseHexNibble(encoded.charAt(offset));
+    int green4 = parseHexNibble(encoded.charAt(offset + 1));
+    int blue4 = parseHexNibble(encoded.charAt(offset + 2));
+    if (red4 < 0 || green4 < 0 || blue4 < 0) {
+      continue;
+    }
+
+    int x = index % kLogicalDisplayWidth;
+    int y = index / kLogicalDisplayWidth;
+    uint32_t color = leftMatrix.Color(red4 * 17, green4 * 17, blue4 * 17);
+    setMappedPixelColor(x, y, color);
+  }
+
+  showMatrices();
+  Serial.println("ACK led_frame");
 }
 
 void drawWhiteDot(int globalX, int globalY, int brightness) {

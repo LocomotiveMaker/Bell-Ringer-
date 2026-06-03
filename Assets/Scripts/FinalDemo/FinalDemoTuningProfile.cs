@@ -82,19 +82,20 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float bellFollowLedIntensity = 0.62f;
         [SerializeField] private float bellAssistTimeoutSeconds = 7.5f;
         [SerializeField] private float bellAssistRepeatSeconds = 4f;
+        [SerializeField] private bool bellFollowAutomaticStrongAssistSound;
         [SerializeField] private float bellAssistGainMultiplier = 1.35f;
         [SerializeField] private bool bellFollowProgressBlockerEnabled = true;
         [SerializeField] private float bellFollowBlockerMarginMeters = 0.35f;
 
         [Header("패드 흔들기 / Pad Shake")]
-        [SerializeField] private float padShakeAssistMotionThreshold = 0.58f;
-        [SerializeField] private float padShakeAssistCooldownSeconds = 4.5f;
+        [SerializeField] private float padShakeAssistMotionThreshold = 0.25f;
+        [SerializeField] private float padShakeAssistCooldownSeconds = 2f;
         [SerializeField] private float padShakeAssistNarrationCooldownSeconds = 19.8f;
 
         [Header("비/앰비언트 / Rain & Ambience")]
         [SerializeField] private Vector3 rainZoneCenter = new Vector3(0f, 1.6f, 2.9f);
         [SerializeField] private float rainZoneRadius = 2.4f;
-        [SerializeField] private float rainIntensityRampSeconds = 3f;
+        [SerializeField] private float rainIntensityRampSeconds = 5f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
         [SerializeField] private float rainFocusBellNarrationDelaySeconds = 3f;
@@ -236,6 +237,7 @@ namespace BellRinger.FinalDemo
         public float BellFollowLedIntensity => Mathf.Clamp01(bellFollowLedIntensity);
         public float BellAssistTimeoutSeconds => Mathf.Max(0.1f, bellAssistTimeoutSeconds);
         public float BellAssistRepeatSeconds => Mathf.Max(0.2f, bellAssistRepeatSeconds);
+        public bool BellFollowAutomaticStrongAssistSound => bellFollowAutomaticStrongAssistSound;
         public float BellAssistGainMultiplier => Mathf.Max(1f, bellAssistGainMultiplier);
         public bool BellFollowProgressBlockerEnabled => bellFollowProgressBlockerEnabled;
         public float BellFollowBlockerMarginMeters => Mathf.Max(0f, bellFollowBlockerMarginMeters);
