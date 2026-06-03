@@ -13,6 +13,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private int selectedPathIndex;
         [SerializeField] private int selectedWaypointIndex;
 
+        private string _lastCaptureStatus = "No capture yet.";
         private readonly string[] _pathLabels =
         {
             "Bell Follow",
@@ -22,7 +23,7 @@ namespace BellRinger.FinalDemo
             "Boss Path 3",
         };
 
-        private Rect _panelRect = new Rect(590f, 18f, 390f, 335f);
+        private Rect _panelRect = new Rect(590f, 18f, 430f, 430f);
 
         private void Awake()
         {
@@ -71,7 +72,9 @@ namespace BellRinger.FinalDemo
         private void DrawWindow(int id)
         {
             GUILayout.Label("Pose hotkeys: F5/F6 Tinnitus, F7/F8/F9 Boss.");
+            GUILayout.Label("Press a capture button/key while the pad is exactly at the desired answer pose.");
             GUILayout.Label(BuildPadSummary());
+            GUILayout.Label(_lastCaptureStatus);
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Capture Tinnitus A"))
@@ -102,7 +105,11 @@ namespace BellRinger.FinalDemo
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Boss uses selected Boss Path waypoints for position and Boss poses for rotation.");
+            GUILayout.Label("General tinnitus uses captured position + yaw/pitch/roll.");
+            GUILayout.Label("Boss currently uses path waypoint position only; boss pose captures are kept for debug/future use.");
+            DrawMarkerSummary("Tinnitus A target", sceneReferences != null ? sceneReferences.TinnitusOneHealMarker : null);
+            DrawMarkerSummary("Tinnitus B target", sceneReferences != null ? sceneReferences.TinnitusTwoHealMarker : null);
+            DrawMarkerSummary("Boss 1 pose", sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
 
             GUILayout.Space(6f);
             GUILayout.Label("Waypoint capture uses current pad camera-space position converted through player camera.");
@@ -134,10 +141,22 @@ namespace BellRinger.FinalDemo
             ResolveReferences();
             if (marker == null || padPoseProvider == null)
             {
+                _lastCaptureStatus = marker == null
+                    ? "Capture failed: target marker is missing."
+                    : "Capture failed: PadPoseProvider is missing.";
+                return;
+            }
+
+            if (!padPoseProvider.HasFreshPosition || !padPoseProvider.HasResolvedRotation)
+            {
+                _lastCaptureStatus = "Capture failed: pad position/rotation is not fresh.";
                 return;
             }
 
             marker.CaptureFrom(padPoseProvider);
+            Vector3 position = marker.TargetCameraSpacePosition;
+            Vector3 ypr = marker.TargetYawPitchRollDegrees;
+            _lastCaptureStatus = $"Captured {marker.name}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  y/p/r {ypr.x:0.0}, {ypr.y:0.0}, {ypr.z:0.0}";
             MarkDirty(marker);
         }
 
@@ -147,12 +166,14 @@ namespace BellRinger.FinalDemo
             FinalDemoAuthoringPath path = ResolveSelectedPath();
             if (path == null || padPoseProvider == null || playerCamera == null)
             {
+                _lastCaptureStatus = "Waypoint capture failed: path, pad, or player camera missing.";
                 return;
             }
 
             Vector3 worldPosition = playerCamera.transform.TransformPoint(padPoseProvider.CameraSpacePosition);
             if (path.TrySetWorldPoint(selectedWaypointIndex, worldPosition))
             {
+                _lastCaptureStatus = $"Captured waypoint {selectedWaypointIndex + 1} on {_pathLabels[selectedPathIndex]}: {worldPosition.x:0.00}, {worldPosition.y:0.00}, {worldPosition.z:0.00}";
                 MarkDirty(path);
             }
         }
@@ -183,6 +204,19 @@ namespace BellRinger.FinalDemo
 
             Vector3 position = padPoseProvider.CameraSpacePosition;
             return $"Pad pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  y/p/r {padPoseProvider.ResolvedYawDegrees:0.0}, {padPoseProvider.ResolvedPitchDegrees:0.0}, {padPoseProvider.ResolvedRollDegrees:0.0}";
+        }
+
+        private static void DrawMarkerSummary(string label, FinalDemoPoseAuthoringMarker marker)
+        {
+            if (marker == null)
+            {
+                GUILayout.Label($"{label}: missing");
+                return;
+            }
+
+            Vector3 position = marker.TargetCameraSpacePosition;
+            Vector3 ypr = marker.TargetYawPitchRollDegrees;
+            GUILayout.Label($"{label}: pos {position.x:0.00}, {position.y:0.00}, {position.z:0.00}  y/p/r {ypr.x:0}, {ypr.y:0}, {ypr.z:0}");
         }
 
         private void ResolveReferences()

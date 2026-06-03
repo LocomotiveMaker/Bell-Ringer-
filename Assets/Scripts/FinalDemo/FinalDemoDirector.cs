@@ -43,6 +43,13 @@ namespace BellRinger.FinalDemo
         };
         [Header("Debug / Authoring Walls")]
         [SerializeField] private bool showAuthoringBarrierRenderers = true;
+        [SerializeField] private bool showPreflightPadAnchorLight;
+        [Header("Sound + LED Range Authoring")]
+        [SerializeField] private FinalDemoRangeAuthoring bellFollowOneRange;
+        [SerializeField] private FinalDemoRangeAuthoring bellFollowTwoRange;
+        [SerializeField] private FinalDemoRangeAuthoring tinnitusOneRange;
+        [SerializeField] private FinalDemoRangeAuthoring tinnitusTwoRange;
+        [SerializeField] private FinalDemoRangeAuthoring bossTinnitusRange;
 
         private readonly FinalDemoStage[] _stageOrder =
         {
@@ -97,6 +104,11 @@ namespace BellRinger.FinalDemo
         private string _lastPadShakeAssistStatus = "(idle)";
         private float _currentBellFollowDistance = float.PositiveInfinity;
         private float _currentRainIntensity;
+        private float _currentRainWindTextureIntensity;
+        private bool _rainOutroActive;
+        private float _rainOutroStartedAtRealtime;
+        private float _rainOutroStartIntensity;
+        private float _rainOutroStartWindIntensity;
         private int _bellGazeSuccessCount;
         private float _bellGazeProgressSeconds;
         private float _bellGazeAngleDegrees = 180f;
@@ -110,9 +122,11 @@ namespace BellRinger.FinalDemo
         private TinnitusAudioController _tinnitusAudioController;
         private FinalDemoAudioReactiveLight _tinnitusReactiveLight;
         private FinalDemoAudioReactiveLight _bossReactiveLight;
+        private FinalDemoMatchToneFeedback _matchToneFeedback;
         private bool _wasTinnitusInsideTolerance;
         private float _nextTinnitusLightAtRealtime;
         private float _nextTinnitusHapticAtRealtime;
+        private float _nextTinnitusPadBellAtRealtime;
         private float _currentTinnitusGazeAngleDegrees = 180f;
         private bool _generalTinnitusPoseLocked;
         private bool _hasGeneralTinnitusStageWorldPosition;
@@ -126,6 +140,7 @@ namespace BellRinger.FinalDemo
         private float _currentBossPatternProgress01;
         private float _currentBossPatternTargetMatch01;
         private int _currentBossPatternIndex = -1;
+        private Vector3 _currentBossWeakpointWorldPosition;
         private float _nextForestBellAtRealtime;
         private float _currentForestDistance = float.PositiveInfinity;
         private int _nextOpeningBellCueIndex;
@@ -159,6 +174,15 @@ namespace BellRinger.FinalDemo
             public float notBeforeRealtime;
         }
 
+        private enum SoundLightRangeSource
+        {
+            BellFollowOne,
+            BellFollowTwo,
+            TinnitusOne,
+            TinnitusTwo,
+            BossTinnitus,
+        }
+
         public FinalDemoStage CurrentStage => _currentStage;
         public int StageCount => _stageOrder.Length;
         public int StageIndex => Array.IndexOf(_stageOrder, _currentStage);
@@ -187,6 +211,12 @@ namespace BellRinger.FinalDemo
         public float CurrentBellGazeConeDegrees => _currentBellGazeConeDegrees;
         public float GeneralTinnitusProgress01 => _poseMatchEvaluator != null ? _poseMatchEvaluator.Progress01 : 0f;
         public float GeneralTinnitusMatch01 => _poseMatchEvaluator != null ? _poseMatchEvaluator.TotalMatch01 : 0f;
+        public float GeneralTinnitusPositionMatch01 => _poseMatchEvaluator != null ? _poseMatchEvaluator.PositionMatch01 : 0f;
+        public float GeneralTinnitusRotationMatch01 => _poseMatchEvaluator != null ? _poseMatchEvaluator.RotationMatch01 : 0f;
+        public float GeneralTinnitusPositionErrorMeters => _poseMatchEvaluator != null ? _poseMatchEvaluator.PositionErrorMeters : float.PositiveInfinity;
+        public float GeneralTinnitusYawErrorDegrees => _poseMatchEvaluator != null ? _poseMatchEvaluator.YawErrorDegrees : float.PositiveInfinity;
+        public float GeneralTinnitusPitchErrorDegrees => _poseMatchEvaluator != null ? _poseMatchEvaluator.PitchErrorDegrees : float.PositiveInfinity;
+        public float GeneralTinnitusRollErrorDegrees => _poseMatchEvaluator != null ? _poseMatchEvaluator.RollErrorDegrees : float.PositiveInfinity;
         public bool GeneralTinnitusInsideTolerance => _poseMatchEvaluator != null && _poseMatchEvaluator.IsInsideTolerance;
         public float CurrentBossApproachDistance => _currentBossApproachDistance;
         public float CurrentBossPatternProgress01 => _currentBossPatternProgress01;
@@ -212,12 +242,24 @@ namespace BellRinger.FinalDemo
             EnsurePresentationHelpers();
             operatorControls?.Initialize(this, inputStatus);
             inputStatus?.RefreshReferences();
+            if (createMissingRuntimeObjects)
+            {
+                EnsureRuntimeRangeAuthoringObjects();
+            }
         }
 
         private void Start()
         {
             AssistLevel = tuningProfile != null ? tuningProfile.DefaultAssistLevel : FinalDemoAssistLevel.Gentle;
             EnterStage(FinalDemoStage.Preflight);
+        }
+
+        private void OnValidate()
+        {
+            if (!Application.isPlaying)
+            {
+                ConfigureProgressGateEditorPreviews();
+            }
         }
 
         private void Update()
@@ -507,7 +549,7 @@ namespace BellRinger.FinalDemo
             }
             else if (_currentStage == FinalDemoStage.GeneralTinnitusOne || _currentStage == FinalDemoStage.GeneralTinnitusTwo)
             {
-                summary += $" distance={_currentGeneralTinnitusDistance:0.00}/{(tuningProfile != null ? tuningProfile.GeneralTinnitusApproachRadius : 0f):0.00}m locked={_generalTinnitusPoseLocked} match={GeneralTinnitusMatch01:0.00} cleanse={GeneralTinnitusProgress01:0.00} angle={_currentTinnitusGazeAngleDegrees:0.0}";
+                summary += $" distance={_currentGeneralTinnitusDistance:0.00}/{(tuningProfile != null ? tuningProfile.GeneralTinnitusApproachRadius : 0f):0.00}m locked={_generalTinnitusPoseLocked} posErr={GeneralTinnitusPositionErrorMeters:0.000}m rotErr={GeneralTinnitusYawErrorDegrees:0}/{GeneralTinnitusPitchErrorDegrees:0}/{GeneralTinnitusRollErrorDegrees:0} match={GeneralTinnitusMatch01:0.00} cleanse={GeneralTinnitusProgress01:0.00} angle={_currentTinnitusGazeAngleDegrees:0.0}";
             }
             else if (_currentStage == FinalDemoStage.BossApproach)
             {
@@ -594,6 +636,7 @@ namespace BellRinger.FinalDemo
             hapticRouter?.StopAllHaptics();
             lightRouter?.Clear();
             StopProceduralTinnitus();
+            StopMatchToneFeedback();
             _bossReactiveLight = null;
             SetPlayerMovementLocked(ShouldLockMovement(nextStage));
             MovePlaceholdersForStage(nextStage);
@@ -610,6 +653,11 @@ namespace BellRinger.FinalDemo
             _lastPadShakeAssistStatus = $"waiting in {nextStage}";
             _currentBellFollowDistance = float.PositiveInfinity;
             _currentRainIntensity = 0f;
+            _currentRainWindTextureIntensity = 0f;
+            _rainOutroActive = false;
+            _rainOutroStartedAtRealtime = 0f;
+            _rainOutroStartIntensity = 0f;
+            _rainOutroStartWindIntensity = 0f;
             _bellGazeProgressSeconds = 0f;
             _bellGazeAngleDegrees = 180f;
             _currentBellGazeConeDegrees = tuningProfile != null ? tuningProfile.BellGazeConeDegrees : 14f;
@@ -617,6 +665,7 @@ namespace BellRinger.FinalDemo
             _wasTinnitusInsideTolerance = false;
             _nextTinnitusLightAtRealtime = Time.realtimeSinceStartup;
             _nextTinnitusHapticAtRealtime = Time.realtimeSinceStartup;
+            _nextTinnitusPadBellAtRealtime = Time.realtimeSinceStartup;
             _currentTinnitusGazeAngleDegrees = 180f;
             _generalTinnitusPoseLocked = false;
             _hasGeneralTinnitusStageWorldPosition = false;
@@ -629,6 +678,7 @@ namespace BellRinger.FinalDemo
             _currentBossPatternProgress01 = 0f;
             _currentBossPatternTargetMatch01 = 0f;
             _currentBossPatternIndex = -1;
+            _currentBossWeakpointWorldPosition = Vector3.zero;
             _nextForestBellAtRealtime = Time.realtimeSinceStartup;
             _currentForestDistance = float.PositiveInfinity;
             _nextOpeningBellCueIndex = 0;
@@ -801,7 +851,8 @@ namespace BellRinger.FinalDemo
 
         private void TickPadAnchorLight()
         {
-            if (_currentStage != FinalDemoStage.Preflight ||
+            if (!showPreflightPadAnchorLight ||
+                _currentStage != FinalDemoStage.Preflight ||
                 lightRouter == null ||
                 Time.realtimeSinceStartup < _nextPadAnchorLightAtRealtime)
             {
@@ -955,7 +1006,8 @@ namespace BellRinger.FinalDemo
             MoveBellPlaceholder(bellPosition);
             UpdateBellMovementTextureLoop(bellPosition, 0f, false);
 
-            TickBellContinuousAnchor(bellPosition, pointIntensity, bellOrbitIdleAnchorScale, false);
+            float silentScale = tuningProfile.BellOrbitSilentLightMultiplier;
+            TickBellContinuousAnchor(bellPosition, pointIntensity * silentScale, bellOrbitIdleAnchorScale * silentScale, false);
 
             if (HasOpeningBellCueSchedule)
             {
@@ -963,7 +1015,7 @@ namespace BellRinger.FinalDemo
             }
             else if (Time.realtimeSinceStartup >= _nextBellCallAtRealtime)
             {
-                audioRouter?.PlayOneShot(FinalDemoCueId.BellDistantCall, bellPosition, tuningProfile.BellOrbitVolume);
+                PlayReactiveBellCueAttached(FinalDemoCueId.BellDistantCall, ResolveBellPlaceholderTransform(), bellPosition, tuningProfile.BellOrbitVolume, pointIntensity * tuningProfile.BellOrbitWaveLightMultiplier);
                 ScheduleNextCueAfterPlayback(FinalDemoCueId.BellDistantCall, tuningProfile.BellOrbitCallIntervalSeconds);
             }
 
@@ -1073,8 +1125,8 @@ namespace BellRinger.FinalDemo
             }
 
             float volume = tuningProfile != null ? tuningProfile.BellOrbitVolume : 0.68f;
-            float ledIntensity = Mathf.Clamp01(pointIntensity);
-            PlayReactiveBellCue(entry.cueId, bellPosition, volume, ledIntensity);
+            float ledIntensity = Mathf.Clamp01(pointIntensity * tuningProfile.BellOrbitWaveLightMultiplier);
+            PlayReactiveBellCueAttached(entry.cueId, ResolveBellPlaceholderTransform(), bellPosition, volume, ledIntensity);
             SuppressBellOrbitAnchorForCue(entry.cueId);
         }
 
@@ -1096,13 +1148,23 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
+            if (rainStage && _rainOutroActive)
+            {
+                TickRainLayer();
+                return;
+            }
+
             Vector3 targetPosition = ResolveBellFollowTargetPosition(rainStage);
             MoveBellPlaceholder(targetPosition);
             _currentBellFollowDistance = ResolvePlanarDistanceToPlayer(targetPosition);
-            if (!rainStage)
-            {
-                TickBellContinuousAnchor(targetPosition, tuningProfile.BellFollowLedIntensity * 0.42f);
-            }
+            float soundLightRange01 = ResolveSoundLightRange01(
+                rainStage ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne,
+                targetPosition);
+            TickBellContinuousAnchor(
+                targetPosition,
+                tuningProfile.BellFollowLedIntensity * 0.42f * ResolveBellLedRangeScale(soundLightRange01),
+                1f,
+                false);
 
             if (rainStage)
             {
@@ -1137,10 +1199,8 @@ namespace BellRinger.FinalDemo
             {
                 if (rainStage)
                 {
-                    audioRouter?.StopLoop(FinalDemoCueId.RainLightBed);
-                    audioRouter?.StopLoop(FinalDemoCueId.RainStrongBed);
-                    _rainLoopStarted = false;
-                    _currentRainIntensity = 0f;
+                    BeginRainArrivalOutro();
+                    return;
                 }
 
                 ForceNextStage();
@@ -1151,6 +1211,12 @@ namespace BellRinger.FinalDemo
         {
             if (tuningProfile == null || playerRig == null)
             {
+                return;
+            }
+
+            if (_rainOutroActive)
+            {
+                TickRainArrivalOutro();
                 return;
             }
 
@@ -1165,15 +1231,10 @@ namespace BellRinger.FinalDemo
             float ramp = Mathf.Clamp01((Time.realtimeSinceStartup - _rainStartedAtRealtime) / tuningProfile.RainIntensityRampSeconds);
             float windRamp = Mathf.Clamp01((Time.realtimeSinceStartup - _rainStartedAtRealtime - tuningProfile.RainWindTextureDelaySeconds) / tuningProfile.RainIntensityRampSeconds);
             _currentRainIntensity = tuningProfile.RainMaxIntensity * ramp;
-            float windTextureIntensity = tuningProfile.RainWindTextureMaxIntensity * windRamp;
-            if (StageElapsedSeconds >= tuningProfile.BellAssistTimeoutSeconds)
-            {
-                _currentRainIntensity = Mathf.Min(_currentRainIntensity, tuningProfile.RainAssistVolumeFloor);
-                windTextureIntensity = Mathf.Min(windTextureIntensity, tuningProfile.RainAssistVolumeFloor * 0.5f);
-            }
+            _currentRainWindTextureIntensity = tuningProfile.RainWindTextureMaxIntensity * windRamp;
 
-            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainLightBed, _currentRainIntensity);
-            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainStrongBed, windTextureIntensity);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainLightBed, Mathf.Clamp01(_currentRainIntensity * tuningProfile.RainAudioGainMultiplier));
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainStrongBed, Mathf.Clamp01(_currentRainWindTextureIntensity * tuningProfile.RainAudioGainMultiplier));
 
             if (!_stageNarrationPlayed &&
                 Time.realtimeSinceStartup - _rainStartedAtRealtime >= tuningProfile.RainFocusBellNarrationDelaySeconds)
@@ -1186,7 +1247,7 @@ namespace BellRinger.FinalDemo
             {
                 float lateral = Mathf.Sin(Time.realtimeSinceStartup * 1.731f) * 0.95f;
                 Vector3 dropPosition = ResolvePlayerRelativePosition(new Vector3(lateral, -0.7f, 1.1f));
-                audioRouter?.PlayOneShot(FinalDemoCueId.RainCloseDrops, dropPosition, _currentRainIntensity);
+                audioRouter?.PlayOneShot(FinalDemoCueId.RainCloseDrops, dropPosition, Mathf.Clamp01(_currentRainIntensity * tuningProfile.RainAudioGainMultiplier));
                 _nextRainDropAtRealtime = Time.realtimeSinceStartup + tuningProfile.RainCloseDropIntervalSeconds;
             }
         }
@@ -1204,6 +1265,50 @@ namespace BellRinger.FinalDemo
             _nextRainLightAtRealtime = Time.realtimeSinceStartup;
             audioRouter?.StartLoop(FinalDemoCueId.RainLightBed, playerRig.position, 0f);
             audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
+        }
+
+        private void BeginRainArrivalOutro()
+        {
+            if (_rainOutroActive)
+            {
+                return;
+            }
+
+            _rainOutroActive = true;
+            _rainOutroStartedAtRealtime = Time.realtimeSinceStartup;
+            _rainOutroStartIntensity = _currentRainIntensity;
+            _rainOutroStartWindIntensity = _currentRainWindTextureIntensity;
+            SetPlayerMovementLocked(true);
+        }
+
+        private void TickRainArrivalOutro()
+        {
+            if (tuningProfile == null)
+            {
+                ForceNextStage();
+                return;
+            }
+
+            float elapsed = Time.realtimeSinceStartup - _rainOutroStartedAtRealtime;
+            float audioFade01 = 1f - Mathf.Clamp01(elapsed / tuningProfile.RainArrivalAudioFadeSeconds);
+            float lightFade01 = 1f - Mathf.Clamp01(elapsed / tuningProfile.RainArrivalLightFadeSeconds);
+            _currentRainIntensity = _rainOutroStartIntensity * lightFade01;
+            _currentRainWindTextureIntensity = _rainOutroStartWindIntensity * lightFade01;
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainLightBed, Mathf.Clamp01(_rainOutroStartIntensity * audioFade01 * tuningProfile.RainAudioGainMultiplier));
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainStrongBed, Mathf.Clamp01(_rainOutroStartWindIntensity * audioFade01 * tuningProfile.RainAudioGainMultiplier));
+
+            if (elapsed < tuningProfile.RainArrivalAudioFadeSeconds)
+            {
+                return;
+            }
+
+            audioRouter?.StopLoop(FinalDemoCueId.RainLightBed);
+            audioRouter?.StopLoop(FinalDemoCueId.RainStrongBed);
+            _rainLoopStarted = false;
+            _rainOutroActive = false;
+            _currentRainIntensity = 0f;
+            _currentRainWindTextureIntensity = 0f;
+            ForceNextStage();
         }
 
         private void TickAmbientRainLightLayer()
@@ -1225,6 +1330,9 @@ namespace BellRinger.FinalDemo
         {
             float volume = tuningProfile != null ? tuningProfile.BellFollowVolume : 0.6f;
             float intensity = tuningProfile != null ? tuningProfile.BellFollowLedIntensity : 0.6f;
+            float range01 = ResolveSoundLightRange01(
+                _currentStage == FinalDemoStage.BellFollowRain ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne,
+                targetPosition);
             if (assisted && tuningProfile != null)
             {
                 volume = Mathf.Clamp01(volume * tuningProfile.BellAssistGainMultiplier);
@@ -1232,7 +1340,10 @@ namespace BellRinger.FinalDemo
                 _lastBellAssistAtRealtime = Time.realtimeSinceStartup;
             }
 
-            PlayReactiveBellCue(FinalDemoCueId.BellDistantCall, targetPosition, volume, intensity);
+            volume *= range01;
+            intensity *= ResolveBellLedRangeScale(range01);
+            AudioSource source = PlayReactiveBellCue(FinalDemoCueId.BellDistantCall, targetPosition, volume, intensity);
+            ApplyAudioSourceRange(source, _currentStage == FinalDemoStage.BellFollowRain ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne);
         }
 
         private void TriggerBellAssist(Vector3 targetPosition, FinalDemoCueId cueId)
@@ -1240,7 +1351,13 @@ namespace BellRinger.FinalDemo
             _lastBellAssistAtRealtime = Time.realtimeSinceStartup;
             float volume = tuningProfile != null ? Mathf.Clamp01(tuningProfile.BellFollowVolume * tuningProfile.BellAssistGainMultiplier) : 0.85f;
             float intensity = tuningProfile != null ? Mathf.Clamp01(tuningProfile.BellFollowLedIntensity * tuningProfile.BellAssistGainMultiplier) : 0.85f;
-            PlayReactiveBellCue(cueId, targetPosition, volume, intensity);
+            float range01 = ResolveSoundLightRange01(
+                _currentStage == FinalDemoStage.BellFollowRain ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne,
+                targetPosition);
+            volume *= range01;
+            intensity *= ResolveBellLedRangeScale(range01);
+            AudioSource source = PlayReactiveBellCue(cueId, targetPosition, volume, intensity);
+            ApplyAudioSourceRange(source, _currentStage == FinalDemoStage.BellFollowRain ? SoundLightRangeSource.BellFollowTwo : SoundLightRangeSource.BellFollowOne);
             DelayNextBellFollowCallAfterAssist(cueId);
             hapticRouter?.TriggerBellAssistPulse();
         }
@@ -1349,10 +1466,35 @@ namespace BellRinger.FinalDemo
                 return 8f;
             }
 
-            return Mathf.Max(
+            float baseInterval = Mathf.Max(
                 tuningProfile.BellFollowMinimumCallIntervalSeconds,
                 tuningProfile.BellFollowInitialCallIntervalSeconds -
                 (_bellFollowCallCount * tuningProfile.BellFollowMissIntervalReductionSeconds));
+            float near01 = ResolveBellFollowNearProximity01();
+            float multiplier = Mathf.Lerp(1f, 1f - tuningProfile.BellFollowNearIntervalReduction, near01);
+            return Mathf.Max(0.2f, baseInterval * multiplier);
+        }
+
+        private float ResolveBellFollowNearProximity01()
+        {
+            if (tuningProfile == null ||
+                playerRig == null ||
+                (_currentStage != FinalDemoStage.BellFollowOne && _currentStage != FinalDemoStage.BellFollowRain) ||
+                float.IsInfinity(_currentBellFollowDistance))
+            {
+                return 0f;
+            }
+
+            Vector3 targetPosition = ResolveBellFollowTargetPosition(_currentStage == FinalDemoStage.BellFollowRain);
+            float startDistance = ResolvePlanarDistance(_bellFollowStageStartPosition, targetPosition);
+            float arrivalRadius = tuningProfile.BellArrivalRadius;
+            if (startDistance <= arrivalRadius + 0.001f)
+            {
+                return 1f;
+            }
+
+            float currentDistance = Mathf.Max(arrivalRadius, _currentBellFollowDistance);
+            return 1f - Mathf.Clamp01((currentDistance - arrivalRadius) / (startDistance - arrivalRadius));
         }
 
         private void DelayNextBellFollowCallAfterAssist(FinalDemoCueId cueId)
@@ -1402,34 +1544,20 @@ namespace BellRinger.FinalDemo
                 case FinalDemoStage.BellFollowRain:
                     targetPosition = ResolveBellFollowTargetPosition(true);
                     return true;
-                case FinalDemoStage.BellAcquisition:
-                case FinalDemoStage.GeneralTinnitusOne:
-                case FinalDemoStage.GeneralTinnitusTwo:
-                case FinalDemoStage.BossApproach:
-                case FinalDemoStage.BossPatternOne:
-                case FinalDemoStage.BossPatternTwo:
-                case FinalDemoStage.BossPatternThree:
-                case FinalDemoStage.BossDefeat:
-                case FinalDemoStage.ForestEnding:
-                    targetPosition = ResolveBellInHandAssistPosition();
-                    return true;
                 default:
                     _lastPadShakeAssistStatus = $"disabled in {_currentStage}";
                     return false;
             }
         }
 
-        private Vector3 ResolveBellInHandAssistPosition()
-        {
-            Vector3 localOffset = tuningProfile != null
-                ? tuningProfile.BellAcquisitionLocalOffset
-                : new Vector3(0f, -0.08f, 0.85f);
-            return ResolvePlayerRelativePosition(localOffset);
-        }
-
         private void TryQueuePadShakeAssistNarration()
         {
             if (tuningProfile == null)
+            {
+                return;
+            }
+
+            if (_currentStage != FinalDemoStage.BellFollowOne && _currentStage != FinalDemoStage.BellFollowRain)
             {
                 return;
             }
@@ -1677,6 +1805,8 @@ namespace BellRinger.FinalDemo
             if (_tinnitusAudioController != null)
             {
                 _tinnitusAudioController.transform.position = targetWorldPosition;
+                float range01 = ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), targetWorldPosition);
+                _tinnitusAudioController.Volume = 0.052f * tuningProfile.GeneralTinnitusToneVolume * range01;
             }
 
             if (_poseMatchEvaluator == null)
@@ -1705,6 +1835,14 @@ namespace BellRinger.FinalDemo
             bool isLooking = UpdateTinnitusLookAndLight(targetWorldPosition, cleanseProgress);
             bool isInsideTolerance = _poseMatchEvaluator.IsInsideTolerance;
             UpdateTinnitusHealingLoop(targetWorldPosition, cleanseProgress, isInsideTolerance);
+            Vector3 answerWorldPosition = ResolveCurrentPoseTargetWorldPosition();
+            UpdateMatchToneFeedback(
+                answerWorldPosition,
+                _poseMatchEvaluator.PositionMatch01,
+                _poseMatchEvaluator.RotationMatch01,
+                true,
+                ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), targetWorldPosition));
+            TickTinnitusPadBellFeedback(_poseMatchEvaluator.PositionMatch01);
             TickPoseMatchGuidanceHaptics(isInsideTolerance, false, ref _nextTinnitusHapticAtRealtime);
             if (isInsideTolerance && !_wasTinnitusInsideTolerance)
             {
@@ -1811,6 +1949,7 @@ namespace BellRinger.FinalDemo
             }
 
             float intensity = tuningProfile.GeneralTinnitusLedIntensity * Mathf.Lerp(1f, 0.25f, cleanseProgress);
+            intensity *= ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), targetWorldPosition);
             lightRouter?.ShowTinnitusPattern(targetWorldPosition, intensity, cleanseProgress, false, tuningProfile.GeneralTinnitusRadiusScale);
             _nextTinnitusLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusLightIntervalSeconds;
             return true;
@@ -1838,7 +1977,9 @@ namespace BellRinger.FinalDemo
         {
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile != null ? tuningProfile.BossBaseVolume : 0.42f);
+            float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition);
+            AudioSource bossLoop = audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, (tuningProfile != null ? tuningProfile.BossBaseVolume : 0.42f) * range01);
+            ApplyAudioSourceRange(bossLoop, SoundLightRangeSource.BossTinnitus);
             _bossReactiveLight = null;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
         }
@@ -1853,10 +1994,12 @@ namespace BellRinger.FinalDemo
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
             _currentBossApproachDistance = ResolvePlanarDistanceToPlayer(bossPosition);
+            float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BossBasePulse, tuningProfile.BossBaseVolume * range01);
 
             if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
-                lightRouter?.ShowTinnitusPattern(bossPosition, tuningProfile.BossMassLedIntensity, 0f, true);
+                lightRouter?.ShowTinnitusPattern(bossPosition, tuningProfile.BossMassLedIntensity * range01, 0f, true);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
@@ -1891,7 +2034,8 @@ namespace BellRinger.FinalDemo
 
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile.BossBaseVolume);
+            AudioSource bossLoop = audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, bossPosition, tuningProfile.BossBaseVolume * ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition));
+            ApplyAudioSourceRange(bossLoop, SoundLightRangeSource.BossTinnitus);
             _bossReactiveLight = null;
             if (stage == FinalDemoStage.BossPatternOne)
             {
@@ -1918,10 +2062,12 @@ namespace BellRinger.FinalDemo
 
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
+            float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition);
+            audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BossBasePulse, tuningProfile.BossBaseVolume * range01);
             if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
                 float lightPulse = tuningProfile.BossMassLedIntensity * (0.8f + Mathf.Sin(Time.realtimeSinceStartup * Mathf.PI * 1.25f) * 0.12f);
-                lightRouter?.ShowTinnitusPattern(bossPosition, Mathf.Clamp01(lightPulse), 0f, true);
+                lightRouter?.ShowTinnitusPattern(bossPosition, Mathf.Clamp01(lightPulse * range01), 0f, true);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
@@ -1935,6 +2081,12 @@ namespace BellRinger.FinalDemo
 
             _bossWasInsideTolerance = insideTolerance;
             TickPoseMatchGuidanceHaptics(insideTolerance, true, ref _nextBossHapticAtRealtime);
+            UpdateMatchToneFeedback(
+                _currentBossWeakpointWorldPosition != Vector3.zero ? _currentBossWeakpointWorldPosition : bossPosition,
+                _poseMatchEvaluator.PositionMatch01,
+                0f,
+                false,
+                ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition));
 
             _currentBossPatternProgress01 = _poseMatchEvaluator.Progress01;
             _currentBossPatternTargetMatch01 = _poseMatchEvaluator.TotalMatch01;
@@ -1981,6 +2133,7 @@ namespace BellRinger.FinalDemo
             {
                 MoveBossWeakpointVisual(weakpointWorldPosition);
             }
+            _currentBossWeakpointWorldPosition = weakpointWorldPosition;
 
             FinalDemoPoseAuthoringMarker marker = ResolveBossPoseMarker(_currentBossPatternIndex);
             float toleranceMultiplier = 1f + _bossPatternFailureCount * tuningProfile.BossFailureToleranceGain;
@@ -2002,7 +2155,8 @@ namespace BellRinger.FinalDemo
             _poseMatchEvaluator.SetTargetPose(targetPosition, 0f, 0f, 0f);
             _currentBossPatternProgress01 = _poseMatchEvaluator.Progress01;
             _currentBossPatternTargetMatch01 = _poseMatchEvaluator.TotalMatch01;
-            UpdateBossWeakpointMoveLoop(weakpointWorldPosition, Mathf.Lerp(0.32f, 0.52f, smoothMove01), moving);
+            float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, ResolveBossPosition());
+            UpdateBossWeakpointMoveLoop(weakpointWorldPosition, Mathf.Lerp(0.32f, 0.52f, smoothMove01) * range01, moving);
         }
 
         private void ResetCurrentBossPatternAfterMiss(Vector3 bossPosition)
@@ -2101,6 +2255,20 @@ namespace BellRinger.FinalDemo
             return source;
         }
 
+        private AudioSource PlayReactiveBellCueAttached(FinalDemoCueId cueId, Transform followTarget, Vector3 fallbackWorldPosition, float volumeScale, float intensityScale)
+        {
+            AudioSource source = followTarget != null
+                ? audioRouter?.PlayOneShotAttached(cueId, followTarget, volumeScale)
+                : audioRouter?.PlayOneShot(cueId, fallbackWorldPosition, volumeScale);
+            float cueLength = audioRouter != null ? audioRouter.GetCueLengthSeconds(cueId) : 0.2f;
+            _bellLightActiveUntilRealtime = Mathf.Max(_bellLightActiveUntilRealtime, Time.realtimeSinceStartup + Mathf.Max(0.1f, cueLength));
+            Vector3 lightPosition = followTarget != null ? followTarget.position : fallbackWorldPosition;
+            lightRouter?.ShowBellWave(lightPosition, 0.22f, 0.32f, intensityScale);
+            FinalDemoAudioReactiveLight reactive = AttachReactiveLight(source, lightPosition, FinalDemoAudioReactiveLight.ReactiveLightKind.Bell, intensityScale);
+            reactive?.SetFollowTransform(followTarget);
+            return source;
+        }
+
         private void UpdateBellMovementTextureLoop(Vector3 worldPosition, float volumeScale, bool moving)
         {
             if (audioRouter == null)
@@ -2137,8 +2305,48 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            float loopVolume = Mathf.Lerp(0.24f, 0.52f, Mathf.Clamp01(cleanseProgress));
+            float range01 = ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), worldPosition);
+            float loopVolume = Mathf.Lerp(0.24f, 0.52f, Mathf.Clamp01(cleanseProgress)) * range01;
             audioRouter.StartLoop(FinalDemoCueId.TinnitusHealingLoop, worldPosition, loopVolume);
+        }
+
+        private void TickTinnitusPadBellFeedback(float positionMatch01)
+        {
+            if (tuningProfile == null ||
+                !tuningProfile.TinnitusPadBellFeedbackEnabled ||
+                audioRouter == null ||
+                Time.realtimeSinceStartup < _nextTinnitusPadBellAtRealtime)
+            {
+                return;
+            }
+
+            float match = Mathf.Clamp01(positionMatch01);
+            float speed = Mathf.Lerp(tuningProfile.TinnitusPadBellFarSpeed, tuningProfile.TinnitusPadBellNearSpeed, match);
+            Vector3 padPosition = ResolvePadBellFeedbackPosition();
+            audioRouter.PlayOneShot(FinalDemoCueId.BellDistantCall, padPosition, tuningProfile.TinnitusPadBellVolume, speed);
+            float interval = tuningProfile.TinnitusPadBellBaseIntervalSeconds / Mathf.Max(0.1f, speed);
+            _nextTinnitusPadBellAtRealtime = Time.realtimeSinceStartup + interval;
+        }
+
+        private Vector3 ResolvePadBellFeedbackPosition()
+        {
+            Transform pad = sceneReferences != null ? sceneReferences.PadVisual : null;
+            if (pad != null)
+            {
+                return pad.position;
+            }
+
+            return ResolvePlayerRelativePosition(new Vector3(0f, -0.12f, 0.85f));
+        }
+
+        private Vector3 ResolveCurrentPoseTargetWorldPosition()
+        {
+            if (_poseMatchEvaluator == null)
+            {
+                return ResolvePlayerRelativePosition(new Vector3(0f, -0.08f, 0.72f));
+            }
+
+            return PlayerCameraSpaceToWorld(_poseMatchEvaluator.TargetCameraSpacePosition);
         }
 
         private void UpdateBossWeakpointMoveLoop(Vector3 worldPosition, float volumeScale, bool moving)
@@ -2154,14 +2362,30 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            audioRouter.StartLoop(FinalDemoCueId.BossWeakpointMove, worldPosition, volumeScale);
+            AudioSource source = audioRouter.StartLoop(FinalDemoCueId.BossWeakpointMove, worldPosition, volumeScale);
+            ApplyAudioSourceRange(source, SoundLightRangeSource.BossTinnitus);
         }
 
         private AudioSource PlayReactiveTinnitusCue(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale, float intensityScale, bool boss)
         {
-            AudioSource source = audioRouter?.PlayOneShot(cueId, worldPosition, volumeScale);
-            lightRouter?.ShowTinnitusPattern(worldPosition, intensityScale, boss ? 0f : GeneralTinnitusProgress01, boss, boss ? 1f : tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
+            SoundLightRangeSource rangeSource = boss ? SoundLightRangeSource.BossTinnitus : ResolveGeneralTinnitusRangeSource(_currentStage);
+            float range01 = ResolveSoundLightRange01(rangeSource, worldPosition);
+            AudioSource source = audioRouter?.PlayOneShot(cueId, worldPosition, volumeScale * range01);
+            ApplyAudioSourceRange(source, rangeSource);
+            lightRouter?.ShowTinnitusPattern(worldPosition, intensityScale * range01, boss ? 0f : GeneralTinnitusProgress01, boss, boss ? 1f : tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
             return source;
+        }
+
+        private void ApplyAudioSourceRange(AudioSource source, SoundLightRangeSource rangeSource)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            float radius = ResolveSourceRangeRadius(rangeSource);
+            source.maxDistance = Mathf.Max(0.1f, radius);
+            source.minDistance = Mathf.Min(source.minDistance, source.maxDistance * 0.25f);
         }
 
         private FinalDemoAudioReactiveLight AttachReactiveLight(
@@ -2593,10 +2817,10 @@ namespace BellRinger.FinalDemo
             ConfigureInvisibleBarrier("frontWall_White_Authoring", ref _frontWallCollider);
             ConfigureInvisibleBarrier("LeftSoftWall_Authoring", ref _leftSoftWallCollider);
             ConfigureInvisibleBarrier("RightSoftWall_Authoring", ref _rightSoftWallCollider);
-            ConfigureInvisibleBarrier("firMove", ref _firstMoveGateCollider);
-            ConfigureInvisibleBarrier("secondMov", ref _secondMoveGateCollider);
-            ConfigureInvisibleBarrier("firTin", ref _firstTinnitusGateCollider);
-            ConfigureInvisibleBarrier("secondTin", ref _secondTinnitusGateCollider);
+            ConfigureProgressGateBarrier("firMove", ref _firstMoveGateCollider);
+            ConfigureProgressGateBarrier("secondMov", ref _secondMoveGateCollider);
+            ConfigureProgressGateBarrier("firTin", ref _firstTinnitusGateCollider);
+            ConfigureProgressGateBarrier("secondTin", ref _secondTinnitusGateCollider);
         }
 
         private void UpdateAuthoringBarriers()
@@ -2621,10 +2845,10 @@ namespace BellRinger.FinalDemo
             bool secondTinnitusBlocking = currentStageIndex < generalTwoIndex ||
                                           (_currentStage == FinalDemoStage.GeneralTinnitusTwo && !_generalTinnitusPoseLocked);
 
-            SetBarrierState(_firstMoveGateCollider, firstMoveBlocking);
-            SetBarrierState(_secondMoveGateCollider, secondMoveBlocking);
-            SetBarrierState(_firstTinnitusGateCollider, firstTinnitusBlocking);
-            SetBarrierState(_secondTinnitusGateCollider, secondTinnitusBlocking);
+            SetProgressGateState(_firstMoveGateCollider, firstMoveBlocking);
+            SetProgressGateState(_secondMoveGateCollider, secondMoveBlocking);
+            SetProgressGateState(_firstTinnitusGateCollider, firstTinnitusBlocking);
+            SetProgressGateState(_secondTinnitusGateCollider, secondTinnitusBlocking);
         }
 
         private void ConfigureInvisibleBarrier(string objectName, ref Collider collider)
@@ -2636,6 +2860,22 @@ namespace BellRinger.FinalDemo
             }
 
             collider = EnsureBarrierCollider(target);
+        }
+
+        private void ConfigureProgressGateBarrier(string objectName, ref Collider collider)
+        {
+            ConfigureInvisibleBarrier(objectName, ref collider);
+            if (collider != null)
+            {
+                if (Application.isPlaying)
+                {
+                    SetRenderersEnabled(collider.transform, false);
+                }
+                else
+                {
+                    ApplyBarrierEditorPreview(collider.transform);
+                }
+            }
         }
 
         private void ConfigureInvisibleBarriersByPrefix(string namePrefix, List<Collider> colliders)
@@ -2739,6 +2979,15 @@ namespace BellRinger.FinalDemo
             }
         }
 
+        private static void SetProgressGateState(Collider collider, bool blocking)
+        {
+            SetColliderEnabled(collider, blocking);
+            if (collider != null)
+            {
+                SetRenderersEnabled(collider.transform, false);
+            }
+        }
+
         private static void SetCollidersEnabled(List<Collider> colliders, bool enabled)
         {
             if (colliders == null)
@@ -2779,6 +3028,33 @@ namespace BellRinger.FinalDemo
             foreach (Renderer renderer in renderers)
             {
                 renderer.enabled = enabled;
+            }
+        }
+
+        private void ConfigureProgressGateEditorPreviews()
+        {
+            ApplyBarrierEditorPreview(FindNamedTransform("firMove"));
+            ApplyBarrierEditorPreview(FindNamedTransform("secondMov"));
+            ApplyBarrierEditorPreview(FindNamedTransform("firTin"));
+            ApplyBarrierEditorPreview(FindNamedTransform("secondTin"));
+        }
+
+        private static void ApplyBarrierEditorPreview(Transform target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                renderer.enabled = true;
+                MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(propertyBlock);
+                propertyBlock.SetColor("_Color", Color.white);
+                propertyBlock.SetColor("_BaseColor", Color.white);
+                renderer.SetPropertyBlock(propertyBlock);
             }
         }
 
@@ -2906,6 +3182,170 @@ namespace BellRinger.FinalDemo
             return ResolvePlanarDistance(playerRig.position, worldPosition);
         }
 
+        private float ResolveSoundLightRange01(SoundLightRangeSource source, Vector3 sourceWorldPosition)
+        {
+            if (playerRig == null)
+            {
+                return 1f;
+            }
+
+            FinalDemoRangeAuthoring range = ResolveRangeAuthoring(source);
+            float linear01 = range != null
+                ? range.EvaluateLinear01(playerRig.position)
+                : 1f - Mathf.Clamp01(ResolvePlanarDistance(playerRig.position, sourceWorldPosition) / ResolveFallbackRangeRadius(source));
+            AnimationCurve curve = tuningProfile != null ? tuningProfile.SoundLightRangeResponseCurve : null;
+            return Mathf.Clamp01(curve != null ? curve.Evaluate(Mathf.Clamp01(linear01)) : linear01);
+        }
+
+        private float ResolveBellLedRangeScale(float range01)
+        {
+            float clamped = Mathf.Clamp01(range01);
+            if (clamped <= 0.001f)
+            {
+                return 0f;
+            }
+
+            float minimum = tuningProfile != null ? tuningProfile.BellRangeMinimumLedScale : 0.08f;
+            return Mathf.Max(clamped, minimum);
+        }
+
+        private float ResolveSourceRangeRadius(SoundLightRangeSource source)
+        {
+            FinalDemoRangeAuthoring range = ResolveRangeAuthoring(source);
+            return range != null ? range.RadiusMeters : ResolveFallbackRangeRadius(source);
+        }
+
+        private static SoundLightRangeSource ResolveGeneralTinnitusRangeSource(FinalDemoStage stage)
+        {
+            return stage == FinalDemoStage.GeneralTinnitusTwo
+                ? SoundLightRangeSource.TinnitusTwo
+                : SoundLightRangeSource.TinnitusOne;
+        }
+
+        private FinalDemoRangeAuthoring ResolveRangeAuthoring(SoundLightRangeSource source)
+        {
+            FinalDemoRangeAuthoring range = source switch
+            {
+                SoundLightRangeSource.BellFollowTwo => bellFollowTwoRange,
+                SoundLightRangeSource.TinnitusOne => tinnitusOneRange,
+                SoundLightRangeSource.TinnitusTwo => tinnitusTwoRange,
+                SoundLightRangeSource.BossTinnitus => bossTinnitusRange,
+                _ => bellFollowOneRange,
+            };
+            if (range != null)
+            {
+                return range;
+            }
+
+            string objectName = source switch
+            {
+                SoundLightRangeSource.BellFollowTwo => "Range_BellFollow_02",
+                SoundLightRangeSource.TinnitusOne => "Range_Tinnitus_01",
+                SoundLightRangeSource.TinnitusTwo => "Range_Tinnitus_02",
+                SoundLightRangeSource.BossTinnitus => "Range_BossTinnitus",
+                _ => "Range_BellFollow_01",
+            };
+            Transform found = FindNamedTransform(objectName);
+            range = found != null ? found.GetComponent<FinalDemoRangeAuthoring>() : null;
+            if (range == null)
+            {
+                return null;
+            }
+
+            switch (source)
+            {
+                case SoundLightRangeSource.BellFollowTwo:
+                    bellFollowTwoRange = range;
+                    break;
+                case SoundLightRangeSource.TinnitusOne:
+                    tinnitusOneRange = range;
+                    break;
+                case SoundLightRangeSource.TinnitusTwo:
+                    tinnitusTwoRange = range;
+                    break;
+                case SoundLightRangeSource.BossTinnitus:
+                    bossTinnitusRange = range;
+                    break;
+                default:
+                    bellFollowOneRange = range;
+                    break;
+            }
+
+            return range;
+        }
+
+        private float ResolveFallbackRangeRadius(SoundLightRangeSource source)
+        {
+            if (tuningProfile == null)
+            {
+                return source == SoundLightRangeSource.BossTinnitus ? 2.4f : source.ToString().StartsWith("BellFollow") ? 4.2f : 2.2f;
+            }
+
+            return source switch
+            {
+                SoundLightRangeSource.BellFollowOne => tuningProfile.DefaultBellFollowSoundLightRadius,
+                SoundLightRangeSource.BellFollowTwo => tuningProfile.DefaultBellFollowSoundLightRadius,
+                SoundLightRangeSource.BossTinnitus => tuningProfile.DefaultBossSoundLightRadius,
+                _ => tuningProfile.DefaultTinnitusSoundLightRadius,
+            };
+        }
+
+        private void EnsureRuntimeRangeAuthoringObjects()
+        {
+            Transform parent = sceneReferences != null && sceneReferences.WorldRoot != null ? sceneReferences.WorldRoot : transform;
+            Vector3 bellOne = ResolveBellFollowRangePosition(false);
+            Vector3 bellTwo = ResolveBellFollowRangePosition(true);
+            bellFollowOneRange ??= EnsureRuntimeRangeAuthoringObject("Range_BellFollow_01", "Bell follow 1 sound+LED", bellOne, ResolveFallbackRangeRadius(SoundLightRangeSource.BellFollowOne), new Color(0.1f, 1f, 0.2f, 0.9f), parent);
+            bellFollowTwoRange ??= EnsureRuntimeRangeAuthoringObject("Range_BellFollow_02", "Bell follow 2 sound+LED", bellTwo, ResolveFallbackRangeRadius(SoundLightRangeSource.BellFollowTwo), new Color(0.1f, 1f, 0.2f, 0.9f), parent);
+            tinnitusOneRange ??= EnsureRuntimeRangeAuthoringObject("Range_Tinnitus_01", "Tinnitus 1 sound+LED", ResolveGeneralTinnitusWorldPosition(FinalDemoStage.GeneralTinnitusOne), ResolveFallbackRangeRadius(SoundLightRangeSource.TinnitusOne), new Color(0.55f, 0.1f, 1f, 0.9f), parent);
+            tinnitusTwoRange ??= EnsureRuntimeRangeAuthoringObject("Range_Tinnitus_02", "Tinnitus 2 sound+LED", ResolveGeneralTinnitusWorldPosition(FinalDemoStage.GeneralTinnitusTwo), ResolveFallbackRangeRadius(SoundLightRangeSource.TinnitusTwo), new Color(0.55f, 0.1f, 1f, 0.9f), parent);
+            bossTinnitusRange ??= EnsureRuntimeRangeAuthoringObject("Range_BossTinnitus", "Boss tinnitus sound+LED", ResolveBossPosition(), ResolveFallbackRangeRadius(SoundLightRangeSource.BossTinnitus), new Color(1f, 0.1f, 0.25f, 0.9f), parent);
+        }
+
+        private Vector3 ResolveBellFollowRangePosition(bool second)
+        {
+            FinalDemoAuthoringPath path = sceneReferences != null ? sceneReferences.BellFollowAuthoringPath : null;
+            if (path != null && path.TryGetWorldPoint(second ? 1 : 0, out Vector3 authoredPosition))
+            {
+                return authoredPosition;
+            }
+
+            if (tuningProfile == null)
+            {
+                return second ? new Vector3(1.4f, 1.5f, 3.6f) : new Vector3(-1.4f, 1.5f, 3.2f);
+            }
+
+            return second ? tuningProfile.BellFollowTargetTwoPosition : tuningProfile.BellFollowTargetOnePosition;
+        }
+
+        private FinalDemoRangeAuthoring EnsureRuntimeRangeAuthoringObject(
+            string objectName,
+            string label,
+            Vector3 position,
+            float radius,
+            Color color,
+            Transform parent)
+        {
+            Transform existing = FindNamedTransform(objectName);
+            bool created = existing == null;
+            GameObject rangeObject = existing != null ? existing.gameObject : new GameObject(objectName);
+            if (parent != null && rangeObject.transform.parent == null)
+            {
+                rangeObject.transform.SetParent(parent);
+            }
+
+            FinalDemoRangeAuthoring range = rangeObject.GetComponent<FinalDemoRangeAuthoring>() ?? rangeObject.AddComponent<FinalDemoRangeAuthoring>();
+            if (created)
+            {
+                rangeObject.transform.position = position;
+                range.RadiusMeters = radius;
+                range.Label = label;
+                range.GizmoColor = color;
+            }
+
+            return range;
+        }
+
         private static float ResolvePlanarDistance(Vector3 a, Vector3 b)
         {
             return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
@@ -2913,10 +3353,15 @@ namespace BellRinger.FinalDemo
 
         private Vector3 GetBellPlaceholderPosition()
         {
-            Transform bell = sceneReferences != null && sceneReferences.BellVisual != null
+            Transform bell = ResolveBellPlaceholderTransform();
+            return bell != null ? bell.position : ResolvePlayerRelativePosition(Vector3.forward * 1.4f);
+        }
+
+        private Transform ResolveBellPlaceholderTransform()
+        {
+            return sceneReferences != null && sceneReferences.BellVisual != null
                 ? sceneReferences.BellVisual
                 : FindNamedTransform("FinalDemo_BellPlaceholder");
-            return bell != null ? bell.position : ResolvePlayerRelativePosition(Vector3.forward * 1.4f);
         }
 
         private Vector3 ResolveBellFollowTargetPosition(bool rainStage)
@@ -3014,6 +3459,12 @@ namespace BellRinger.FinalDemo
 
         private void StartProceduralTinnitus(Vector3 worldPosition)
         {
+            if (tuningProfile == null || !tuningProfile.FinalDemoProceduralTinnitusEnabled)
+            {
+                StopProceduralTinnitus();
+                return;
+            }
+
             TinnitusAudioController controller = EnsureTinnitusAudioController();
             if (controller == null)
             {
@@ -3022,10 +3473,11 @@ namespace BellRinger.FinalDemo
 
             controller.transform.position = worldPosition;
             controller.SetGlitchClips(cueLibrary != null ? cueLibrary.ResolveAudioClip(FinalDemoCueId.TinnitusLongGlitch) : null, cueLibrary != null ? cueLibrary.ResolveAudioClip(FinalDemoCueId.TinnitusBurst) : null);
-            controller.Volume = 0.052f * (tuningProfile != null ? tuningProfile.GeneralTinnitusToneVolume : 0.8f);
+            float range01 = ResolveSoundLightRange01(ResolveGeneralTinnitusRangeSource(_currentStage), worldPosition);
+            controller.Volume = 0.052f * (tuningProfile != null ? tuningProfile.GeneralTinnitusToneVolume : 0.8f) * range01;
             controller.CleanseStability = 0f;
             controller.enabled = true;
-            controller.SetSpatialRangeScale(tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
+            controller.SetSpatialRangeScale(ResolveSourceRangeRadius(ResolveGeneralTinnitusRangeSource(_currentStage)) / 10f);
             controller.SetBinauralPreview(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
             _tinnitusAudioController = controller;
             _tinnitusReactiveLight = null;
@@ -3050,6 +3502,69 @@ namespace BellRinger.FinalDemo
                 _tinnitusReactiveLight.EmissionEnabled = false;
                 _tinnitusReactiveLight = null;
             }
+        }
+
+        private void UpdateMatchToneFeedback(
+            Vector3 worldPosition,
+            float positionMatch01,
+            float rotationMatch01,
+            bool rotationEnabled,
+            float volumeScale01)
+        {
+            if (tuningProfile == null || !tuningProfile.TinnitusMatchToneEnabled)
+            {
+                StopMatchToneFeedback();
+                return;
+            }
+
+            FinalDemoMatchToneFeedback feedback = EnsureMatchToneFeedback();
+            if (feedback == null)
+            {
+                return;
+            }
+
+            feedback.ConfigureAudio(ResolveAudioListenerTransform(), HrtfPreviewEnabled);
+            feedback.ConfigureSettings(
+                tuningProfile.TinnitusMatchToneVolume,
+                tuningProfile.TinnitusPositionToneFrequencyRange,
+                tuningProfile.TinnitusRotationToneFrequencyRange,
+                tuningProfile.TinnitusRotationToneVolumeMultiplier);
+            feedback.SetSpatialRadius(rotationEnabled
+                ? ResolveSourceRangeRadius(ResolveGeneralTinnitusRangeSource(_currentStage))
+                : ResolveSourceRangeRadius(SoundLightRangeSource.BossTinnitus));
+            feedback.SetMatch(worldPosition, positionMatch01, rotationMatch01, rotationEnabled, volumeScale01);
+        }
+
+        private void StopMatchToneFeedback()
+        {
+            if (_matchToneFeedback == null)
+            {
+                _matchToneFeedback = FindFirstObjectByType<FinalDemoMatchToneFeedback>();
+            }
+
+            if (_matchToneFeedback != null)
+            {
+                _matchToneFeedback.StopTone();
+            }
+        }
+
+        private FinalDemoMatchToneFeedback EnsureMatchToneFeedback()
+        {
+            if (_matchToneFeedback != null)
+            {
+                return _matchToneFeedback;
+            }
+
+            Transform existing = FindNamedTransform("FinalDemo_TinnitusMatchTone");
+            GameObject sourceObject = existing != null ? existing.gameObject : new GameObject("FinalDemo_TinnitusMatchTone");
+            sourceObject.transform.SetParent(transform);
+            if (sourceObject.GetComponent<AudioSource>() == null)
+            {
+                sourceObject.AddComponent<AudioSource>();
+            }
+
+            _matchToneFeedback = sourceObject.GetComponent<FinalDemoMatchToneFeedback>() ?? sourceObject.AddComponent<FinalDemoMatchToneFeedback>();
+            return _matchToneFeedback;
         }
 
         private TinnitusAudioController EnsureTinnitusAudioController()
@@ -3177,7 +3692,7 @@ namespace BellRinger.FinalDemo
                 return Vector3.zero;
             }
 
-            return marker.UseTransformLocalPose ? marker.StoredTargetCameraSpacePosition : marker.TargetCameraSpacePosition;
+            return marker.TargetCameraSpacePosition;
         }
 
         private static Vector3 ResolveGeneralTinnitusYawPitchRollTarget(FinalDemoPoseAuthoringMarker marker)
@@ -3187,7 +3702,7 @@ namespace BellRinger.FinalDemo
                 return Vector3.zero;
             }
 
-            return marker.UseTransformLocalPose ? marker.StoredTargetYawPitchRollDegrees : marker.TargetYawPitchRollDegrees;
+            return marker.TargetYawPitchRollDegrees;
         }
 
         private Transform ResolveGeneralTinnitusLockPoint(FinalDemoStage stage)

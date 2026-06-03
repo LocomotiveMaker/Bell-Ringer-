@@ -16,6 +16,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private FinalDemoLightRouter lightRouter;
         [SerializeField] private ReactiveLightKind lightKind;
         [SerializeField] private Vector3 worldPosition;
+        [SerializeField] private Transform followTransform;
         [SerializeField] private float intensityScale = 1f;
         [SerializeField] private float sensitivity = 2.35f;
         [SerializeField] private float updateIntervalSeconds = 0.12f;
@@ -65,6 +66,11 @@ namespace BellRinger.FinalDemo
             sensitivity = Mathf.Max(0.1f, envelopeSensitivity);
             updateIntervalSeconds = Mathf.Clamp(intervalSeconds, 0.09f, 0.25f);
             _nextEmitAtRealtime = 0f;
+        }
+
+        public void SetFollowTransform(Transform target)
+        {
+            followTransform = target;
         }
 
         public void SetWorldPosition(Vector3 position)
@@ -150,6 +156,11 @@ namespace BellRinger.FinalDemo
 
         private void Emit(float onset01)
         {
+            if (followTransform != null)
+            {
+                worldPosition = followTransform.position;
+            }
+
             switch (lightKind)
             {
                 case ReactiveLightKind.Bell:

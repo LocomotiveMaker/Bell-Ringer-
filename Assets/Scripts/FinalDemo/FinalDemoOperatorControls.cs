@@ -194,6 +194,7 @@ namespace BellRinger.FinalDemo
             GUILayout.Label(director.BuildStageSummary());
             GUILayout.Label(director.CurrentObjectiveLabel);
             DrawProgressBar(director.CurrentObjectiveProgress01);
+            DrawTinnitusPoseProgressIfNeeded();
             GUILayout.Space(6f);
             GUILayout.Label(BuildTrackingSummary());
             if (showInputStatus)
@@ -445,6 +446,42 @@ namespace BellRinger.FinalDemo
             GUI.color = new Color(0.18f, 0.82f, 0.38f, 1f);
             GUI.Box(fillRect, GUIContent.none);
             GUI.color = previous;
+        }
+
+        private void DrawTinnitusPoseProgressIfNeeded()
+        {
+            if (director.CurrentStage != FinalDemoStage.GeneralTinnitusOne &&
+                director.CurrentStage != FinalDemoStage.GeneralTinnitusTwo &&
+                director.CurrentStage != FinalDemoStage.BossPatternOne &&
+                director.CurrentStage != FinalDemoStage.BossPatternTwo &&
+                director.CurrentStage != FinalDemoStage.BossPatternThree)
+            {
+                return;
+            }
+
+            GUILayout.Space(4f);
+            if (director.CurrentStage == FinalDemoStage.BossPatternOne ||
+                director.CurrentStage == FinalDemoStage.BossPatternTwo ||
+                director.CurrentStage == FinalDemoStage.BossPatternThree)
+            {
+                GUILayout.Label($"Boss pattern {director.BossPatternFailureCount} misses  target match {director.CurrentBossPatternTargetMatch01:0.00}");
+                GUILayout.Label($"Boss cleanse {director.CurrentBossPatternProgress01:0.00}");
+                DrawProgressBar(director.CurrentBossPatternProgress01);
+                GUILayout.Label($"Boss target match {director.CurrentBossPatternTargetMatch01:0.00}");
+                DrawProgressBar(director.CurrentBossPatternTargetMatch01);
+                return;
+            }
+
+            GUILayout.Label(
+                $"Pad target posErr {director.GeneralTinnitusPositionErrorMeters:0.000}m  " +
+                $"rotErr Y/P/R {director.GeneralTinnitusYawErrorDegrees:0}/{director.GeneralTinnitusPitchErrorDegrees:0}/{director.GeneralTinnitusRollErrorDegrees:0}  " +
+                $"inside {director.GeneralTinnitusInsideTolerance}");
+            GUILayout.Label($"Position match {director.GeneralTinnitusPositionMatch01:0.00}");
+            DrawProgressBar(director.GeneralTinnitusPositionMatch01);
+            GUILayout.Label($"Rotation match {director.GeneralTinnitusRotationMatch01:0.00}");
+            DrawProgressBar(director.GeneralTinnitusRotationMatch01);
+            GUILayout.Label($"Cleanse {director.GeneralTinnitusProgress01:0.00}");
+            DrawProgressBar(director.GeneralTinnitusProgress01);
         }
 
         private string BuildTrackingSummary()

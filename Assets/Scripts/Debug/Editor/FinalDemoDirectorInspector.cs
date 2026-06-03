@@ -1,5 +1,6 @@
 using BellRinger.FinalDemo;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace BellRinger.Debug.Editor
@@ -10,6 +11,8 @@ namespace BellRinger.Debug.Editor
         private bool _showCueLibrary = true;
         private bool _showBellTiming = true;
         private bool _showPadShake = true;
+        private bool _showRangeAuthoring = true;
+        private bool _showRangeCurve = true;
         private bool _showLed = true;
         private bool _showWallsProgress = true;
         private bool _showTinnitus = true;
@@ -22,21 +25,22 @@ namespace BellRinger.Debug.Editor
             EditorGUILayout.Space(12f);
             EditorGUILayout.LabelField("FinalDemoRoot Quick Tuning", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "아래 항목은 FinalDemoRoot에서 FinalDemoCueLibrary와 FinalDemoTuningProfile의 핵심 값을 바로 확인/수정하기 위한 요약입니다.",
+                "This section exposes the cue library and the tuning profile values most often changed during final-demo QA.",
                 MessageType.Info);
 
             DrawCueLibrarySection(director.CueLibrary);
+            DrawRangeAuthoringSection(director);
             DrawTuningSections(director.TuningProfile);
         }
 
         private void DrawCueLibrarySection(FinalDemoCueLibrary cueLibrary)
         {
-            _showCueLibrary = EditorGUILayout.BeginFoldoutHeaderGroup(_showCueLibrary, "오디오 Cue 목록 / Clip / Loop");
+            _showCueLibrary = EditorGUILayout.BeginFoldoutHeaderGroup(_showCueLibrary, "Audio Cue List / Clips / Loop Settings");
             if (_showCueLibrary)
             {
                 if (cueLibrary == null)
                 {
-                    EditorGUILayout.HelpBox("FinalDemoCueLibrary가 연결되어 있지 않습니다.", MessageType.Warning);
+                    EditorGUILayout.HelpBox("FinalDemoCueLibrary is not assigned.", MessageType.Warning);
                 }
                 else
                 {
@@ -53,8 +57,7 @@ namespace BellRinger.Debug.Editor
                         EditorGUI.indentLevel++;
                         for (int i = 0; i < cues.arraySize; i++)
                         {
-                            SerializedProperty entry = cues.GetArrayElementAtIndex(i);
-                            DrawCueEntry(entry, i);
+                            DrawCueEntry(cues.GetArrayElementAtIndex(i), i);
                         }
                         EditorGUI.indentLevel--;
                     }
@@ -68,11 +71,38 @@ namespace BellRinger.Debug.Editor
             EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
+        private void DrawRangeAuthoringSection(FinalDemoDirector director)
+        {
+            _showRangeAuthoring = EditorGUILayout.BeginFoldoutHeaderGroup(_showRangeAuthoring, "Scene Range Circles: Sound + LED");
+            if (_showRangeAuthoring)
+            {
+                EditorGUILayout.HelpBox(
+                    "Create or refresh five circular authoring objects. Their radius controls both audio loudness and LED brightness for the same source.",
+                    MessageType.None);
+                if (GUILayout.Button("Create / Refresh Range Circles In Scene", GUILayout.Height(28f)))
+                {
+                    CreateOrRefreshRangeObjects(director);
+                }
+
+                SerializedObject directorObject = serializedObject;
+                DrawSerializedProperty(directorObject, "bellFollowOneRange", "Bell follow 1 range");
+                DrawSerializedProperty(directorObject, "bellFollowTwoRange", "Bell follow 2 range");
+                DrawSerializedProperty(directorObject, "tinnitusOneRange", "Tinnitus 1 range");
+                DrawSerializedProperty(directorObject, "tinnitusTwoRange", "Tinnitus 2 range");
+                DrawSerializedProperty(directorObject, "bossTinnitusRange", "Boss tinnitus range");
+                if (directorObject.ApplyModifiedProperties())
+                {
+                    EditorUtility.SetDirty(director);
+                }
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
         private void DrawTuningSections(FinalDemoTuningProfile profile)
         {
             if (profile == null)
             {
-                EditorGUILayout.HelpBox("FinalDemoTuningProfile이 연결되어 있지 않습니다.", MessageType.Warning);
+                EditorGUILayout.HelpBox("FinalDemoTuningProfile is not assigned.", MessageType.Warning);
                 return;
             }
 
@@ -80,75 +110,102 @@ namespace BellRinger.Debug.Editor
             tuningObject.Update();
             EditorGUILayout.ObjectField("Tuning Profile Asset", profile, typeof(FinalDemoTuningProfile), false);
 
-            _showBellTiming = EditorGUILayout.BeginFoldoutHeaderGroup(_showBellTiming, "종 주기 / Follow / Gaze");
+            _showBellTiming = EditorGUILayout.BeginFoldoutHeaderGroup(_showBellTiming, "Bell Timing / Follow / Gaze");
             if (_showBellTiming)
             {
-                EditorGUILayout.HelpBox("Follow 종소리 주기는 현재 고정 주기가 아니라 첫 주기 -> 최소 주기까지 감소하는 규칙을 사용합니다.", MessageType.None);
-                DrawTuningProperty(tuningObject, "bellFollowCallIntervalSeconds", "Follow 고정 주기 (현재 미사용/호환)");
-                DrawTuningProperty(tuningObject, "bellOrbitCallIntervalSeconds", "초기 회전 종소리 주기");
-                DrawTuningProperty(tuningObject, "bellFollowInitialCallIntervalSeconds", "Follow 첫 종소리 주기");
-                DrawTuningProperty(tuningObject, "bellFollowMinimumCallIntervalSeconds", "Follow 최소 주기");
-                DrawTuningProperty(tuningObject, "bellFollowMissIntervalReductionSeconds", "못 찾을 때 주기 감소");
-                DrawTuningProperty(tuningObject, "bellCallPostClipGapSeconds", "종 Clip 이후 최소 여백");
-                DrawTuningProperty(tuningObject, "bellAssistTimeoutSeconds", "자동 Assist 시작 시간");
-                DrawTuningProperty(tuningObject, "bellAssistRepeatSeconds", "자동 Assist 반복 주기");
-                DrawTuningProperty(tuningObject, "bellFollowAutomaticStrongAssistSound", "BellStrongAssist 자동 반복음");
-                DrawTuningProperty(tuningObject, "bellGazeCallIntervalSeconds", "종 바라보기 종소리 주기");
-                DrawTuningProperty(tuningObject, "forestBellCallIntervalSeconds", "숲 종소리 주기");
+                DrawTuningProperty(tuningObject, "bellFollowInitialCallIntervalSeconds", "Follow first bell interval");
+                DrawTuningProperty(tuningObject, "bellFollowMinimumCallIntervalSeconds", "Follow minimum interval");
+                DrawTuningProperty(tuningObject, "bellFollowMissIntervalReductionSeconds", "Follow interval reduction per missed call");
+                DrawTuningProperty(tuningObject, "bellFollowNearIntervalReduction", "Follow near interval reduction");
+                DrawTuningProperty(tuningObject, "bellCallPostClipGapSeconds", "Minimum post-clip gap");
+                DrawTuningProperty(tuningObject, "bellAssistTimeoutSeconds", "Automatic assist start seconds");
+                DrawTuningProperty(tuningObject, "bellAssistRepeatSeconds", "Automatic assist repeat seconds");
+                DrawTuningProperty(tuningObject, "bellFollowAutomaticStrongAssistSound", "Enable automatic BellStrongAssist");
+                DrawTuningProperty(tuningObject, "bellOrbitCallIntervalSeconds", "Opening orbit bell interval");
+                DrawTuningProperty(tuningObject, "bellGazeCallIntervalSeconds", "Bell gaze call interval");
+                DrawTuningProperty(tuningObject, "forestBellCallIntervalSeconds", "Forest bell interval");
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
 
-            _showPadShake = EditorGUILayout.BeginFoldoutHeaderGroup(_showPadShake, "패드 흔들기 / Bell Assist");
+            _showPadShake = EditorGUILayout.BeginFoldoutHeaderGroup(_showPadShake, "Pad Shake Bell Assist");
             if (_showPadShake)
             {
-                EditorGUILayout.HelpBox("Follow 1/2에서는 이동한 종 위치에서 울리고, BellAcquisition 이후에는 사용자 중앙의 손 안 종 위치에서 울립니다.", MessageType.None);
-                DrawTuningProperty(tuningObject, "padShakeAssistMotionThreshold", "흔들림 감지 기준");
-                DrawTuningProperty(tuningObject, "padShakeAssistCooldownSeconds", "흔들기 종소리 쿨다운");
-                DrawTuningProperty(tuningObject, "padShakeAssistNarrationCooldownSeconds", "흔들기 안내 나레이션 쿨다운");
-                DrawTuningProperty(tuningObject, "bellAssistGainMultiplier", "흔들기/Assist 볼륨·LED 증폭");
+                EditorGUILayout.HelpBox("Pad shake bell assist is enabled only during BellFollowOne and BellFollowRain.", MessageType.None);
+                DrawTuningProperty(tuningObject, "padShakeAssistMotionThreshold", "Shake detection threshold");
+                DrawTuningProperty(tuningObject, "padShakeAssistCooldownSeconds", "Shake bell cooldown");
+                DrawTuningProperty(tuningObject, "padShakeAssistNarrationCooldownSeconds", "Shake narration cooldown");
+                DrawTuningProperty(tuningObject, "bellAssistGainMultiplier", "Shake/assist volume and LED gain");
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
 
-            _showLed = EditorGUILayout.BeginFoldoutHeaderGroup(_showLed, "LED / 소리 반응");
+            _showRangeCurve = EditorGUILayout.BeginFoldoutHeaderGroup(_showRangeCurve, "Shared Sound + LED Range Curve");
+            if (_showRangeCurve)
+            {
+                DrawTuningProperty(tuningObject, "soundLightRangeResponseCurve", "Shared response curve");
+                DrawTuningProperty(tuningObject, "defaultBellFollowSoundLightRadius", "Default bell follow radius");
+                DrawTuningProperty(tuningObject, "defaultTinnitusSoundLightRadius", "Default tinnitus radius");
+                DrawTuningProperty(tuningObject, "defaultBossSoundLightRadius", "Default boss radius");
+                DrawTuningProperty(tuningObject, "bellRangeMinimumLedScale", "Bell LED floor inside range");
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
+            _showLed = EditorGUILayout.BeginFoldoutHeaderGroup(_showLed, "LED / Sound Reactive");
             if (_showLed)
             {
-                DrawTuningProperty(tuningObject, "soundReactiveLedEnabled", "소리 파형 LED 반응");
-                DrawTuningProperty(tuningObject, "soundReactiveLedUpdateIntervalSeconds", "LED 반응 업데이트 간격");
-                DrawTuningProperty(tuningObject, "bellSoundReactiveSensitivity", "종 파형 민감도");
-                DrawTuningProperty(tuningObject, "tinnitusSoundReactiveSensitivity", "이명 파형 민감도");
-                DrawTuningProperty(tuningObject, "bellFollowLedIntensity", "Follow 종 LED");
-                DrawTuningProperty(tuningObject, "bellGazeLedIntensity", "종 바라보기 LED");
-                DrawTuningProperty(tuningObject, "generalTinnitusLedIntensity", "일반 이명 LED");
-                DrawTuningProperty(tuningObject, "bossMassLedIntensity", "보스 이명 LED");
-                DrawTuningProperty(tuningObject, "rainMaxIntensity", "비 최대 광량");
+                DrawTuningProperty(tuningObject, "soundReactiveLedEnabled", "Sound-reactive LED");
+                DrawTuningProperty(tuningObject, "soundReactiveLedUpdateIntervalSeconds", "LED update interval");
+                DrawTuningProperty(tuningObject, "bellSoundReactiveSensitivity", "Bell waveform sensitivity");
+                DrawTuningProperty(tuningObject, "tinnitusSoundReactiveSensitivity", "Tinnitus waveform sensitivity");
+                DrawTuningProperty(tuningObject, "bellOrbitSilentLightMultiplier", "Opening silent bell light multiplier");
+                DrawTuningProperty(tuningObject, "bellOrbitWaveLightMultiplier", "Opening waveform bell light multiplier");
+                DrawTuningProperty(tuningObject, "bellFollowLedIntensity", "Follow bell LED");
+                DrawTuningProperty(tuningObject, "bellGazeLedIntensity", "Bell gaze LED");
+                DrawTuningProperty(tuningObject, "generalTinnitusLedIntensity", "General tinnitus LED");
+                DrawTuningProperty(tuningObject, "bossMassLedIntensity", "Boss tinnitus LED");
+                DrawTuningProperty(tuningObject, "rainMaxIntensity", "Rain max LED/audio scale");
+                DrawTuningProperty(tuningObject, "rainIntensityRampSeconds", "Rain ramp seconds");
+                DrawTuningProperty(tuningObject, "rainAudioGainMultiplier", "Rain audio gain");
+                DrawTuningProperty(tuningObject, "rainArrivalAudioFadeSeconds", "Rain arrival audio fade");
+                DrawTuningProperty(tuningObject, "rainArrivalLightFadeSeconds", "Rain arrival LED fade");
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
 
-            _showWallsProgress = EditorGUILayout.BeginFoldoutHeaderGroup(_showWallsProgress, "벽 / 진행 조건");
+            _showWallsProgress = EditorGUILayout.BeginFoldoutHeaderGroup(_showWallsProgress, "Walls / Progress Conditions");
             if (_showWallsProgress)
             {
-                DrawTuningProperty(tuningObject, "bellArrivalRadius", "종 도착 반경");
-                DrawTuningProperty(tuningObject, "bellFollowProgressBlockerEnabled", "종 너머 진행 방지");
-                DrawTuningProperty(tuningObject, "bellFollowBlockerMarginMeters", "종 너머 진행 여유");
-                DrawTuningProperty(tuningObject, "generalTinnitusApproachRadius", "일반 이명 접근 반경");
-                DrawTuningProperty(tuningObject, "bossApproachRadius", "보스 이명 접근 반경");
-                DrawTuningProperty(tuningObject, "forestBellArrivalRadius", "숲 종 도착 반경");
+                DrawTuningProperty(tuningObject, "bellArrivalRadius", "Bell arrival radius");
+                DrawTuningProperty(tuningObject, "bellFollowProgressBlockerEnabled", "Prevent walking past bell");
+                DrawTuningProperty(tuningObject, "bellFollowBlockerMarginMeters", "Bell blocker margin");
+                DrawTuningProperty(tuningObject, "generalTinnitusApproachRadius", "Fallback general tinnitus approach radius");
+                DrawTuningProperty(tuningObject, "bossApproachRadius", "Fallback boss approach radius");
+                DrawTuningProperty(tuningObject, "forestBellArrivalRadius", "Forest bell arrival radius");
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
 
-            _showTinnitus = EditorGUILayout.BeginFoldoutHeaderGroup(_showTinnitus, "이명 / 보스 이명");
+            _showTinnitus = EditorGUILayout.BeginFoldoutHeaderGroup(_showTinnitus, "Tinnitus / Boss Tinnitus");
             if (_showTinnitus)
             {
-                DrawTuningProperty(tuningObject, "generalTinnitusTreatmentSeconds", "일반 이명 치료 시간");
-                DrawTuningProperty(tuningObject, "generalTinnitusPositionToleranceMeters", "일반 이명 위치 허용");
-                DrawTuningProperty(tuningObject, "generalTinnitusRotationToleranceDegrees", "일반 이명 회전 허용");
-                DrawTuningProperty(tuningObject, "generalTinnitusLightIntervalSeconds", "일반 이명 LED 주기");
-                DrawTuningProperty(tuningObject, "bossPatternOneSeconds", "보스 1단계 시간");
-                DrawTuningProperty(tuningObject, "bossPatternTwoSeconds", "보스 2단계 시간");
-                DrawTuningProperty(tuningObject, "bossPatternThreeSeconds", "보스 3단계 시간");
-                DrawTuningProperty(tuningObject, "bossOpeningHoldSeconds", "보스 초기 고정 시간");
-                DrawTuningProperty(tuningObject, "bossMovingToleranceMeters", "보스 이동 위치 허용");
-                DrawTuningProperty(tuningObject, "bossLightIntervalSeconds", "보스 LED 주기");
+                DrawTuningProperty(tuningObject, "generalTinnitusTreatmentSeconds", "General tinnitus treatment seconds");
+                DrawTuningProperty(tuningObject, "generalTinnitusPositionToleranceMeters", "General tinnitus position tolerance");
+                DrawTuningProperty(tuningObject, "generalTinnitusRotationToleranceDegrees", "General tinnitus rotation tolerance");
+                DrawTuningProperty(tuningObject, "generalTinnitusLightIntervalSeconds", "General tinnitus LED interval");
+                DrawTuningProperty(tuningObject, "finalDemoProceduralTinnitusEnabled", "Enable generated tinnitus tone in FinalDemo");
+                DrawTuningProperty(tuningObject, "tinnitusMatchToneEnabled", "Enable match feedback tone");
+                DrawTuningProperty(tuningObject, "tinnitusMatchToneVolume", "Match feedback tone volume");
+                DrawTuningProperty(tuningObject, "tinnitusPositionToneFrequencyRange", "Position sine frequency range");
+                DrawTuningProperty(tuningObject, "tinnitusRotationToneFrequencyRange", "Rotation square frequency range");
+                DrawTuningProperty(tuningObject, "tinnitusRotationToneVolumeMultiplier", "Rotation square volume multiplier");
+                DrawTuningProperty(tuningObject, "tinnitusPadBellFeedbackEnabled", "Enable pad bell while cleansing");
+                DrawTuningProperty(tuningObject, "tinnitusPadBellBaseIntervalSeconds", "Pad bell base interval");
+                DrawTuningProperty(tuningObject, "tinnitusPadBellVolume", "Pad bell volume");
+                DrawTuningProperty(tuningObject, "tinnitusPadBellFarSpeed", "Pad bell far speed");
+                DrawTuningProperty(tuningObject, "tinnitusPadBellNearSpeed", "Pad bell near speed");
+                DrawTuningProperty(tuningObject, "bossPatternOneSeconds", "Boss pattern 1 seconds");
+                DrawTuningProperty(tuningObject, "bossPatternTwoSeconds", "Boss pattern 2 seconds");
+                DrawTuningProperty(tuningObject, "bossPatternThreeSeconds", "Boss pattern 3 seconds");
+                DrawTuningProperty(tuningObject, "bossOpeningHoldSeconds", "Boss opening hold seconds");
+                DrawTuningProperty(tuningObject, "bossMovingToleranceMeters", "Boss moving position tolerance");
+                DrawTuningProperty(tuningObject, "bossLightIntervalSeconds", "Boss LED interval");
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
 
@@ -156,6 +213,104 @@ namespace BellRinger.Debug.Editor
             {
                 EditorUtility.SetDirty(profile);
             }
+        }
+
+        private static void CreateOrRefreshRangeObjects(FinalDemoDirector director)
+        {
+            if (director == null)
+            {
+                return;
+            }
+
+            FinalDemoTuningProfile profile = director.TuningProfile;
+            FinalDemoSceneReferences references = director.SceneReferences;
+            Transform parent = references != null && references.WorldRoot != null
+                ? references.WorldRoot
+                : director.transform;
+
+            Vector3 bellOne = profile != null ? profile.BellFollowTargetOnePosition : new Vector3(-1.4f, 1.5f, 3.2f);
+            Vector3 bellTwo = profile != null ? profile.BellFollowTargetTwoPosition : new Vector3(1.4f, 1.5f, 3.6f);
+            if (references != null && references.BellFollowAuthoringPath != null)
+            {
+                if (references.BellFollowAuthoringPath.TryGetWorldPoint(0, out Vector3 authoredOne))
+                {
+                    bellOne = authoredOne;
+                }
+
+                if (references.BellFollowAuthoringPath.TryGetWorldPoint(1, out Vector3 authoredTwo))
+                {
+                    bellTwo = authoredTwo;
+                }
+            }
+
+            Vector3 tinnitusOne = references != null && references.TinnitusOneVisual != null
+                ? references.TinnitusOneVisual.position
+                : profile != null ? profile.GeneralTinnitusOneWorldPosition : new Vector3(-1.2f, 1.45f, 2.8f);
+            Vector3 tinnitusTwo = references != null && references.TinnitusTwoVisual != null
+                ? references.TinnitusTwoVisual.position
+                : profile != null ? profile.GeneralTinnitusTwoWorldPosition : new Vector3(1.25f, 1.35f, 3.1f);
+            Vector3 boss = references != null && references.BossVisual != null
+                ? references.BossVisual.position
+                : profile != null ? profile.BossWorldPosition : new Vector3(0f, 1.6f, 4.2f);
+
+            SerializedObject directorObject = new SerializedObject(director);
+            directorObject.Update();
+            AssignRange(directorObject, "bellFollowOneRange", "Range_BellFollow_01", "Bell follow 1 sound+LED", bellOne, profile != null ? profile.DefaultBellFollowSoundLightRadius : 4.2f, new Color(0.1f, 1f, 0.2f, 0.9f), parent);
+            AssignRange(directorObject, "bellFollowTwoRange", "Range_BellFollow_02", "Bell follow 2 sound+LED", bellTwo, profile != null ? profile.DefaultBellFollowSoundLightRadius : 4.2f, new Color(0.1f, 1f, 0.2f, 0.9f), parent);
+            AssignRange(directorObject, "tinnitusOneRange", "Range_Tinnitus_01", "Tinnitus 1 sound+LED", tinnitusOne, profile != null ? profile.DefaultTinnitusSoundLightRadius : 2.2f, new Color(0.55f, 0.1f, 1f, 0.9f), parent);
+            AssignRange(directorObject, "tinnitusTwoRange", "Range_Tinnitus_02", "Tinnitus 2 sound+LED", tinnitusTwo, profile != null ? profile.DefaultTinnitusSoundLightRadius : 2.2f, new Color(0.55f, 0.1f, 1f, 0.9f), parent);
+            AssignRange(directorObject, "bossTinnitusRange", "Range_BossTinnitus", "Boss tinnitus sound+LED", boss, profile != null ? profile.DefaultBossSoundLightRadius : 2.4f, new Color(1f, 0.1f, 0.25f, 0.9f), parent);
+            directorObject.ApplyModifiedProperties();
+
+            EditorUtility.SetDirty(director);
+            EditorSceneManager.MarkSceneDirty(director.gameObject.scene);
+        }
+
+        private static void AssignRange(
+            SerializedObject directorObject,
+            string propertyName,
+            string objectName,
+            string label,
+            Vector3 position,
+            float radius,
+            Color color,
+            Transform parent)
+        {
+            FinalDemoRangeAuthoring range = FindOrCreateRange(objectName, parent);
+            Undo.RecordObject(range.gameObject, $"Refresh {objectName}");
+            range.transform.position = position;
+            range.RadiusMeters = radius;
+            range.Label = label;
+            range.GizmoColor = color;
+            EditorUtility.SetDirty(range);
+            SerializedProperty property = directorObject.FindProperty(propertyName);
+            if (property != null)
+            {
+                property.objectReferenceValue = range;
+            }
+        }
+
+        private static FinalDemoRangeAuthoring FindOrCreateRange(string objectName, Transform parent)
+        {
+            GameObject existing = GameObject.Find(objectName);
+            if (existing == null)
+            {
+                existing = new GameObject(objectName);
+                Undo.RegisterCreatedObjectUndo(existing, $"Create {objectName}");
+            }
+
+            if (parent != null && existing.transform.parent == null)
+            {
+                Undo.SetTransformParent(existing.transform, parent, $"Parent {objectName}");
+            }
+
+            FinalDemoRangeAuthoring range = existing.GetComponent<FinalDemoRangeAuthoring>();
+            if (range == null)
+            {
+                range = Undo.AddComponent<FinalDemoRangeAuthoring>(existing);
+            }
+
+            return range;
         }
 
         private static void DrawCueEntry(SerializedProperty entry, int index)
@@ -197,7 +352,12 @@ namespace BellRinger.Debug.Editor
 
         private static void DrawTuningProperty(SerializedObject tuningObject, string propertyName, string label)
         {
-            SerializedProperty property = tuningObject.FindProperty(propertyName);
+            DrawSerializedProperty(tuningObject, propertyName, label);
+        }
+
+        private static void DrawSerializedProperty(SerializedObject serializedObject, string propertyName, string label)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
             if (property == null)
             {
                 EditorGUILayout.LabelField(label, $"Missing property: {propertyName}");

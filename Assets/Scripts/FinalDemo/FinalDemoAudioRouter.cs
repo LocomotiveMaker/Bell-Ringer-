@@ -106,7 +106,7 @@ namespace BellRinger.FinalDemo
                 : "HRTF preview disabled.";
         }
 
-        public AudioSource PlayOneShot(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale = 1f)
+        public AudioSource PlayOneShot(FinalDemoCueId cueId, Vector3 worldPosition, float volumeScale = 1f, float pitchScale = 1f)
         {
             if (!TryResolveCue(cueId, out FinalDemoCueEntry cue, out AudioClip clip))
             {
@@ -120,11 +120,12 @@ namespace BellRinger.FinalDemo
 
             AudioSource source = sourceObject.AddComponent<AudioSource>();
             ConfigureSource(source, cue, worldPosition);
+            source.pitch = cue.Pitch * Mathf.Max(0.1f, pitchScale);
             source.volume = ResolveVolume(cue, volumeScale);
             source.clip = clip;
             source.loop = false;
             source.Play();
-            Destroy(sourceObject, Mathf.Max(0.25f, clip.length / Mathf.Max(0.1f, cue.Pitch)) + 0.5f);
+            Destroy(sourceObject, Mathf.Max(0.25f, clip.length / Mathf.Max(0.1f, source.pitch)) + 0.5f);
 
             if (cue.Bus == FinalDemoAudioBus.Narration)
             {
@@ -142,6 +143,23 @@ namespace BellRinger.FinalDemo
             };
 
             _lastAction = $"One-shot {cueId} on {cue.Bus}.";
+            return source;
+        }
+
+        public AudioSource PlayOneShotAttached(FinalDemoCueId cueId, Transform followTarget, float volumeScale = 1f, float pitchScale = 1f)
+        {
+            if (followTarget == null)
+            {
+                Vector3 fallbackPosition = listenerTransform != null ? listenerTransform.position : transform.position;
+                return PlayOneShot(cueId, fallbackPosition, volumeScale, pitchScale);
+            }
+
+            AudioSource source = PlayOneShot(cueId, followTarget.position, volumeScale, pitchScale);
+            if (source != null)
+            {
+                source.transform.SetParent(followTarget, true);
+            }
+
             return source;
         }
 

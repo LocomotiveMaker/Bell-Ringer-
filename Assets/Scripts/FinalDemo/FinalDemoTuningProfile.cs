@@ -38,6 +38,14 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellSoundReactiveSensitivity = 1.45f;
         [SerializeField] private float tinnitusSoundReactiveSensitivity = 1.25f;
         [SerializeField] private float bellCallPostClipGapSeconds = 0.32f;
+        [SerializeField] private AnimationCurve soundLightRangeResponseCurve = new AnimationCurve(
+            new Keyframe(0f, 0f),
+            new Keyframe(0.5f, 0.22f),
+            new Keyframe(1f, 1f));
+        [SerializeField] private float defaultBellFollowSoundLightRadius = 4.2f;
+        [SerializeField] private float defaultTinnitusSoundLightRadius = 2.2f;
+        [SerializeField] private float defaultBossSoundLightRadius = 2.4f;
+        [SerializeField, Range(0f, 0.35f)] private float bellRangeMinimumLedScale = 0.08f;
 
         [Header("종 경로 / Bell Orbit")]
         [SerializeField] private float bellOrbitSeconds = 19.1f;
@@ -67,6 +75,8 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float bellOrbitNearIntensity = 0.78f;
         [SerializeField, Range(0f, 1f)] private float bellOrbitFarIntensity = 0.42f;
         [SerializeField, Range(0f, 1f)] private float bellOrbitVolume = 0.68f;
+        [SerializeField, Range(0f, 1f)] private float bellOrbitSilentLightMultiplier = 0.5f;
+        [SerializeField, Range(0.5f, 2f)] private float bellOrbitWaveLightMultiplier = 1.2f;
 
         [Header("종 경로 / Bell Follow")]
         [SerializeField] private int bellFollowTargetCount = 2;
@@ -78,6 +88,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellFollowInitialCallIntervalSeconds = 11f;
         [SerializeField] private float bellFollowMinimumCallIntervalSeconds = 8f;
         [SerializeField] private float bellFollowMissIntervalReductionSeconds = 0.5f;
+        [SerializeField, Range(0f, 0.8f)] private float bellFollowNearIntervalReduction = 0.4f;
         [SerializeField, Range(0f, 1f)] private float bellFollowVolume = 0.62f;
         [SerializeField, Range(0f, 1f)] private float bellFollowLedIntensity = 0.62f;
         [SerializeField] private float bellAssistTimeoutSeconds = 7.5f;
@@ -95,8 +106,11 @@ namespace BellRinger.FinalDemo
         [Header("비/앰비언트 / Rain & Ambience")]
         [SerializeField] private Vector3 rainZoneCenter = new Vector3(0f, 1.6f, 2.9f);
         [SerializeField] private float rainZoneRadius = 2.4f;
-        [SerializeField] private float rainIntensityRampSeconds = 5f;
+        [SerializeField] private float rainIntensityRampSeconds = 8f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
+        [SerializeField, Range(0.1f, 2f)] private float rainAudioGainMultiplier = 1.3f;
+        [SerializeField] private float rainArrivalAudioFadeSeconds = 3f;
+        [SerializeField] private float rainArrivalLightFadeSeconds = 1.5f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
         [SerializeField] private float rainFocusBellNarrationDelaySeconds = 3f;
         [SerializeField, Range(0f, 1f)] private float rainWindTextureMaxIntensity = 0.34f;
@@ -138,6 +152,17 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0f, 1f)] private float generalTinnitusToneVolume = 0.8f;
         [SerializeField] private float generalTinnitusLightIntervalSeconds = 0.16f;
         [SerializeField] private float generalTinnitusCleanseHapticIntervalSeconds = 0.55f;
+        [SerializeField] private bool finalDemoProceduralTinnitusEnabled;
+        [SerializeField] private bool tinnitusMatchToneEnabled = true;
+        [SerializeField, Range(0f, 0.2f)] private float tinnitusMatchToneVolume = 0.0135f;
+        [SerializeField] private Vector2 tinnitusPositionToneFrequencyRange = new Vector2(40f, 120f);
+        [SerializeField] private Vector2 tinnitusRotationToneFrequencyRange = new Vector2(45f, 110f);
+        [SerializeField, Range(0f, 1f)] private float tinnitusRotationToneVolumeMultiplier = 0.35f;
+        [SerializeField] private bool tinnitusPadBellFeedbackEnabled = true;
+        [SerializeField] private float tinnitusPadBellBaseIntervalSeconds = 3f;
+        [SerializeField, Range(0f, 1f)] private float tinnitusPadBellVolume = 0.2f;
+        [SerializeField, Range(0.2f, 2f)] private float tinnitusPadBellFarSpeed = 0.8f;
+        [SerializeField, Range(0.2f, 2f)] private float tinnitusPadBellNearSpeed = 1.4f;
 
         [Header("대왕 이명 / Boss Tinnitus")]
         [SerializeField] private Vector3 bossWorldPosition = new Vector3(0f, 1.6f, 4.2f);
@@ -209,6 +234,11 @@ namespace BellRinger.FinalDemo
         public float BellSoundReactiveSensitivity => Mathf.Max(0.1f, bellSoundReactiveSensitivity);
         public float TinnitusSoundReactiveSensitivity => Mathf.Max(0.1f, tinnitusSoundReactiveSensitivity);
         public float BellCallPostClipGapSeconds => Mathf.Max(0f, bellCallPostClipGapSeconds);
+        public AnimationCurve SoundLightRangeResponseCurve => soundLightRangeResponseCurve;
+        public float DefaultBellFollowSoundLightRadius => Mathf.Max(0.1f, defaultBellFollowSoundLightRadius);
+        public float DefaultTinnitusSoundLightRadius => Mathf.Max(0.1f, defaultTinnitusSoundLightRadius);
+        public float DefaultBossSoundLightRadius => Mathf.Max(0.1f, defaultBossSoundLightRadius);
+        public float BellRangeMinimumLedScale => Mathf.Clamp(bellRangeMinimumLedScale, 0f, 0.35f);
         public float BellOrbitSeconds => Mathf.Max(0.1f, bellOrbitSeconds);
         public float BellOrbitCallIntervalSeconds => Mathf.Max(0.2f, bellOrbitCallIntervalSeconds);
         public bool BellOrbitPreferProfilePath => bellOrbitPreferProfilePath;
@@ -224,6 +254,8 @@ namespace BellRinger.FinalDemo
         public float BellOrbitNearIntensity => Mathf.Clamp01(bellOrbitNearIntensity);
         public float BellOrbitFarIntensity => Mathf.Clamp01(bellOrbitFarIntensity);
         public float BellOrbitVolume => Mathf.Clamp01(bellOrbitVolume);
+        public float BellOrbitSilentLightMultiplier => Mathf.Clamp01(bellOrbitSilentLightMultiplier);
+        public float BellOrbitWaveLightMultiplier => Mathf.Clamp(bellOrbitWaveLightMultiplier, 0.5f, 2f);
         public int BellFollowTargetCount => Mathf.Max(1, bellFollowTargetCount);
         public Vector3 BellFollowTargetOnePosition => bellFollowTargetOnePosition;
         public Vector3 BellFollowTargetTwoPosition => bellFollowTargetTwoPosition;
@@ -233,6 +265,7 @@ namespace BellRinger.FinalDemo
         public float BellFollowInitialCallIntervalSeconds => Mathf.Max(0.2f, bellFollowInitialCallIntervalSeconds);
         public float BellFollowMinimumCallIntervalSeconds => Mathf.Clamp(bellFollowMinimumCallIntervalSeconds, 0.2f, BellFollowInitialCallIntervalSeconds);
         public float BellFollowMissIntervalReductionSeconds => Mathf.Max(0f, bellFollowMissIntervalReductionSeconds);
+        public float BellFollowNearIntervalReduction => Mathf.Clamp(bellFollowNearIntervalReduction, 0f, 0.8f);
         public float BellFollowVolume => Mathf.Clamp01(bellFollowVolume);
         public float BellFollowLedIntensity => Mathf.Clamp01(bellFollowLedIntensity);
         public float BellAssistTimeoutSeconds => Mathf.Max(0.1f, bellAssistTimeoutSeconds);
@@ -248,6 +281,9 @@ namespace BellRinger.FinalDemo
         public float RainZoneRadius => Mathf.Max(0.1f, rainZoneRadius);
         public float RainIntensityRampSeconds => Mathf.Max(0.1f, rainIntensityRampSeconds);
         public float RainMaxIntensity => Mathf.Clamp01(rainMaxIntensity);
+        public float RainAudioGainMultiplier => Mathf.Clamp(rainAudioGainMultiplier, 0.1f, 2f);
+        public float RainArrivalAudioFadeSeconds => Mathf.Max(0.1f, rainArrivalAudioFadeSeconds);
+        public float RainArrivalLightFadeSeconds => Mathf.Max(0.1f, rainArrivalLightFadeSeconds);
         public float RainWindTextureDelaySeconds => Mathf.Max(0f, rainWindTextureDelaySeconds);
         public float RainFocusBellNarrationDelaySeconds => Mathf.Max(0f, rainFocusBellNarrationDelaySeconds);
         public float RainWindTextureMaxIntensity => Mathf.Clamp01(rainWindTextureMaxIntensity);
@@ -272,7 +308,7 @@ namespace BellRinger.FinalDemo
         public Vector3 GeneralTinnitusOnePadTargetYawPitchRoll => generalTinnitusOnePadTargetYawPitchRoll;
         public Vector3 GeneralTinnitusTwoPadTargetYawPitchRoll => generalTinnitusTwoPadTargetYawPitchRoll;
         public float GeneralTinnitusTreatmentSeconds => Mathf.Max(0.1f, generalTinnitusTreatmentSeconds);
-        public float GeneralTinnitusApproachRadius => Mathf.Max(0.05f, generalTinnitusApproachRadius * GeneralTinnitusRadiusScale);
+        public float GeneralTinnitusApproachRadius => Mathf.Max(0.05f, generalTinnitusApproachRadius);
         public float GeneralTinnitusRadiusScale => Mathf.Max(0.1f, generalTinnitusRadiusScale);
         public float GeneralTinnitusPositionToleranceMeters => Mathf.Max(0.01f, generalTinnitusPositionToleranceMeters);
         public float GeneralTinnitusRotationToleranceDegrees => Mathf.Clamp(generalTinnitusRotationToleranceDegrees, 1f, 180f);
@@ -282,6 +318,17 @@ namespace BellRinger.FinalDemo
         public float GeneralTinnitusToneVolume => Mathf.Clamp01(generalTinnitusToneVolume);
         public float GeneralTinnitusLightIntervalSeconds => Mathf.Max(0.05f, generalTinnitusLightIntervalSeconds);
         public float GeneralTinnitusCleanseHapticIntervalSeconds => Mathf.Max(0.1f, generalTinnitusCleanseHapticIntervalSeconds);
+        public bool FinalDemoProceduralTinnitusEnabled => finalDemoProceduralTinnitusEnabled;
+        public bool TinnitusMatchToneEnabled => tinnitusMatchToneEnabled;
+        public float TinnitusMatchToneVolume => Mathf.Clamp(tinnitusMatchToneVolume, 0f, 0.2f);
+        public Vector2 TinnitusPositionToneFrequencyRange => ClampFrequencyRange(tinnitusPositionToneFrequencyRange, new Vector2(40f, 120f));
+        public Vector2 TinnitusRotationToneFrequencyRange => ClampFrequencyRange(tinnitusRotationToneFrequencyRange, new Vector2(45f, 110f));
+        public float TinnitusRotationToneVolumeMultiplier => Mathf.Clamp01(tinnitusRotationToneVolumeMultiplier);
+        public bool TinnitusPadBellFeedbackEnabled => tinnitusPadBellFeedbackEnabled;
+        public float TinnitusPadBellBaseIntervalSeconds => Mathf.Max(0.2f, tinnitusPadBellBaseIntervalSeconds);
+        public float TinnitusPadBellVolume => Mathf.Clamp01(tinnitusPadBellVolume);
+        public float TinnitusPadBellFarSpeed => Mathf.Clamp(tinnitusPadBellFarSpeed, 0.2f, 2f);
+        public float TinnitusPadBellNearSpeed => Mathf.Clamp(tinnitusPadBellNearSpeed, TinnitusPadBellFarSpeed, 2f);
         public Vector3 BossWorldPosition => bossWorldPosition;
         public float BossApproachRadius => Mathf.Max(0.05f, bossApproachRadius);
         public float BossApproachAutoStartSeconds => Mathf.Max(0.1f, bossApproachAutoStartSeconds);
@@ -309,5 +356,17 @@ namespace BellRinger.FinalDemo
         public float ForestBellArrivalRadius => Mathf.Max(0.05f, forestBellArrivalRadius);
         public float ForestAutoEndSeconds => Mathf.Max(0.1f, forestAutoEndSeconds);
         public float ForestBellLedIntensity => Mathf.Clamp01(forestBellLedIntensity);
+
+        private static Vector2 ClampFrequencyRange(Vector2 range, Vector2 fallback)
+        {
+            if (range.x <= 0f || range.y <= 0f)
+            {
+                range = fallback;
+            }
+
+            float min = Mathf.Clamp(Mathf.Min(range.x, range.y), 20f, 16000f);
+            float max = Mathf.Clamp(Mathf.Max(range.x, range.y), min + 1f, 16000f);
+            return new Vector2(min, max);
+        }
     }
 }

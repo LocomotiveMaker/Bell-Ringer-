@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bell Ringer Family Experience Survey</title>
+  <style>
+    :root {
+      --bg: #10140f;
+      --panel: #f1ead8;
+      --panel-2: #fffaf0;
+      --ink: #172016;
+      --muted: #5c6759;
+      --line: #cfc5aa;
+      --accent: #d9892b;
+      --accent-2: #156f6d;
+      --danger: #a23b2a;
+      --shadow: rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(216, 137, 43, 0.26), transparent 36rem),
+        radial-gradient(circle at 90% 18%, rgba(21, 111, 109, 0.26), transparent 34rem),
+        linear-gradient(135deg, #10140f 0%, #1a2119 64%, #0b1213 100%);
+      color: var(--ink);
+      font-family: "Malgun Gothic", "Noto Sans KR", sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      color: #fff8e8;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 54px);
+      line-height: 1.05;
+      margin: 0 0 10px;
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .lead {
+      color: rgba(255, 248, 232, 0.82);
+      max-width: 850px;
+      margin: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      border-radius: 22px;
+      box-shadow: 0 22px 52px var(--shadow);
+      padding: 20px;
+    }
+
+    .section {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin: 14px 0;
+      padding: 16px;
+    }
+
+    .section:first-of-type {
+      margin-top: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+      margin-top: -3px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fffdf7;
+      color: var(--ink);
+      font: inherit;
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .question {
+      border-top: 1px dashed var(--line);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .question:first-child {
+      border-top: 0;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .scale-row {
+      display: grid;
+      grid-template-columns: 70px minmax(120px, 1fr) 70px;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .value-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: var(--ink);
+      color: #fff8e8;
+      font-weight: 800;
+      justify-self: center;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent-2);
+      padding: 0;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent-2);
+      color: white;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      padding: 11px 16px;
+    }
+
+    button.secondary {
+      background: #243024;
+    }
+
+    button.warning {
+      background: var(--danger);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .sticky {
+      position: sticky;
+      top: 18px;
+    }
+
+    .status {
+      border-left: 5px solid var(--accent);
+      background: #fff4d8;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 14px;
+      color: #38230c;
+      font-weight: 700;
+    }
+
+    .stats {
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+
+    .stat {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      border-bottom: 1px solid rgba(23, 32, 22, 0.12);
+      padding-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .stat strong {
+      color: var(--accent-2);
+    }
+
+    .response-list {
+      display: grid;
+      gap: 10px;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .response {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf7;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .response-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      background: #e9dec0;
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: #31402e;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 920px) {
+      body {
+        padding: 14px;
+      }
+
+      .layout,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sticky {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Bell Ringer 가족 체험 설문</h1>
+      <p class="lead">
+        체험 직후 바로 작성하는 용도입니다. 정답을 맞히는 설문이 아니라, 사용자가 어떤 감각을 실제로 받았는지 확인하기 위한 기록입니다.
+        제출 결과는 이 브라우저의 localStorage에 누적 저장되고 오른쪽에 바로 집계됩니다.
+      </p>
+    </header>
+
+    <div class="layout">
+      <main class="card">
+        <form id="surveyForm">
+          <section class="section">
+            <h2>기본 정보</h2>
+            <div class="grid">
+              <div>
+                <label for="participant">응답자 이름 또는 별명</label>
+                <input id="participant" name="participant" required placeholder="예: 엄마, 동생, A">
+              </div>
+              <div>
+                <label for="ageGroup">연령대</label>
+                <select id="ageGroup" name="ageGroup">
+                  <option value="">선택 안 함</option>
+                  <option>10대 이하</option>
+                  <option>20대</option>
+                  <option>30대</option>
+                  <option>40대</option>
+                  <option>50대</option>
+                  <option>60대 이상</option>
+                </select>
+              </div>
+              <div>
+                <label for="stageReached">어디까지 체험했나요?</label>
+                <select id="stageReached" name="stageReached">
+                  <option>초반 정면 대기/나레이션</option>
+                  <option>종이 주변을 도는 구간</option>
+                  <option>1번째 종 따라가기</option>
+                  <option>비/바람 속 2번째 종 따라가기</option>
+                  <option>종 바라보기/획득</option>
+                  <option>일반 이명 1</option>
+                  <option>일반 이명 2</option>
+                  <option>보스 이명</option>
+                  <option>엔딩 또는 거의 끝</option>
+                </select>
+              </div>
+              <div>
+                <label for="playMinutes">체험 시간</label>
+                <select id="playMinutes" name="playMinutes">
+                  <option>1분 미만</option>
+                  <option>1~2분</option>
+                  <option>2~3분</option>
+                  <option>3~5분</option>
+                  <option>5분 이상</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <div id="questionRoot"></div>
+
+          <section class="section">
+            <h2>자유 서술</h2>
+            <div class="question">
+              <label for="bestMoment">가장 인상적이거나 괜찮았던 순간은 무엇이었나요?</label>
+              <textarea id="bestMoment" name="bestMoment" placeholder="예: 비바람 속에서 종소리가 들리는 순간, 이명 소리를 없애는 순간"></textarea>
+            </div>
+            <div class="question">
+              <label for="confusingMoment">가장 헷갈리거나 막혔던 순간은 무엇이었나요?</label>
+              <textarea id="confusingMoment" name="confusingMoment" placeholder="무엇을 해야 하는지 몰랐던 지점, 방향을 잘못 느낀 지점 등을 적어주세요."></textarea>
+            </div>
+            <div class="question">
+              <label for="painPoint">눈, 귀, 머리, 손 중 불편하거나 아팠던 부분이 있었나요?</label>
+              <textarea id="painPoint" name="painPoint" placeholder="없으면 없다고 적어주세요. 있었다면 어느 구간에서 어떤 느낌이었는지 적어주세요."></textarea>
+            </div>
+            <div class="question">
+              <label for="oneFix">딱 하나만 고친다면 무엇을 고치면 좋겠나요?</label>
+              <textarea id="oneFix" name="oneFix" placeholder="예: 나레이션을 더 짧게, 종소리를 더 크게, 빛을 더 약하게"></textarea>
+            </div>
+            <div class="question">
+              <label for="threeWords">이 게임을 세 단어로 표현하면?</label>
+              <input id="threeWords" name="threeWords" placeholder="예: 낯설다, 신기하다, 어렵다">
+            </div>
+            <div class="question">
+              <label for="testerNote">진행자가 남길 메모</label>
+              <textarea id="testerNote" name="testerNote" placeholder="체험 중 표정, 멈춘 구간, 반복된 실수 등 사용자가 관찰한 내용을 적어도 됩니다."></textarea>
+            </div>
+          </section>
+
+          <div class="actions">
+            <button type="submit">제출하고 결과에 합치기</button>
+            <button type="button" class="secondary" id="clearFormButton">입력만 초기화</button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="card sticky">
+        <div class="status" id="saveStatus">아직 제출된 응답이 없습니다.</div>
+        <h2>누적 결과</h2>
+        <div class="stats" id="summaryStats"></div>
+        <div class="actions">
+          <button type="button" class="secondary" id="exportJsonButton">JSON 저장</button>
+          <button type="button" class="secondary" id="exportCsvButton">CSV 저장</button>
+          <button type="button" class="warning" id="resetAllButton">누적 결과 삭제</button>
+        </div>
+        <h3 style="margin-top: 20px;">응답 목록</h3>
+        <div class="response-list" id="responseList"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "bellRingerFamilyExperienceSurvey.v1";
+
+    const sections = [
+      {
+        title: "전체 이해와 진행",
+        questions: [
+          ["goalClear", "처음부터 무엇을 해야 하는 게임인지 이해됐나요?", "전혀 몰랐다", "바로 이해했다"],
+          ["nextActionClear", "각 구간에서 다음 행동이 명확했나요?", "항상 헷갈렸다", "항상 명확했다"],
+          ["narrationHelpful", "나레이션이 도움이 됐나요?", "방해됐다", "매우 도움됐다"],
+          ["paceGood", "진행 속도는 적절했나요?", "너무 느리거나 빠름", "적절했다"],
+          ["wantContinue", "중간에 그만하고 싶지 않고 계속 해보고 싶었나요?", "그만하고 싶었다", "계속하고 싶었다"]
+        ]
+      },
+      {
+        title: "소리 방향성과 공간감",
+        questions: [
+          ["bellDirection", "종소리의 좌우 방향을 구분할 수 있었나요?", "구분 안 됨", "매우 잘 구분됨"],
+          ["bellDistance", "종소리가 가까워지거나 멀어지는 느낌이 있었나요?", "없었다", "분명했다"],
+          ["frontBack", "앞/뒤 방향감은 있었나요?", "없었다", "분명했다"],
+          ["headLinkedSound", "머리를 돌렸을 때 소리 위치가 실제 공간에 박혀 있는 것처럼 느껴졌나요?", "머리 안에서만 들림", "공간에 고정된 느낌"],
+          ["rainMix", "비/바람 속에서도 종소리를 따라갈 수 있었나요?", "완전히 묻힘", "어렵지만 따라감"],
+          ["tinnitusDirection", "이명 소리도 방향이 있는 것처럼 느껴졌나요?", "양쪽에서 똑같이 들림", "방향이 분명함"],
+          ["soundQuality", "전체 음질과 공간감은 체험에 몰입을 줬나요?", "거칠고 어색함", "몰입됨"]
+        ]
+      },
+      {
+        title: "폐안 LED와 빛 자극",
+        questions: [
+          ["lightHelpful", "눈을 감은 상태에서 빛이 힌트로 도움이 됐나요?", "방해됐다", "매우 도움됐다"],
+          ["lightComfort", "빛이 눈에 아프지 않았나요?", "아팠다", "편안했다"],
+          ["bellLight", "초록 종 빛이 종 위치를 알려주는 느낌이었나요?", "그냥 깜빡임", "위치 힌트"],
+          ["rainLight", "비의 파란 빛이 비/바닥 느낌으로 느껴졌나요?", "안 느껴짐", "분명함"],
+          ["tinnitusLight", "이명 빛이 다른 빛과 구분됐나요?", "구분 안 됨", "구분됨"],
+          ["lightPattern", "빛 패턴의 움직임이나 퍼짐을 인식할 수 있었나요?", "못 느낌", "잘 느낌"],
+          ["colorSeparation", "색 차이를 폐안 상태에서 구분할 수 있었나요?", "거의 안 됨", "잘 됨"]
+        ]
+      },
+      {
+        title: "패드, 진동, 입력",
+        questions: [
+          ["padComfort", "패드를 들고 움직이는 것이 편했나요?", "불편했다", "편했다"],
+          ["shakeUnderstood", "패드를 흔들어 종소리를 다시 확인하는 규칙을 이해했나요?", "몰랐다", "이해했다"],
+          ["shakeUseful", "패드 흔들기 종소리 확인 기능이 유용했나요?", "불필요", "유용"],
+          ["hapticUseful", "진동이 방향/정답 피드백으로 도움이 됐나요?", "도움 안 됨", "도움 됨"],
+          ["inputLatency", "패드나 머리 움직임 반응이 늦게 느껴졌나요?", "많이 늦음", "즉각적"],
+          ["poseRule", "패드 위치/회전으로 이명을 치료한다는 규칙을 이해했나요?", "이해 안 됨", "이해됨"]
+        ]
+      },
+      {
+        title: "이명과 보스 이명",
+        questions: [
+          ["tinnitusUnpleasant", "이명 소리는 불쾌하지만 견딜 만한 수준이었나요?", "너무 힘듦", "의도대로 견딜 만함"],
+          ["tinnitusUrgency", "이명을 빨리 제거해야 한다는 압박감이 있었나요?", "없었다", "강했다"],
+          ["positionTone", "정답 위치에 가까워질수록 소리가 변하는 느낌을 받을 수 있었나요?", "못 느낌", "잘 느낌"],
+          ["rotationTone", "일반 이명에서 회전을 맞출 때 소리 변화가 도움이 됐나요?", "못 느낌", "도움 됨"],
+          ["tinnitusFair", "이명 처치 난이도는 납득 가능했나요?", "불공평함", "납득 가능"],
+          ["bossTrack", "보스 이명 약점을 따라가야 한다는 느낌이 들었나요?", "이해 안 됨", "이해됨"],
+          ["bossDifficulty", "보스 이명의 난이도는 전시 체험용으로 적절했나요?", "너무 어렵거나 쉬움", "적절함"]
+        ]
+      },
+      {
+        title: "전시 적합성과 감정",
+        questions: [
+          ["unique", "이 체험이 다른 게임/전시와 다르게 느껴졌나요?", "평범함", "독특함"],
+          ["closedEyeWorth", "눈을 감고 하는 이유가 체험적으로 납득됐나요?", "납득 안 됨", "납득됨"],
+          ["immersion", "소리와 빛만으로 몰입이 생겼나요?", "몰입 안 됨", "몰입됨"],
+          ["fatigue", "체험 후 피로감은 적절한 수준이었나요?", "너무 피곤함", "괜찮음"],
+          ["expoLength", "전시장에서 3~5분 체험으로 적절해 보이나요?", "부적절", "적절"],
+          ["recommend", "다른 사람에게 체험시켜보고 싶나요?", "아니다", "그렇다"]
+        ]
+      }
+    ];
+
+    const form = document.getElementById("surveyForm");
+    const questionRoot = document.getElementById("questionRoot");
+    const saveStatus = document.getElementById("saveStatus");
+    const summaryStats = document.getElementById("summaryStats");
+    const responseList = document.getElementById("responseList");
+
+    function renderQuestions() {
+      questionRoot.innerHTML = "";
+      for (const section of sections) {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "section";
+        sectionEl.innerHTML = `<h2>${section.title}</h2>`;
+
+        for (const [id, label, low, high] of section.questions) {
+          const wrap = document.createElement("div");
+          wrap.className = "question";
+          wrap.innerHTML = `
+            <label for="${id}">${label}</label>
+            <div class="hint">1 = ${low} / 5 = ${high}</div>
+            <div class="scale-row">
+              <span>1</span>
+              <input type="range" id="${id}" name="${id}" min="1" max="5" step="1" value="3">
+              <span>5</span>
+            </div>
+            <div class="value-pill" id="${id}_value">3</div>
+          `;
+          sectionEl.appendChild(wrap);
+        }
+
+        questionRoot.appendChild(sectionEl);
+      }
+
+      for (const input of form.querySelectorAll('input[type="range"]')) {
+        input.addEventListener("input", () => {
+          document.getElementById(`${input.id}_value`).textContent = input.value;
+        });
+      }
+    }
+
+    function loadResponses() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveResponses(responses) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
+    }
+
+    function collectFormData() {
+      const formData = new FormData(form);
+      const response = {
+        submittedAt: new Date().toISOString(),
+        participant: formData.get("participant") || "",
+        ageGroup: formData.get("ageGroup") || "",
+        stageReached: formData.get("stageReached") || "",
+        playMinutes: formData.get("playMinutes") || "",
+        scores: {},
+        text: {
+          bestMoment: formData.get("bestMoment") || "",
+          confusingMoment: formData.get("confusingMoment") || "",
+          painPoint: formData.get("painPoint") || "",
+          oneFix: formData.get("oneFix") || "",
+          threeWords: formData.get("threeWords") || "",
+          testerNote: formData.get("testerNote") || ""
+        }
+      };
+
+      for (const section of sections) {
+        for (const [id] of section.questions) {
+          response.scores[id] = Number(formData.get(id) || 0);
+        }
+      }
+
+      return response;
+    }
+
+    function average(responses, id) {
+      if (!responses.length) return "-";
+      const values = responses.map(response => response.scores[id]).filter(value => Number.isFinite(value));
+      if (!values.length) return "-";
+      return (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2);
+    }
+
+    function renderResults() {
+      const responses = loadResponses();
+      saveStatus.textContent = responses.length
+        ? `누적 응답 ${responses.length}개가 저장되어 있습니다.`
+        : "아직 제출된 응답이 없습니다.";
+
+      const keyStats = [
+        ["goalClear", "목표 이해"],
+        ["bellDirection", "종 좌우 방향"],
+        ["headLinkedSound", "공간 고정 소리"],
+        ["lightHelpful", "폐안 빛 도움"],
+        ["lightComfort", "빛 편안함"],
+        ["shakeUseful", "패드 흔들기 유용성"],
+        ["poseRule", "이명 처치 규칙 이해"],
+        ["positionTone", "위치 주파수 피드백"],
+        ["rotationTone", "회전 주파수 피드백"],
+        ["bossTrack", "보스 약점 추적 이해"],
+        ["closedEyeWorth", "폐안 이유 납득"],
+        ["recommend", "추천 의향"]
+      ];
+
+      summaryStats.innerHTML = keyStats.map(([id, label]) => `
+        <div class="stat"><span>${label}</span><strong>${average(responses, id)}</strong></div>
+      `).join("");
+
+      if (!responses.length) {
+        responseList.innerHTML = `<div class="empty">제출 후 여기에 응답이 표시됩니다.</div>`;
+        return;
+      }
+
+      responseList.innerHTML = responses.slice().reverse().map((response, index) => {
+        const time = new Date(response.submittedAt).toLocaleString("ko-KR");
+        const text = response.text || {};
+        return `
+          <article class="response">
+            <div class="response-title">
+              <span>${escapeHtml(response.participant || `응답 ${responses.length - index}`)}</span>
+              <span>${time}</span>
+            </div>
+            <div>${escapeHtml(response.stageReached || "")} / ${escapeHtml(response.playMinutes || "")}</div>
+            <div class="chips">
+              <span class="chip">목표 ${response.scores.goalClear}</span>
+              <span class="chip">소리방향 ${response.scores.bellDirection}</span>
+              <span class="chip">빛도움 ${response.scores.lightHelpful}</span>
+              <span class="chip">이명규칙 ${response.scores.poseRule}</span>
+              <span class="chip">추천 ${response.scores.recommend}</span>
+            </div>
+            ${text.bestMoment ? `<p><strong>좋았던 순간:</strong> ${escapeHtml(text.bestMoment)}</p>` : ""}
+            ${text.confusingMoment ? `<p><strong>헷갈린 순간:</strong> ${escapeHtml(text.confusingMoment)}</p>` : ""}
+            ${text.oneFix ? `<p><strong>하나만 고치면:</strong> ${escapeHtml(text.oneFix)}</p>` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJson() {
+      const responses = loadResponses();
+      download("bell-ringer-family-survey.json", JSON.stringify(responses, null, 2), "application/json;charset=utf-8");
+    }
+
+    function exportCsv() {
+      const responses = loadResponses();
+      const scoreIds = sections.flatMap(section => section.questions.map(question => question[0]));
+      const textIds = ["bestMoment", "confusingMoment", "painPoint", "oneFix", "threeWords", "testerNote"];
+      const headers = ["submittedAt", "participant", "ageGroup", "stageReached", "playMinutes", ...scoreIds, ...textIds];
+      const rows = responses.map(response => {
+        const text = response.text || {};
+        const values = [
+          response.submittedAt,
+          response.participant,
+          response.ageGroup,
+          response.stageReached,
+          response.playMinutes,
+          ...scoreIds.map(id => response.scores[id]),
+          ...textIds.map(id => text[id] || "")
+        ];
+        return values.map(csvEscape).join(",");
+      });
+      download("bell-ringer-family-survey.csv", [headers.join(","), ...rows].join("\n"), "text/csv;charset=utf-8");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return `"${text.replaceAll('"', '""')}"`;
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const responses = loadResponses();
+      responses.push(collectFormData());
+      saveResponses(responses);
+      form.reset();
+      for (const input of form.querySelectorAll('input[type="range"]')) {
+        input.value = "3";
+        document.getElementById(`${input.id}_value`).textContent = "3";
+      }
+      renderResults();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("clearFormButton").addEventListener("click", () => {
+      form.reset();
+      for (const input of form.querySelectorAll('input[type="range"]')) {
+        input.value = "3";
+        document.getElementById(`${input.id}_value`).textContent = "3";
+      }
+    });
+
+    document.getElementById("exportJsonButton").addEventListener("click", exportJson);
+    document.getElementById("exportCsvButton").addEventListener("click", exportCsv);
+    document.getElementById("resetAllButton").addEventListener("click", () => {
+      if (!confirm("누적 설문 결과를 모두 삭제할까요? JSON 또는 CSV로 먼저 저장했는지 확인하세요.")) {
+        return;
+      }
+
+      localStorage.removeItem(STORAGE_KEY);
+      renderResults();
+    });
+
+    renderQuestions();
+    renderResults();
+  </script>
+</body>
+</html>

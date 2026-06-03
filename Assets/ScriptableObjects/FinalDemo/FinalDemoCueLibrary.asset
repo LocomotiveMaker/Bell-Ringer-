@@ -226,7 +226,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 14
     operatorLabel: Tinnitus burst
-    audioClip: {fileID: 8300000, guid: 75b30e2df524a2d4ab9c384227594ea4, type: 3}
+    audioClip: {fileID: 8300000, guid: 2e1d128ad9895fa46982d9d242193922, type: 3}
     alternateClips:
     - {fileID: 8300000, guid: 391f06bf47f510e42af0189eb23e1ab0, type: 3}
     - {fileID: 8300000, guid: 64ebbaeea421a51408a4deb1f66c968a, type: 3}
@@ -245,7 +245,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 15
     operatorLabel: Tinnitus pose lock
-    audioClip: {fileID: 8300000, guid: a017afb3c9abeac41b6f6a01effcd286, type: 3}
+    audioClip: {fileID: 8300000, guid: 8fe5160b14b57df4ba00ea4bfdf6933e, type: 3}
     alternateClips:
     - {fileID: 8300000, guid: 8393e96fa4c3fc04687d98c6217ee65a, type: 3}
     bus: 6
