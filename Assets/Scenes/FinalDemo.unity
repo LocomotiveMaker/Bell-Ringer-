@@ -7136,7 +7136,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8efd87b156d29e5469e083a1df507a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTransformLocalPose: 1
+  useTransformLocalPose: 0
   targetCameraSpacePosition: {x: -0.16, y: -0.03, z: 0.68}
   targetYawPitchRollDegrees: {x: 0, y: 0, z: 0}
   overrideTolerances: 0
@@ -13824,7 +13824,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8efd87b156d29e5469e083a1df507a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTransformLocalPose: 1
+  useTransformLocalPose: 0
   targetCameraSpacePosition: {x: -0.12, y: 0, z: 0.68}
   targetYawPitchRollDegrees: {x: 0, y: 0, z: 0}
   overrideTolerances: 0
@@ -13898,8 +13898,17 @@ MonoBehaviour:
   bossTinnitusBoardRangeScale: 0.5
   tinnitusPatternSizeScale: 0.5
   bossTinnitusPatternSizeScale: 0.5
-  rainHardwareBrightnessMultiplier: 0.1
-  rainHardwareColorMultiplier: 0.3
+  rainBrightness: 0.055
+  rainDensity: 0.2
+  rainNeutralRows: 2
+  rainLookDownRows: 4.4
+  rainHardwareBrightnessMultiplier: 0.25
+  rainHardwareColorMultiplier: 0.25
+  rainHardwareMaximumBrightness: 0.055
+  rainPreviewBrightnessBoost: 1.8
+  rainSeedRate: 0.22
+  rainPhaseSpeed: 0.9
+  rainPeakContrast: 1.1
   clearWhenMappedOutsideBoard: 1
 --- !u!1 &1261298735
 GameObject:
@@ -15853,7 +15862,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8efd87b156d29e5469e083a1df507a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTransformLocalPose: 1
+  useTransformLocalPose: 0
   targetCameraSpacePosition: {x: 0.16, y: 0.04, z: 0.8}
   targetYawPitchRollDegrees: {x: -12, y: -20, z: 12}
   overrideTolerances: 0
@@ -16747,7 +16756,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8efd87b156d29e5469e083a1df507a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTransformLocalPose: 1
+  useTransformLocalPose: 0
   targetCameraSpacePosition: {x: 0.18, y: 0.02, z: 0.74}
   targetYawPitchRollDegrees: {x: 12, y: -18, z: 8}
   overrideTolerances: 0
@@ -25575,7 +25584,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8efd87b156d29e5469e083a1df507a5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTransformLocalPose: 1
+  useTransformLocalPose: 0
   targetCameraSpacePosition: {x: 0.05, y: -0.02, z: 0.74}
   targetYawPitchRollDegrees: {x: 10, y: 16, z: -8}
   overrideTolerances: 0

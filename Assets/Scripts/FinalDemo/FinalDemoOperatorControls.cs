@@ -296,6 +296,12 @@ namespace BellRinger.FinalDemo
             GUILayout.Label($"Preview brightness x{ledPreviewBrightness:0.0}");
             Rect gridRect = GUILayoutUtility.GetRect(10f, 220f, GUILayout.ExpandWidth(true));
             DrawLedPreviewGrid(gridRect, router);
+            if (router != null)
+            {
+                GUILayout.Label(router.LastAction);
+                GUILayout.Label(router.LastRainDebug);
+            }
+
             GUILayout.Label("Bottom row here matches the physical board bottom row.");
         }
 

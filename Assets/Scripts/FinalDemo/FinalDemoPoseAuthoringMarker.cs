@@ -20,8 +20,16 @@ namespace BellRinger.FinalDemo
         public Vector3 StoredTargetCameraSpacePosition => targetCameraSpacePosition;
         public Vector3 StoredTargetYawPitchRollDegrees => targetYawPitchRollDegrees;
 
-        public Vector3 TargetCameraSpacePosition => useTransformLocalPose ? transform.localPosition : targetCameraSpacePosition;
-        public Vector3 TargetYawPitchRollDegrees => useTransformLocalPose ? ResolveYawPitchRollFromTransform() : targetYawPitchRollDegrees;
+        public Vector3 TargetCameraSpacePosition => targetCameraSpacePosition;
+        public Vector3 TargetYawPitchRollDegrees => targetYawPitchRollDegrees;
+
+        private void Awake()
+        {
+            if (!useTransformLocalPose)
+            {
+                ApplyStoredPoseToTransform();
+            }
+        }
 
         private void OnValidate()
         {
@@ -45,6 +53,7 @@ namespace BellRinger.FinalDemo
                 NormalizeSignedAngle(provider.ResolvedYawDegrees),
                 NormalizeSignedAngle(provider.ResolvedPitchDegrees),
                 NormalizeSignedAngle(provider.ResolvedRollDegrees));
+            useTransformLocalPose = false;
             ApplyStoredPoseToTransform();
         }
 

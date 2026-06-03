@@ -54,7 +54,7 @@ namespace BellRinger.FinalDemo
                                stage == FinalDemoStage.ForestEnding ||
                                stage == FinalDemoStage.Complete;
             bool rainVisible = stage == FinalDemoStage.BellFollowRain || stage == FinalDemoStage.BellGaze;
-            bool tinnitusVisible = stage == FinalDemoStage.GeneralTinnitusOne || stage == FinalDemoStage.GeneralTinnitusTwo;
+            bool tinnitusVisible = stage == FinalDemoStage.GeneralTinnitusOne;
             bool bossVisible = stage == FinalDemoStage.BossApproach ||
                                stage == FinalDemoStage.BossPatternOne ||
                                stage == FinalDemoStage.BossPatternTwo ||

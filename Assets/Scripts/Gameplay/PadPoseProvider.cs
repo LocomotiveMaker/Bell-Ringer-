@@ -56,6 +56,21 @@ namespace BellRinger.Gameplay
         public float ResolvedPitchDegrees => _resolvedPitchDegrees;
         public float ResolvedRollDegrees => _resolvedRollDegrees;
 
+        public void SetCameraSpaceCorrections(
+            bool invertX,
+            bool invertZ,
+            Vector3 axisScale,
+            Vector3 offset)
+        {
+            invertCameraSpacePositionX = invertX;
+            invertCameraSpacePositionZ = invertZ;
+            cameraSpacePositionAxisScale = new Vector3(
+                Mathf.Max(0.01f, axisScale.x),
+                Mathf.Max(0.01f, axisScale.y),
+                Mathf.Max(0.01f, axisScale.z));
+            cameraSpacePositionOffset = offset;
+        }
+
         private void OnValidate()
         {
             cameraSpacePositionAxisScale.x = Mathf.Max(0.01f, cameraSpacePositionAxisScale.x);

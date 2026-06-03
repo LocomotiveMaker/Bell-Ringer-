@@ -6,6 +6,7 @@ namespace BellRinger.FinalDemo
     [DisallowMultipleComponent]
     public sealed class FinalDemoAuthoringCapture : MonoBehaviour
     {
+        [SerializeField] private FinalDemoDirector director;
         [SerializeField] private FinalDemoSceneReferences sceneReferences;
         [SerializeField] private PadPoseProvider padPoseProvider;
         [SerializeField] private Camera playerCamera;
@@ -18,12 +19,9 @@ namespace BellRinger.FinalDemo
         {
             "Bell Follow",
             "Bell Gaze",
-            "Boss Path 1",
-            "Boss Path 2",
-            "Boss Path 3",
         };
 
-        private Rect _panelRect = new Rect(590f, 18f, 430f, 430f);
+        private Rect _panelRect = new Rect(590f, 18f, 430f, 560f);
 
         private void Awake()
         {
@@ -38,24 +36,19 @@ namespace BellRinger.FinalDemo
                 CapturePose(sceneReferences != null ? sceneReferences.TinnitusOneHealMarker : null);
             }
 
-            if (Input.GetKeyDown(KeyCode.F6))
-            {
-                CapturePose(sceneReferences != null ? sceneReferences.TinnitusTwoHealMarker : null);
-            }
-
             if (Input.GetKeyDown(KeyCode.F7))
             {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
+                CaptureBossPose(0);
             }
 
             if (Input.GetKeyDown(KeyCode.F8))
             {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseTwoMarker : null);
+                CaptureBossPose(1);
             }
 
             if (Input.GetKeyDown(KeyCode.F9))
             {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseThreeMarker : null);
+                CaptureBossPose(2);
             }
         }
 
@@ -71,45 +64,28 @@ namespace BellRinger.FinalDemo
 
         private void DrawWindow(int id)
         {
-            GUILayout.Label("Pose hotkeys: F5/F6 Tinnitus, F7/F8/F9 Boss.");
+            GUILayout.Label("Pose hotkeys: F5 Tinnitus A. Boss points: F7 Boss1, F8 Boss2, F9 Boss3.");
             GUILayout.Label("Press a capture button/key while the pad is exactly at the desired answer pose.");
             GUILayout.Label(BuildPadSummary());
             GUILayout.Label(_lastCaptureStatus);
 
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Capture Tinnitus A"))
             {
                 CapturePose(sceneReferences != null ? sceneReferences.TinnitusOneHealMarker : null);
             }
 
-            if (GUILayout.Button("Capture Tinnitus B"))
-            {
-                CapturePose(sceneReferences != null ? sceneReferences.TinnitusTwoHealMarker : null);
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Capture Boss 1"))
-            {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
-            }
-
-            if (GUILayout.Button("Capture Boss 2"))
-            {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseTwoMarker : null);
-            }
-
-            if (GUILayout.Button("Capture Boss 3"))
-            {
-                CapturePose(sceneReferences != null ? sceneReferences.BossPoseThreeMarker : null);
-            }
-            GUILayout.EndHorizontal();
-
             GUILayout.Label("General tinnitus uses captured position + yaw/pitch/roll.");
-            GUILayout.Label("Boss currently uses path waypoint position only; boss pose captures are kept for debug/future use.");
+            GUILayout.Label("Tinnitus B is skipped in FinalDemo; first tinnitus goes directly to boss.");
+            GUILayout.Label("Boss now uses three fixed answer points. Rotation is ignored.");
             DrawMarkerSummary("Tinnitus A target", sceneReferences != null ? sceneReferences.TinnitusOneHealMarker : null);
-            DrawMarkerSummary("Tinnitus B target", sceneReferences != null ? sceneReferences.TinnitusTwoHealMarker : null);
-            DrawMarkerSummary("Boss 1 pose", sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
+
+            GUILayout.Space(6f);
+            DrawBossCaptureRow("Boss 1", 0);
+            DrawBossCaptureRow("Boss 2", 1);
+            DrawBossCaptureRow("Boss 3", 2);
+            DrawMarkerSummary("Boss 1 target", sceneReferences != null ? sceneReferences.BossPoseOneMarker : null);
+            DrawMarkerSummary("Boss 2 target", sceneReferences != null ? sceneReferences.BossPoseTwoMarker : null);
+            DrawMarkerSummary("Boss 3 target", sceneReferences != null ? sceneReferences.BossPoseThreeMarker : null);
 
             GUILayout.Space(6f);
             GUILayout.Label("Waypoint capture uses current pad camera-space position converted through player camera.");
@@ -154,9 +130,10 @@ namespace BellRinger.FinalDemo
             }
 
             marker.CaptureFrom(padPoseProvider);
-            Vector3 position = marker.TargetCameraSpacePosition;
-            Vector3 ypr = marker.TargetYawPitchRollDegrees;
-            _lastCaptureStatus = $"Captured {marker.name}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  y/p/r {ypr.x:0.0}, {ypr.y:0.0}, {ypr.z:0.0}";
+            Vector3 position = marker.StoredTargetCameraSpacePosition;
+            Vector3 ypr = marker.StoredTargetYawPitchRollDegrees;
+            bool appliedNow = director != null && director.TryApplyCapturedGeneralTinnitusTarget(marker);
+            _lastCaptureStatus = $"Captured {marker.name}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  y/p/r {ypr.x:0.0}, {ypr.y:0.0}, {ypr.z:0.0}{(appliedNow ? "  applied now" : string.Empty)}";
             MarkDirty(marker);
         }
 
@@ -178,6 +155,30 @@ namespace BellRinger.FinalDemo
             }
         }
 
+        private void CaptureBossPose(int patternIndex)
+        {
+            ResolveReferences();
+            FinalDemoPoseAuthoringMarker marker = ResolveBossMarker(patternIndex);
+            if (marker == null || padPoseProvider == null)
+            {
+                _lastCaptureStatus = marker == null
+                    ? "Boss point capture failed: marker is missing."
+                    : "Boss point capture failed: PadPoseProvider is missing.";
+                return;
+            }
+
+            if (!padPoseProvider.HasFreshPosition || !padPoseProvider.HasResolvedRotation)
+            {
+                _lastCaptureStatus = "Boss point capture failed: pad position/rotation is not fresh.";
+                return;
+            }
+
+            marker.CaptureFrom(padPoseProvider);
+            Vector3 position = marker.StoredTargetCameraSpacePosition;
+            _lastCaptureStatus = $"Captured Boss {patternIndex + 1}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  (rotation captured but ignored in boss match)";
+            MarkDirty(marker);
+        }
+
         private FinalDemoAuthoringPath ResolveSelectedPath()
         {
             if (sceneReferences == null)
@@ -188,10 +189,22 @@ namespace BellRinger.FinalDemo
             return selectedPathIndex switch
             {
                 1 => sceneReferences.BellGazeAuthoringPath,
-                2 => sceneReferences.BossWeakpointPathOneAuthoring,
-                3 => sceneReferences.BossWeakpointPathTwoAuthoring,
-                4 => sceneReferences.BossWeakpointPathThreeAuthoring,
                 _ => sceneReferences.BellFollowAuthoringPath,
+            };
+        }
+
+        private FinalDemoPoseAuthoringMarker ResolveBossMarker(int patternIndex)
+        {
+            if (sceneReferences == null)
+            {
+                return null;
+            }
+
+            return patternIndex switch
+            {
+                1 => sceneReferences.BossPoseTwoMarker,
+                2 => sceneReferences.BossPoseThreeMarker,
+                _ => sceneReferences.BossPoseOneMarker,
             };
         }
 
@@ -214,13 +227,25 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            Vector3 position = marker.TargetCameraSpacePosition;
-            Vector3 ypr = marker.TargetYawPitchRollDegrees;
+            Vector3 position = marker.StoredTargetCameraSpacePosition;
+            Vector3 ypr = marker.StoredTargetYawPitchRollDegrees;
             GUILayout.Label($"{label}: pos {position.x:0.00}, {position.y:0.00}, {position.z:0.00}  y/p/r {ypr.x:0}, {ypr.y:0}, {ypr.z:0}");
+        }
+
+        private void DrawBossCaptureRow(string label, int patternIndex)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label, GUILayout.Width(62f));
+            if (GUILayout.Button("Capture Point"))
+            {
+                CaptureBossPose(patternIndex);
+            }
+            GUILayout.EndHorizontal();
         }
 
         private void ResolveReferences()
         {
+            director ??= FindFirstObjectByType<FinalDemoDirector>();
             sceneReferences ??= FindFirstObjectByType<FinalDemoSceneReferences>();
             padPoseProvider ??= sceneReferences != null ? sceneReferences.PadPoseProvider : FindFirstObjectByType<PadPoseProvider>();
             playerCamera ??= sceneReferences != null ? sceneReferences.PlayerCamera : Camera.main;

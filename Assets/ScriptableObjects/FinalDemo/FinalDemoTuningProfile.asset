@@ -31,9 +31,9 @@ MonoBehaviour:
   generalTinnitusRadiusScale: 1.3
   generalTinnitusPositionToleranceMeters: 0.18
   generalTinnitusRotationToleranceDegrees: 22
-  bossPatternOneSeconds: 7
-  bossPatternTwoSeconds: 8
-  bossPatternThreeSeconds: 10
+  bossPatternOneSeconds: 4
+  bossPatternTwoSeconds: 5
+  bossPatternThreeSeconds: 6
   bossOpeningHoldSeconds: 2
   bossMovingToleranceMeters: 0.42
   bossMovingToleranceDegrees: 38

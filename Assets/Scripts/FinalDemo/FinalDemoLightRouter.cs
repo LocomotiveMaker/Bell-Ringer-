@@ -32,8 +32,19 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusBoardRangeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float tinnitusPatternSizeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusPatternSizeScale = 0.5f;
-        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.1f;
-        [SerializeField, Range(0.05f, 1f)] private float rainHardwareColorMultiplier = 0.3f;
+        [Header("Rain LED / Sample Grammar")]
+        [SerializeField, Range(0.01f, 0.35f)] private float rainBrightness = 0.055f;
+        [SerializeField, Range(0f, 1f)] private float rainDensity = 0.2f;
+        [SerializeField, Range(0.6f, 4f)] private float rainNeutralRows = 2f;
+        [SerializeField, Range(1f, 6f)] private float rainLookDownRows = 4.4f;
+        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.25f;
+        [SerializeField, Range(0.05f, 1f)] private float rainHardwareColorMultiplier = 0.25f;
+        [SerializeField, Range(0.02f, 0.35f)] private float rainHardwareMaximumBrightness = 0.055f;
+        [SerializeField, Range(0f, 0.1f)] private float rainHardwareMinimumVisibleBrightness = 0.067f;
+        [SerializeField, Range(0.1f, 3f)] private float rainPreviewBrightnessBoost = 1.8f;
+        [SerializeField, Range(0.1f, 2f)] private float rainSeedRate = 0.22f;
+        [SerializeField, Range(0.1f, 2.5f)] private float rainPhaseSpeed = 0.9f;
+        [SerializeField, Range(0.5f, 2f)] private float rainPeakContrast = 1.1f;
         [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
@@ -41,10 +52,16 @@ namespace BellRinger.FinalDemo
         private int _seed;
         private string _lastAction = "(idle)";
         private readonly Color[] _logicalFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
+        private readonly Color[] _rainFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
+        private readonly Color[] _compositeFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
+        private readonly Color[] _hardwareFrame = new Color[BellRingerAudioLedMapper.DisplayWidth * BellRingerAudioLedMapper.DisplayHeight];
         private int _logicalFrameVersion;
+        private float _rainFrameActiveUntilRealtime;
+        private string _lastRainDebug = "(no rain)";
 
         public bool OutputToHardware => outputToHardware;
         public string LastAction => _lastAction;
+        public string LastRainDebug => _lastRainDebug;
         public FinalDemoFeedbackPriority HeldPriority => Time.realtimeSinceStartup <= _holdUntilRealtime ? _heldPriority : FinalDemoFeedbackPriority.Rain;
         public int LogicalFrameWidth => BellRingerAudioLedMapper.DisplayWidth;
         public int LogicalFrameHeight => BellRingerAudioLedMapper.DisplayHeight;
@@ -69,20 +86,23 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            HardwareBridge bridge = ResolveBridge();
-            if (outputToHardware && bridge != null)
+            RenderBellLogicalFrame(frame, miniRipple, bellColor);
+            if (!TrySendCurrentFrameWithRainComposite(FinalDemoFeedbackPriority.Bell))
             {
-                if (miniRipple)
+                HardwareBridge bridge = ResolveBridge();
+                if (outputToHardware && bridge != null)
                 {
-                    bridge.SendLedRipple(frame.centerX, frame.centerY, 1.7f, 0.75f, bellColor, frame.brightnessNormalized);
-                }
-                else
-                {
-                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.55f, 0.8f, 0.6f, bellColor, frame.brightnessNormalized, 1.4f);
+                    if (miniRipple)
+                    {
+                        bridge.SendLedRipple(frame.centerX, frame.centerY, 1.7f, 0.75f, bellColor, frame.brightnessNormalized);
+                    }
+                    else
+                    {
+                        bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.55f, 0.8f, 0.6f, bellColor, frame.brightnessNormalized, 1.4f);
+                    }
                 }
             }
 
-            RenderBellLogicalFrame(frame, miniRipple, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell light x={frame.x} y={frame.y} b={frame.brightnessNormalized:0.00}";
         }
@@ -100,13 +120,16 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            HardwareBridge bridge = ResolveBridge();
-            if (outputToHardware && bridge != null)
+            RenderBellLogicalFrame(frame, false, bellColor);
+            if (!TrySendCurrentFrameWithRainComposite(FinalDemoFeedbackPriority.Bell))
             {
-                bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellColor, frame.brightnessNormalized, 1.15f);
+                HardwareBridge bridge = ResolveBridge();
+                if (outputToHardware && bridge != null)
+                {
+                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellColor, frame.brightnessNormalized, 1.15f);
+                }
             }
 
-            RenderBellLogicalFrame(frame, false, bellColor);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell anchor x={frame.centerX:0.00} y={frame.centerY:0.00} b={frame.brightnessNormalized:0.00}";
         }
@@ -199,35 +222,58 @@ namespace BellRinger.FinalDemo
             float core = Mathf.Lerp(0.28f, 0.52f, envelope);
             float width = Mathf.Lerp(1.15f, 2.15f, Mathf.Clamp01(envelope + onset * 0.04f));
 
-            HardwareBridge bridge = ResolveBridge();
-            if (outputToHardware && bridge != null)
+            RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
+            if (!TrySendCurrentFrameWithRainComposite(FinalDemoFeedbackPriority.Bell))
             {
-                bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.62f + onset * 0.04f);
+                HardwareBridge bridge = ResolveBridge();
+                if (outputToHardware && bridge != null)
+                {
+                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.62f + onset * 0.04f);
+                }
             }
 
-            RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
             HoldPriority(FinalDemoFeedbackPriority.Bell);
             _lastAction = $"Bell wave x={frame.x} y={frame.y} env={envelope:0.00} b={brightness:0.00}";
         }
 
         public void ShowRainFloorBand(float intensity = 0.45f)
         {
-            if (!TryEmit(FinalDemoFeedbackPriority.Rain))
+            if (!TryBuildRainFrame(
+                    Mathf.Clamp01(intensity),
+                    _rainFrame,
+                    out float centerX,
+                    out float centerY,
+                    out float width,
+                    out float height,
+                    out float hardwareLevel,
+                    out int seed,
+                    out float phase,
+                    out float density,
+                    out string rainDebug))
             {
-                _lastAction = $"Rain skipped under {HeldPriority}.";
+                _rainFrameActiveUntilRealtime = 0f;
+                _lastRainDebug = rainDebug;
+                ClearMappedOutput(FinalDemoFeedbackPriority.Rain, rainDebug);
                 return;
             }
 
+            _rainFrameActiveUntilRealtime = 0f;
+            _lastRainDebug = rainDebug;
+            if (!TryEmit(FinalDemoFeedbackPriority.Rain))
+            {
+                _lastAction = $"Rain blocked by {HeldPriority}. {rainDebug}";
+                return;
+            }
+
+            CopyFrame(_rainFrame, _logicalFrame);
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
             {
-                Color hardwareRainColor = rainColor * rainHardwareColorMultiplier;
-                hardwareRainColor.a = 1f;
-                bridge.SendLedRain(hardwareRainColor, Mathf.Clamp01(intensity) * rainHardwareBrightnessMultiplier, ++_seed, 7.5f, 0.65f, 16f, 2.4f, Time.realtimeSinceStartup, 0.9f, 1.75f);
+                bridge.SendLedRain(rainColor, hardwareLevel, seed, centerX, centerY, width, height, phase, density, rainPeakContrast);
             }
 
-            RenderRainLogicalFrame(Mathf.Clamp01(intensity));
-            _lastAction = $"Rain floor band b={Mathf.Clamp01(intensity):0.00}";
+            _logicalFrameVersion++;
+            _lastAction = $"Rain floor frame. {rainDebug}";
         }
 
         public void ShowTinnitusPoint(Vector3 worldPosition, float intensity = 0.65f, bool boss = false)
@@ -479,6 +525,11 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
+            if (priority > FinalDemoFeedbackPriority.Rain && TryRestoreRainFrame(reason))
+            {
+                return;
+            }
+
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
             {
@@ -488,6 +539,20 @@ namespace BellRinger.FinalDemo
             ClearLogicalFrame();
             HoldPriority(priority);
             _lastAction = reason;
+        }
+
+        private bool TryRestoreRainFrame(string reason)
+        {
+            if (Time.realtimeSinceStartup > _rainFrameActiveUntilRealtime || !FrameHasVisiblePixels(_rainFrame))
+            {
+                return false;
+            }
+
+            CopyFrame(_rainFrame, _logicalFrame);
+            SendFrameToHardware(_logicalFrame, _rainFrame);
+            _logicalFrameVersion++;
+            _lastAction = $"Rain restored. {reason}";
+            return true;
         }
 
         private bool TryEmit(FinalDemoFeedbackPriority priority)
@@ -503,12 +568,139 @@ namespace BellRinger.FinalDemo
 
         private void ClearLogicalFrame()
         {
-            for (int i = 0; i < _logicalFrame.Length; i++)
+            ClearFrame(_logicalFrame);
+            _logicalFrameVersion++;
+        }
+
+        private static void ClearFrame(Color[] frame)
+        {
+            if (frame == null)
             {
-                _logicalFrame[i] = Color.black;
+                return;
             }
 
-            _logicalFrameVersion++;
+            for (int i = 0; i < frame.Length; i++)
+            {
+                frame[i] = Color.black;
+            }
+        }
+
+        private static void CopyFrame(Color[] source, Color[] destination)
+        {
+            if (source == null || destination == null)
+            {
+                return;
+            }
+
+            int copyLength = Mathf.Min(source.Length, destination.Length);
+            for (int i = 0; i < copyLength; i++)
+            {
+                destination[i] = source[i];
+            }
+        }
+
+        private bool TrySendCurrentFrameWithRainComposite(FinalDemoFeedbackPriority priority)
+        {
+            _ = priority;
+            return false;
+        }
+
+        private void SendFrameToHardware(Color[] frame, Color[] rainReference)
+        {
+            HardwareBridge bridge = ResolveBridge();
+            if (!outputToHardware || bridge == null || frame == null)
+            {
+                return;
+            }
+
+            int copyLength = Mathf.Min(frame.Length, _hardwareFrame.Length);
+            for (int i = 0; i < copyLength; i++)
+            {
+                Color pixel = frame[i];
+                bool rainOnly = rainReference != null &&
+                                i < rainReference.Length &&
+                                IsVisiblePixel(rainReference[i]) &&
+                                ApproximatelySameColor(pixel, rainReference[i]);
+                _hardwareFrame[i] = rainOnly ? ScaleRainHardwarePixel(pixel) : ClampPixel(pixel);
+            }
+
+            for (int i = copyLength; i < _hardwareFrame.Length; i++)
+            {
+                _hardwareFrame[i] = Color.black;
+            }
+
+            bridge.SendLedFrame(_hardwareFrame);
+        }
+
+        private Color ScaleRainHardwarePixel(Color pixel)
+        {
+            Color scaled = pixel * rainHardwareBrightnessMultiplier;
+            scaled.r *= rainHardwareColorMultiplier;
+            scaled.g *= rainHardwareColorMultiplier;
+            scaled.b *= rainHardwareColorMultiplier;
+            scaled.a = 1f;
+
+            float maxComponent = Mathf.Max(scaled.r, Mathf.Max(scaled.g, scaled.b));
+            if (maxComponent <= 0.001f)
+            {
+                return Color.black;
+            }
+
+            float cap = Mathf.Max(0.001f, rainHardwareMaximumBrightness);
+            if (maxComponent > cap)
+            {
+                scaled *= cap / maxComponent;
+                scaled.a = 1f;
+            }
+
+            float minimum = Mathf.Clamp(rainHardwareMinimumVisibleBrightness, 0f, cap);
+            maxComponent = Mathf.Max(scaled.r, Mathf.Max(scaled.g, scaled.b));
+            if (minimum > 0f && maxComponent > 0.001f && maxComponent < minimum)
+            {
+                scaled *= minimum / maxComponent;
+                scaled.a = 1f;
+            }
+
+            return ClampPixel(scaled);
+        }
+
+        private static Color ClampPixel(Color pixel)
+        {
+            pixel.r = Mathf.Clamp01(pixel.r);
+            pixel.g = Mathf.Clamp01(pixel.g);
+            pixel.b = Mathf.Clamp01(pixel.b);
+            pixel.a = 1f;
+            return pixel;
+        }
+
+        private static bool IsVisiblePixel(Color pixel)
+        {
+            return Mathf.Max(pixel.r, Mathf.Max(pixel.g, pixel.b)) > 0.01f;
+        }
+
+        private static bool ApproximatelySameColor(Color a, Color b)
+        {
+            return Mathf.Abs(a.r - b.r) < 0.002f &&
+                   Mathf.Abs(a.g - b.g) < 0.002f &&
+                   Mathf.Abs(a.b - b.b) < 0.002f;
+        }
+
+        private static bool FrameHasVisiblePixels(Color[] frame)
+        {
+            if (frame == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < frame.Length; i++)
+            {
+                if (IsVisiblePixel(frame[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RenderBellLogicalFrame(BellRingerLedDotFrame frame, bool miniRipple, Color color, bool clear = true)
@@ -566,40 +758,116 @@ namespace BellRinger.FinalDemo
             AddPixel(frame.x + 1, frame.y, color, frame.brightnessNormalized * 0.18f);
         }
 
-        private void RenderRainLogicalFrame(float intensity)
+        private bool TryBuildRainFrame(
+            float intensity,
+            Color[] destination,
+            out float centerX,
+            out float centerY,
+            out float width,
+            out float minimalHeight,
+            out float hardwareLevel,
+            out int seed,
+            out float phase,
+            out float density,
+            out string debug)
         {
-            ClearLogicalFrame();
+            centerX = 7.5f;
+            centerY = 0.5f;
+            width = 16f;
+            minimalHeight = 0f;
+            hardwareLevel = 0f;
+            seed = 0;
+            phase = 0f;
+            density = 0f;
+            ClearFrame(destination);
+            if (destination == null || destination.Length == 0)
+            {
+                debug = "Rain skipped: frame missing.";
+                return false;
+            }
+
+            if (!TryProjectRainBand(out centerX, out centerY, out width, out float height, out float visibility))
+            {
+                debug = "Rain skipped: outside rain band.";
+                return false;
+            }
+
+            seed = Mathf.FloorToInt(Time.realtimeSinceStartup * rainSeedRate);
+            _seed = seed;
+            phase = Time.realtimeSinceStartup * rainPhaseSpeed;
+            density = Mathf.Clamp01(rainDensity);
+            hardwareLevel = Mathf.Clamp01(rainBrightness * Mathf.Clamp01(intensity) * visibility);
+            float previewLevel = Mathf.Clamp01(hardwareLevel * rainPreviewBrightnessBoost);
+            minimalHeight = Mathf.Max(0.6f, height * Mathf.Lerp(0.55f, 1f, density));
+            centerY = Mathf.Clamp((minimalHeight - 1f) * 0.5f, 0f, 7f);
+            float halfWidth = width * 0.5f;
+            float halfHeight = minimalHeight * 0.5f;
+            int dropCount = Mathf.Clamp(Mathf.RoundToInt(2f + density * 5f), 2, 7);
+
             for (int y = 0; y < LogicalFrameHeight; y++)
             {
-                float rowWeight = ResolveRainRowWeight(y);
-                if (rowWeight <= 0f)
-                {
-                    continue;
-                }
-
                 for (int x = 0; x < LogicalFrameWidth; x++)
                 {
-                    SetPixel(x, y, rainColor, ResolveRainPixelBrightness(x, y, intensity, rowWeight));
+                    float dxArea = Mathf.Abs(x - centerX);
+                    float dyArea = Mathf.Abs(y - centerY);
+                    if (dxArea > halfWidth || dyArea > halfHeight)
+                    {
+                        continue;
+                    }
+
+                    float alpha = 0f;
+                    for (int drop = 0; drop < dropCount; drop++)
+                    {
+                        float dropX = Mathf.Lerp(centerX - halfWidth, centerX + halfWidth, Hash01(seed + drop * 19, 3, 11));
+                        float dropY = Mathf.Lerp(centerY - halfHeight, centerY + halfHeight, Hash01(seed + drop * 23, 7, 5));
+                        float radius = Mathf.Repeat((phase * 1.15f) + Hash01(seed + drop * 29, 13, 17) * 2.8f, 2.8f);
+                        float distance = Vector2.Distance(new Vector2(x, y), new Vector2(dropX, dropY));
+                        alpha = Mathf.Max(alpha, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / 1.15f)));
+                    }
+
+                    float edgeX = width >= 15.9f ? 1f : Mathf.Clamp01((halfWidth - dxArea) / 1.5f);
+                    float edgeY = Mathf.Clamp01(((centerY + halfHeight) - y) / 1.25f);
+                    float brightness = BellRingerLightStyle.ContrastAlpha(alpha, rainPeakContrast) * edgeX * edgeY * previewLevel;
+                    AddFramePixel(destination, x, y, rainColor, brightness);
                 }
             }
+
+            debug = $"rain level={hardwareLevel:0.000} density={density:0.00} drops={dropCount} h={minimalHeight:0.00} vis={visibility:0.00} seed={seed}";
+            return true;
         }
 
-        private static float ResolveRainRowWeight(int y)
+        private bool TryProjectRainBand(out float centerX, out float centerY, out float width, out float height, out float visibility)
         {
-            return y switch
+            centerX = 7.5f;
+            centerY = 0.5f;
+            width = 16f;
+            height = 0f;
+            visibility = 0f;
+
+            Transform listener = listenerTransform != null ? listenerTransform : Camera.main != null ? Camera.main.transform : null;
+            if (listener == null)
             {
-                0 => 1f,
-                1 => 0.9f,
-                2 => 0.62f,
-                3 => 0.35f,
-                _ => 0f,
-            };
-        }
+                return false;
+            }
 
-        private float ResolveRainPixelBrightness(int x, int y, float intensity, float rowWeight)
-        {
-            float streak = 0.7f + Mathf.Abs(Mathf.Sin((_seed * 0.37f) + x * 0.75f + y * 1.2f)) * 0.3f;
-            return Mathf.Clamp01(intensity * rowWeight * streak);
+            float forwardY = listener.forward.y;
+            float skySuppression = Mathf.Clamp01(1f - Mathf.InverseLerp(0.18f, 0.7f, forwardY));
+            if (skySuppression <= 0.01f)
+            {
+                return false;
+            }
+
+            float lookDown = Mathf.Clamp01(-forwardY);
+            height = Mathf.Lerp(Mathf.Max(1f, rainNeutralRows), Mathf.Max(rainNeutralRows, rainLookDownRows), lookDown) * skySuppression;
+            if (height < 0.6f)
+            {
+                return false;
+            }
+
+            height = Mathf.Clamp(height, 0.6f, 5f);
+            centerY = Mathf.Clamp((height - 1f) * 0.5f, 0f, 7f);
+            visibility = Mathf.Clamp01(skySuppression * Mathf.Lerp(0.72f, 1f, lookDown));
+            return visibility > 0.01f && height > 0.25f;
         }
 
         private void RenderTinnitusLogicalFrame(BellRingerLedDotFrame frame, bool boss, Color color, float sizeScale)
@@ -700,6 +968,32 @@ namespace BellRinger.FinalDemo
             _logicalFrame[index].g = Mathf.Clamp01(_logicalFrame[index].g);
             _logicalFrame[index].b = Mathf.Clamp01(_logicalFrame[index].b);
             _logicalFrame[index].a = 1f;
+        }
+
+        private void AddFramePixel(Color[] frame, int x, int y, Color color, float brightness)
+        {
+            if (frame == null || x < 0 || x >= LogicalFrameWidth || y < 0 || y >= LogicalFrameHeight)
+            {
+                return;
+            }
+
+            int index = (y * LogicalFrameWidth) + x;
+            frame[index] += color * Mathf.Clamp01(brightness);
+            frame[index].r = Mathf.Clamp01(frame[index].r);
+            frame[index].g = Mathf.Clamp01(frame[index].g);
+            frame[index].b = Mathf.Clamp01(frame[index].b);
+            frame[index].a = 1f;
+        }
+
+        private static float Hash01(int seed, int x, int y)
+        {
+            uint value = (uint)seed;
+            value ^= (uint)(x + 37) * 1103515245u;
+            value ^= (uint)(y + 101) * 12345u;
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            return (value & 0x00FFFFFF) / 16777215f;
         }
 
         private HardwareBridge ResolveBridge()

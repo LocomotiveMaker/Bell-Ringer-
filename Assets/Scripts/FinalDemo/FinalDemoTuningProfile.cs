@@ -170,9 +170,9 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bossApproachAutoStartSeconds = 12f;
         [SerializeField, Range(0f, 1f)] private float bossBaseVolume = 0.084f;
         [SerializeField, Range(0f, 1f)] private float bossMassLedIntensity = 0.78f;
-        [SerializeField] private float bossPatternOneSeconds = 8f;
-        [SerializeField] private float bossPatternTwoSeconds = 8.5f;
-        [SerializeField] private float bossPatternThreeSeconds = 9f;
+        [SerializeField] private float bossPatternOneSeconds = 4f;
+        [SerializeField] private float bossPatternTwoSeconds = 5f;
+        [SerializeField] private float bossPatternThreeSeconds = 6f;
         [SerializeField] private float bossOpeningHoldSeconds = 2f;
         [SerializeField] private float bossHoldPositionToleranceMeters = 0.18f;
         [SerializeField] private float bossHoldRotationToleranceDegrees = 24f;
