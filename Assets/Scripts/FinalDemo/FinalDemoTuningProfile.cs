@@ -108,7 +108,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float rainZoneRadius = 2.4f;
         [SerializeField] private float rainIntensityRampSeconds = 8f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
-        [SerializeField, Range(0.1f, 2f)] private float rainAudioGainMultiplier = 1.3f;
+        [SerializeField, Range(0.1f, 2f)] private float rainAudioGainMultiplier = 0.975f;
         [SerializeField] private float rainArrivalAudioFadeSeconds = 3f;
         [SerializeField] private float rainArrivalLightFadeSeconds = 1.5f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
@@ -149,16 +149,16 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float generalTinnitusMatchFeedbackRadiusMultiplier = 2.5f;
         [SerializeField] private float generalTinnitusRevealConeDegrees = 38f;
         [SerializeField, Range(0f, 1f)] private float generalTinnitusLedIntensity = 0.72f;
-        [SerializeField, Range(0f, 1f)] private float generalTinnitusToneVolume = 0.8f;
+        [SerializeField, Range(0f, 1f)] private float generalTinnitusToneVolume = 0.16f;
         [SerializeField] private float generalTinnitusLightIntervalSeconds = 0.16f;
         [SerializeField] private float generalTinnitusCleanseHapticIntervalSeconds = 0.55f;
-        [SerializeField] private bool finalDemoProceduralTinnitusEnabled;
+        [SerializeField] private bool finalDemoProceduralTinnitusEnabled = true;
         [SerializeField] private bool tinnitusMatchToneEnabled = true;
-        [SerializeField, Range(0f, 0.2f)] private float tinnitusMatchToneVolume = 0.0135f;
+        [SerializeField, Range(0f, 0.2f)] private float tinnitusMatchToneVolume = 0.0027f;
         [SerializeField] private Vector2 tinnitusPositionToneFrequencyRange = new Vector2(40f, 120f);
         [SerializeField] private Vector2 tinnitusRotationToneFrequencyRange = new Vector2(45f, 110f);
         [SerializeField, Range(0f, 1f)] private float tinnitusRotationToneVolumeMultiplier = 0.35f;
-        [SerializeField] private bool tinnitusPadBellFeedbackEnabled = true;
+        [SerializeField] private bool tinnitusPadBellFeedbackEnabled;
         [SerializeField] private float tinnitusPadBellBaseIntervalSeconds = 3f;
         [SerializeField, Range(0f, 1f)] private float tinnitusPadBellVolume = 0.2f;
         [SerializeField, Range(0.2f, 2f)] private float tinnitusPadBellFarSpeed = 0.8f;
@@ -168,7 +168,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Vector3 bossWorldPosition = new Vector3(0f, 1.6f, 4.2f);
         [SerializeField] private float bossApproachRadius = 1.25f;
         [SerializeField] private float bossApproachAutoStartSeconds = 12f;
-        [SerializeField, Range(0f, 1f)] private float bossBaseVolume = 0.42f;
+        [SerializeField, Range(0f, 1f)] private float bossBaseVolume = 0.084f;
         [SerializeField, Range(0f, 1f)] private float bossMassLedIntensity = 0.78f;
         [SerializeField] private float bossPatternOneSeconds = 8f;
         [SerializeField] private float bossPatternTwoSeconds = 8.5f;

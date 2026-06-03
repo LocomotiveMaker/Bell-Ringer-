@@ -32,7 +32,8 @@ namespace BellRinger.FinalDemo
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusBoardRangeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float tinnitusPatternSizeScale = 0.5f;
         [SerializeField, Range(0.05f, 1f)] private float bossTinnitusPatternSizeScale = 0.5f;
-        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.25f;
+        [SerializeField, Range(0.05f, 1f)] private float rainHardwareBrightnessMultiplier = 0.1f;
+        [SerializeField, Range(0.05f, 1f)] private float rainHardwareColorMultiplier = 0.3f;
         [SerializeField] private bool clearWhenMappedOutsideBoard = true;
 
         private FinalDemoFeedbackPriority _heldPriority = FinalDemoFeedbackPriority.Rain;
@@ -220,7 +221,9 @@ namespace BellRinger.FinalDemo
             HardwareBridge bridge = ResolveBridge();
             if (outputToHardware && bridge != null)
             {
-                bridge.SendLedRain(rainColor, Mathf.Clamp01(intensity) * rainHardwareBrightnessMultiplier, ++_seed, 7.5f, 0.65f, 16f, 2.4f, Time.realtimeSinceStartup, 0.9f, 1.75f);
+                Color hardwareRainColor = rainColor * rainHardwareColorMultiplier;
+                hardwareRainColor.a = 1f;
+                bridge.SendLedRain(hardwareRainColor, Mathf.Clamp01(intensity) * rainHardwareBrightnessMultiplier, ++_seed, 7.5f, 0.65f, 16f, 2.4f, Time.realtimeSinceStartup, 0.9f, 1.75f);
             }
 
             RenderRainLogicalFrame(Mathf.Clamp01(intensity));
