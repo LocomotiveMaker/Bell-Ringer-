@@ -10,7 +10,8 @@ namespace BellRinger.FinalDemo
         [SerializeField] private Transform listenerTransform;
         [SerializeField] private HardwareBridge hardwareBridge;
         [SerializeField] private bool outputToHardware = true;
-        [SerializeField] private Color bellColor = new Color(0.08f, 1f, 0.15f);
+        [SerializeField] private Color bellColor = new Color(0.12f, 1f, 0.32f);
+        [SerializeField] private Color bellHardwareColor = new Color(0.08f, 1f, 0.15f);
         [SerializeField] private Color padColor = new Color(1f, 0.54f, 0.05f);
         [SerializeField] private Color rainColor = new Color(0.02f, 0.08f, 1f);
         [SerializeField] private Color tinnitusColor = new Color(0.55f, 0.08f, 1f);
@@ -94,11 +95,11 @@ namespace BellRinger.FinalDemo
                 {
                     if (miniRipple)
                     {
-                        bridge.SendLedRipple(frame.centerX, frame.centerY, 1.7f, 0.75f, bellColor, frame.brightnessNormalized);
+                        bridge.SendLedRipple(frame.centerX, frame.centerY, 1.7f, 0.75f, bellHardwareColor, frame.brightnessNormalized);
                     }
                     else
                     {
-                        bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.55f, 0.8f, 0.6f, bellColor, frame.brightnessNormalized, 1.4f);
+                        bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.55f, 0.8f, 0.6f, bellHardwareColor, frame.brightnessNormalized, 1.4f);
                     }
                 }
             }
@@ -126,7 +127,7 @@ namespace BellRinger.FinalDemo
                 HardwareBridge bridge = ResolveBridge();
                 if (outputToHardware && bridge != null)
                 {
-                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellColor, frame.brightnessNormalized, 1.15f);
+                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, 0.18f, 0.45f, 0.48f, bellHardwareColor, frame.brightnessNormalized, 1.15f);
                 }
             }
 
@@ -218,9 +219,9 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
-            float radius = Mathf.Lerp(0.42f, 2.1f, Mathf.SmoothStep(0f, 1f, envelope)) + onset * 0.04f;
-            float core = Mathf.Lerp(0.28f, 0.52f, envelope);
-            float width = Mathf.Lerp(1.15f, 2.15f, Mathf.Clamp01(envelope + onset * 0.04f));
+            float radius = Mathf.Lerp(0.82f, 2.2f, Mathf.SmoothStep(0f, 1f, envelope)) + onset * 0.04f;
+            float core = Mathf.Lerp(0.85f, 1.1f, envelope);
+            float width = Mathf.Lerp(1.28f, 2.3f, Mathf.Clamp01(envelope + onset * 0.04f));
 
             RenderBellWaveLogicalFrame(frame, radius, width, bellColor, brightness);
             if (!TrySendCurrentFrameWithRainComposite(FinalDemoFeedbackPriority.Bell))
@@ -228,7 +229,10 @@ namespace BellRinger.FinalDemo
                 HardwareBridge bridge = ResolveBridge();
                 if (outputToHardware && bridge != null)
                 {
-                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, radius, core, width, bellColor, brightness, 0.62f + onset * 0.04f);
+                    float hardwareRadius = Mathf.Lerp(0.42f, 2.1f, Mathf.SmoothStep(0f, 1f, envelope)) + onset * 0.04f;
+                    float hardwareCore = Mathf.Lerp(0.28f, 0.52f, envelope);
+                    float hardwareWidth = Mathf.Lerp(1.15f, 2.15f, Mathf.Clamp01(envelope + onset * 0.04f));
+                    bridge.SendLedPulseCore(frame.centerX, frame.centerY, hardwareRadius, hardwareCore, hardwareWidth, bellHardwareColor, brightness, 0.62f + onset * 0.04f);
                 }
             }
 
@@ -710,18 +714,9 @@ namespace BellRinger.FinalDemo
                 ClearLogicalFrame();
             }
 
-            SetPixel(frame.x, frame.y, color, frame.brightnessNormalized);
-            if (!miniRipple)
-            {
-                AddPixel(frame.x, frame.y + 1, color, frame.brightnessNormalized * 0.45f);
-                AddPixel(frame.x, frame.y - 1, color, frame.brightnessNormalized * 0.25f);
-                return;
-            }
-
-            AddPixel(frame.x - 1, frame.y, color, frame.brightnessNormalized * 0.38f);
-            AddPixel(frame.x + 1, frame.y, color, frame.brightnessNormalized * 0.38f);
-            AddPixel(frame.x, frame.y - 1, color, frame.brightnessNormalized * 0.24f);
-            AddPixel(frame.x, frame.y + 1, color, frame.brightnessNormalized * 0.24f);
+            float radius = miniRipple ? 1.35f : 0.95f;
+            float edgeGain = miniRipple ? 0.34f : 0.2f;
+            RenderBellBloomLogicalFrame(frame, color, frame.brightnessNormalized, radius, edgeGain, false);
         }
 
         private void RenderBellWaveLogicalFrame(BellRingerLedDotFrame frame, float radius, float width, Color color, float brightness, bool clear = true)
@@ -736,11 +731,39 @@ namespace BellRinger.FinalDemo
             {
                 for (int x = 0; x < LogicalFrameWidth; x++)
                 {
-                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(frame.x, frame.y));
-                    float core = Mathf.Exp(-(distance * distance) / 0.9f);
+                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(frame.centerX, frame.centerY));
+                    float core = Mathf.Exp(-(distance * distance) / 1.45f);
                     float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - radius) / halfWidth);
-                    float alpha = Mathf.Max(core * 0.42f, ring * 0.72f);
+                    float alpha = Mathf.Max(core * 0.68f, ring * 0.5f);
                     if (alpha <= 0.01f)
+                    {
+                        continue;
+                    }
+
+                    AddPixel(x, y, color, brightness * alpha);
+                }
+            }
+        }
+
+        private void RenderBellBloomLogicalFrame(BellRingerLedDotFrame frame, Color color, float brightness, float radius, float edgeGain, bool clear = true)
+        {
+            if (clear)
+            {
+                ClearLogicalFrame();
+            }
+
+            float falloff = Mathf.Max(0.18f, radius * radius);
+            for (int y = 0; y < LogicalFrameHeight; y++)
+            {
+                for (int x = 0; x < LogicalFrameWidth; x++)
+                {
+                    float dx = x - frame.centerX;
+                    float dy = y - frame.centerY;
+                    float distanceSqr = (dx * dx) + (dy * dy);
+                    float core = Mathf.Exp(-distanceSqr / falloff);
+                    float halo = Mathf.Exp(-distanceSqr / (falloff * 2.8f)) * edgeGain;
+                    float alpha = Mathf.Max(core, halo);
+                    if (alpha <= 0.015f)
                     {
                         continue;
                     }

@@ -107,6 +107,7 @@ namespace BellRinger.FinalDemo
         private float _lastBellAssistAtRealtime;
         private float _lastPadShakeAssistAtRealtime;
         private float _lastPadShakeNarrationAtRealtime;
+        private float _rainFocusBellPadShakeNarrationBlockedUntilRealtime;
         private string _lastPadShakeAssistStatus = "(idle)";
         private float _currentBellFollowDistance = float.PositiveInfinity;
         private float _currentRainIntensity;
@@ -522,8 +523,9 @@ namespace BellRinger.FinalDemo
                     continue;
                 }
 
-                _activeNarrationCueId = request.cueId;
                 float cueLength = audioRouter != null ? audioRouter.GetCueLengthSeconds(request.cueId) : 0f;
+                HandleNarrationStarted(request, cueLength);
+                _activeNarrationCueId = request.cueId;
                 _activeNarrationUntilRealtime = Time.realtimeSinceStartup + Mathf.Max(0.1f, cueLength);
                 if (request.oncePerRun)
                 {
@@ -541,7 +543,39 @@ namespace BellRinger.FinalDemo
                 return false;
             }
 
+            if (request.cueId == FinalDemoCueId.NarrPadShakeAssist &&
+                Time.realtimeSinceStartup < _rainFocusBellPadShakeNarrationBlockedUntilRealtime)
+            {
+                return false;
+            }
+
             return !request.requireCurrentStage || _currentStage == request.stage;
+        }
+
+        private void HandleNarrationStarted(NarrationRequest request, float cueLength)
+        {
+            if (request.cueId == FinalDemoCueId.NarrBellEscaped && request.stage == FinalDemoStage.BellFollowRain)
+            {
+                float delayAfterBellEscaped = tuningProfile != null ? tuningProfile.RainFocusBellNarrationDelaySeconds : 3f;
+                QueueNarrationDelayed(
+                    FinalDemoCueId.NarrRainFocusBell,
+                    FinalDemoStage.BellFollowRain,
+                    cueLength + delayAfterBellEscaped);
+                return;
+            }
+
+            if (request.cueId == FinalDemoCueId.NarrRainFocusBell)
+            {
+                _rainFocusBellPadShakeNarrationBlockedUntilRealtime = Mathf.Max(
+                    _rainFocusBellPadShakeNarrationBlockedUntilRealtime,
+                    Time.realtimeSinceStartup + cueLength + 2f);
+                return;
+            }
+
+            if (request.cueId == FinalDemoCueId.NarrPadShakeAssist)
+            {
+                _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup;
+            }
         }
 
         private void ClearQueuedNarration()
@@ -712,6 +746,7 @@ namespace BellRinger.FinalDemo
             _lastBellAssistAtRealtime = Time.realtimeSinceStartup - 999f;
             _lastPadShakeAssistAtRealtime = Time.realtimeSinceStartup - 999f;
             _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup - 999f;
+            _rainFocusBellPadShakeNarrationBlockedUntilRealtime = 0f;
             _lastPadShakeAssistStatus = $"waiting in {nextStage}";
             _currentBellFollowDistance = float.PositiveInfinity;
             _currentRainIntensity = 0f;
@@ -1304,13 +1339,6 @@ namespace BellRinger.FinalDemo
             audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainLightBed, Mathf.Clamp01(_currentRainIntensity * tuningProfile.RainAudioGainMultiplier));
             audioRouter?.SetLoopVolumeScale(FinalDemoCueId.RainStrongBed, Mathf.Clamp01(_currentRainWindTextureIntensity * tuningProfile.RainAudioGainMultiplier));
 
-            if (!_stageNarrationPlayed &&
-                Time.realtimeSinceStartup - _rainStartedAtRealtime >= tuningProfile.RainFocusBellNarrationDelaySeconds)
-            {
-                QueueNarration(FinalDemoCueId.NarrRainFocusBell, FinalDemoStage.BellFollowRain);
-                _stageNarrationPlayed = true;
-            }
-
             if (Time.realtimeSinceStartup >= _nextRainDropAtRealtime)
             {
                 float lateral = Mathf.Sin(Time.realtimeSinceStartup * 1.731f) * 0.95f;
@@ -1637,12 +1665,16 @@ namespace BellRinger.FinalDemo
                 return;
             }
 
+            if (Time.realtimeSinceStartup < _rainFocusBellPadShakeNarrationBlockedUntilRealtime)
+            {
+                return;
+            }
+
             if (Time.realtimeSinceStartup - _lastPadShakeNarrationAtRealtime < tuningProfile.PadShakeAssistNarrationCooldownSeconds)
             {
                 return;
             }
 
-            _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup;
             QueueNarration(FinalDemoCueId.NarrPadShakeAssist, _currentStage, true, false);
         }
 

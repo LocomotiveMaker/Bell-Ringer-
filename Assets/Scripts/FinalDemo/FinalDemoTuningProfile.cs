@@ -108,7 +108,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float rainZoneRadius = 2.4f;
         [SerializeField] private float rainIntensityRampSeconds = 8f;
         [SerializeField, Range(0f, 1f)] private float rainMaxIntensity = 0.58f;
-        [SerializeField, Range(0.1f, 2f)] private float rainAudioGainMultiplier = 0.975f;
+        [SerializeField, Range(0.1f, 2f)] private float rainAudioGainMultiplier = 0.68f;
         [SerializeField] private float rainArrivalAudioFadeSeconds = 3f;
         [SerializeField] private float rainArrivalLightFadeSeconds = 1.5f;
         [SerializeField] private float rainWindTextureDelaySeconds = 1.8f;
@@ -122,7 +122,7 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float bellGazeAssistStartSeconds = 6f;
         [SerializeField] private float bellGazeAssistMaxConeDegrees = 28f;
         [SerializeField] private float bellGazeMoveSeconds = 1.1f;
-        [SerializeField] private float bellGazeCallIntervalSeconds = 1.5f;
+        [SerializeField] private float bellGazeCallIntervalSeconds = 1.05f;
         [SerializeField, Range(0f, 1f)] private float bellGazeLedIntensity = 0.78f;
         [SerializeField] private Vector3[] bellGazeLocalOffsets =
         {

@@ -7182,7 +7182,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 288133267}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -13877,7 +13877,7 @@ MonoBehaviour:
   listenerTransform: {fileID: 203800292}
   hardwareBridge: {fileID: 406508889}
   outputToHardware: 1
-  bellColor: {r: 0.08, g: 1, b: 0.15, a: 1}
+  bellColor: {r: 0.12, g: 1, b: 0.32, a: 1}
   padColor: {r: 1, g: 0.54, b: 0.05, a: 1}
   rainColor: {r: 0.02, g: 0.08, b: 1, a: 1}
   tinnitusColor: {r: 0.55, g: 0.08, b: 1, a: 1}
@@ -15908,7 +15908,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1446033114}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -24824,7 +24824,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1956980852}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1

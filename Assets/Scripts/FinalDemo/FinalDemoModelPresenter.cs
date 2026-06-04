@@ -39,6 +39,12 @@ namespace BellRinger.FinalDemo
 
         private const string BellModelChildName = "FinalDemo_ImportedBellModel";
         private const string PadModelChildName = "FinalDemo_ImportedPadModel";
+        private static readonly string[] HiddenPadAccentRendererNames =
+        {
+            "Pad_AmberGlow",
+            "Pad_ArucoPlate_Yellow",
+            "Button_Y_Yellow",
+        };
 
         public void ConfigureTargets(Transform bell, Transform pad)
         {
@@ -76,6 +82,7 @@ namespace BellRinger.FinalDemo
             }
 
             SetPlaceholderRenderersVisible(padVisual, padModel, !hidePlaceholderRenderers);
+            HideNamedPadAccentRenderers(padVisual);
         }
 
         private void ResolveResourceFallbacks()
@@ -211,6 +218,32 @@ namespace BellRinger.FinalDemo
                 }
 
                 renderer.enabled = visible;
+            }
+        }
+
+        private static void HideNamedPadAccentRenderers(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                foreach (string hiddenName in HiddenPadAccentRendererNames)
+                {
+                    if (renderer.gameObject.name == hiddenName)
+                    {
+                        renderer.enabled = false;
+                        break;
+                    }
+                }
             }
         }
 
