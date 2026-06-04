@@ -1997,6 +1997,11 @@ namespace BellRinger.FinalDemo
             _generalTinnitusPoseLocked = true;
             _wasTinnitusInsideTolerance = false;
             _poseMatchEvaluator?.ResetProgress();
+            if (stage == FinalDemoStage.GeneralTinnitusOne)
+            {
+                QueueNarration(FinalDemoCueId.NarrFindTinnitusPose, FinalDemoStage.GeneralTinnitusOne);
+            }
+
             if (TryResolveGeneralTinnitusLockWorldPosition(stage, targetWorldPosition, out Vector3 lockWorldPosition))
             {
                 MovePlayerRigPlanarTo(lockWorldPosition);
