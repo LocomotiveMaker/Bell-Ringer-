@@ -72,6 +72,10 @@ namespace BellRinger.FinalDemo
         NarrBellEscaped = 38,
         NarrNoiseStillExists = 39,
         NarrBossAhead = 40,
+        FootstepOne = 41,
+        FootstepTwo = 42,
+        NarrBossSecondCleanse = 43,
+        NarrBossFinalCleanse = 44,
     }
 
     public enum FinalDemoAudioBus

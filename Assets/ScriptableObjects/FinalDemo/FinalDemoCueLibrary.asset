@@ -667,3 +667,67 @@ MonoBehaviour:
     lightBinding: 0
     hapticBinding: 0
     stopOnStageExit: 1
+  - id: 41
+    operatorLabel: Footstep one
+    audioClip: {fileID: 8300000, guid: c9dbe05db0274864e97d52aeb353756f, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.45
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.25
+    maxDistance: 4.5
+    lowPassCutoff: 18000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 42
+    operatorLabel: Footstep two
+    audioClip: {fileID: 8300000, guid: 1c6e3d1b0b167ae4eb212b9155616763, type: 3}
+    alternateClips: []
+    bus: 6
+    defaultVolume: 0.45
+    loop: 0
+    spatialized: 1
+    pitch: 1
+    minDistance: 0.25
+    maxDistance: 4.5
+    lowPassCutoff: 18000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 43
+    operatorLabel: Narration boss second cleanse
+    audioClip: {fileID: 8300000, guid: 0dfa17be11e76ca40a58b216c98e78d7, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1
+  - id: 44
+    operatorLabel: Narration boss final cleanse
+    audioClip: {fileID: 8300000, guid: 825dfa96171541944bc21c88ea792ded, type: 3}
+    alternateClips: []
+    bus: 7
+    defaultVolume: 0.72
+    loop: 0
+    spatialized: 0
+    pitch: 1
+    minDistance: 0.4
+    maxDistance: 10
+    lowPassCutoff: 22000
+    highPassCutoff: 10
+    lightBinding: 0
+    hapticBinding: 0
+    stopOnStageExit: 1

@@ -11,6 +11,10 @@ namespace BellRinger.FinalDemo
     [DisallowMultipleComponent]
     public sealed class FinalDemoDirector : MonoBehaviour
     {
+        private const float BossApproachLockHalfExtentMeters = 5f;
+        private const float BossTinnitusLightIntensityMultiplier = 1.2f;
+        private const float BossTinnitusLightRangeMultiplier = 1.5f;
+
         [Serializable]
         private struct OpeningBellScheduleEntry
         {
@@ -116,6 +120,7 @@ namespace BellRinger.FinalDemo
         private float _rainOutroStartedAtRealtime;
         private float _rainOutroStartIntensity;
         private float _rainOutroStartWindIntensity;
+        private bool _pendingRainOutroOnBellGaze;
         private int _bellGazeSuccessCount;
         private float _bellGazeProgressSeconds;
         private float _bellGazeAngleDegrees = 180f;
@@ -130,6 +135,7 @@ namespace BellRinger.FinalDemo
         private FinalDemoAudioReactiveLight _tinnitusReactiveLight;
         private FinalDemoAudioReactiveLight _bossReactiveLight;
         private FinalDemoMatchToneFeedback _matchToneFeedback;
+        private FinalDemoFootstepAudio _footstepAudio;
         private bool _wasTinnitusInsideTolerance;
         private float _nextTinnitusLightAtRealtime;
         private float _nextTinnitusHapticAtRealtime;
@@ -144,6 +150,8 @@ namespace BellRinger.FinalDemo
         private bool _bossSecondTargetActive;
         private float _bossSecondTargetStartedAtRealtime;
         private float _nextBossLightAtRealtime;
+        private float _bossCleanseHumAllowedAtRealtime;
+        private float _nextBossCleanseHumAtRealtime;
         private float _currentBossApproachDistance = float.PositiveInfinity;
         private float _currentBossPatternProgress01;
         private float _currentBossPatternTargetMatch01;
@@ -250,6 +258,7 @@ namespace BellRinger.FinalDemo
             EnsurePresentationHelpers();
             operatorControls?.Initialize(this, inputStatus);
             inputStatus?.RefreshReferences();
+            EnsureFootstepAudio();
             if (createMissingRuntimeObjects)
             {
                 EnsureRuntimeRangeAuthoringObjects();
@@ -280,6 +289,7 @@ namespace BellRinger.FinalDemo
             }
 
             TickCurrentStage();
+            TickDetachedRainOutro();
             TickPadShakeBellAssist();
             TickPersistentAmbience();
             TickEnvironmentPresentation();
@@ -429,6 +439,41 @@ namespace BellRinger.FinalDemo
             _poseMatchEvaluator.RequireRotation = true;
             _poseMatchEvaluator.ResetProgress();
             _wasTinnitusInsideTolerance = false;
+            return true;
+        }
+
+        public bool TryApplyCapturedBossTarget(FinalDemoPoseAuthoringMarker marker, int patternIndex)
+        {
+            if (marker == null ||
+                (_currentStage != FinalDemoStage.BossPatternOne &&
+                 _currentStage != FinalDemoStage.BossPatternTwo &&
+                 _currentStage != FinalDemoStage.BossPatternThree))
+            {
+                return false;
+            }
+
+            int currentPatternIndex = ResolveBossPatternIndex(_currentStage);
+            if (currentPatternIndex != patternIndex)
+            {
+                return false;
+            }
+
+            EnsurePoseMatchEvaluator();
+            if (_poseMatchEvaluator == null)
+            {
+                return false;
+            }
+
+            Vector3 targetPosition = marker.StoredTargetCameraSpacePosition;
+            Vector3 targetWorldPosition = PlayerCameraSpaceToWorld(targetPosition);
+            _currentBossWeakpointWorldPosition = targetWorldPosition;
+            MoveBossWeakpointVisual(targetWorldPosition);
+            _poseMatchEvaluator.RequireRotation = false;
+            _poseMatchEvaluator.SetTargetPose(targetPosition, 0f, 0f, 0f);
+            _poseMatchEvaluator.ResetProgress();
+            _bossWasInsideTolerance = false;
+            _bossCleanseHumAllowedAtRealtime = 0f;
+            _nextBossCleanseHumAtRealtime = 0f;
             return true;
         }
 
@@ -648,8 +693,7 @@ namespace BellRinger.FinalDemo
             }
             else if (_currentStage == FinalDemoStage.BossApproach)
             {
-                float radius = tuningProfile != null ? tuningProfile.BossApproachRadius : 0f;
-                summary += $" distance={_currentBossApproachDistance:0.00}/{radius:0.00}m";
+                summary += $" boxDist={_currentBossApproachDistance:0.00}/{BossApproachLockHalfExtentMeters:0.00}m";
             }
             else if (_currentStage == FinalDemoStage.BossPatternOne || _currentStage == FinalDemoStage.BossPatternTwo || _currentStage == FinalDemoStage.BossPatternThree)
             {
@@ -715,12 +759,30 @@ namespace BellRinger.FinalDemo
         private void EnterStage(FinalDemoStage nextStage)
         {
             nextStage = NormalizeFinalDemoStage(nextStage);
+            FinalDemoStage previousStage = _currentStage;
+            bool preserveRainOutroIntoBellGaze =
+                previousStage == FinalDemoStage.BellFollowRain &&
+                nextStage == FinalDemoStage.BellGaze &&
+                _rainLoopStarted &&
+                (_pendingRainOutroOnBellGaze || _rainOutroActive);
+            bool preserveActiveRainOutro =
+                _rainOutroActive &&
+                _rainLoopStarted &&
+                nextStage != FinalDemoStage.Preflight &&
+                nextStage != FinalDemoStage.OpeningAmbience &&
+                nextStage != FinalDemoStage.OpeningSilence &&
+                nextStage != FinalDemoStage.Complete;
+            bool preserveRainOutro = preserveRainOutroIntoBellGaze || preserveActiveRainOutro;
             Vector3 previousBellPosition = GetBellPlaceholderPosition();
             _currentStage = nextStage;
             _stageStartedAtRealtime = Time.realtimeSinceStartup;
             if (audioRouter != null)
             {
-                if (ShouldKeepOpeningAmbience(nextStage))
+                if (preserveRainOutro)
+                {
+                    audioRouter.StopAllCuesExcept(FinalDemoCueId.RainLightBed, FinalDemoCueId.RainStrongBed);
+                }
+                else if (ShouldKeepOpeningAmbience(nextStage))
                 {
                     audioRouter.StopAllCuesExcept(FinalDemoCueId.OpeningAmbienceBed);
                 }
@@ -739,22 +801,26 @@ namespace BellRinger.FinalDemo
             _stageOneShotPlayed = false;
             _stageNarrationPlayed = false;
             _stageOutputCleared = false;
-            _rainLoopStarted = false;
-            _rainStartedAtRealtime = 0f;
             _nextRainDropAtRealtime = Time.realtimeSinceStartup;
             _nextRainLightAtRealtime = Time.realtimeSinceStartup;
+            if (!preserveRainOutro)
+            {
+                _rainLoopStarted = false;
+                _rainStartedAtRealtime = 0f;
+                _currentRainIntensity = 0f;
+                _currentRainWindTextureIntensity = 0f;
+                _rainOutroActive = false;
+                _rainOutroStartedAtRealtime = 0f;
+                _rainOutroStartIntensity = 0f;
+                _rainOutroStartWindIntensity = 0f;
+                _pendingRainOutroOnBellGaze = false;
+            }
             _lastBellAssistAtRealtime = Time.realtimeSinceStartup - 999f;
             _lastPadShakeAssistAtRealtime = Time.realtimeSinceStartup - 999f;
             _lastPadShakeNarrationAtRealtime = Time.realtimeSinceStartup - 999f;
             _rainFocusBellPadShakeNarrationBlockedUntilRealtime = 0f;
             _lastPadShakeAssistStatus = $"waiting in {nextStage}";
             _currentBellFollowDistance = float.PositiveInfinity;
-            _currentRainIntensity = 0f;
-            _currentRainWindTextureIntensity = 0f;
-            _rainOutroActive = false;
-            _rainOutroStartedAtRealtime = 0f;
-            _rainOutroStartIntensity = 0f;
-            _rainOutroStartWindIntensity = 0f;
             _bellGazeProgressSeconds = 0f;
             _bellGazeAngleDegrees = 180f;
             _currentBellGazeConeDegrees = tuningProfile != null ? tuningProfile.BellGazeConeDegrees : 14f;
@@ -772,6 +838,8 @@ namespace BellRinger.FinalDemo
             _bossSecondTargetActive = false;
             _bossSecondTargetStartedAtRealtime = 0f;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
+            _bossCleanseHumAllowedAtRealtime = 0f;
+            _nextBossCleanseHumAtRealtime = 0f;
             _currentBossApproachDistance = float.PositiveInfinity;
             _currentBossPatternProgress01 = 0f;
             _currentBossPatternTargetMatch01 = 0f;
@@ -789,6 +857,13 @@ namespace BellRinger.FinalDemo
             _bellFollowRelocating = false;
             _bellFollowStageStartPosition = playerRig != null ? playerRig.position : Vector3.zero;
             _bellFollowCallCount = 0;
+            _footstepAudio?.ResetTracking();
+
+            if (preserveRainOutroIntoBellGaze)
+            {
+                BeginRainArrivalOutro(false);
+                _pendingRainOutroOnBellGaze = false;
+            }
 
             if (nextStage == FinalDemoStage.OpeningAmbience)
             {
@@ -1044,7 +1119,7 @@ namespace BellRinger.FinalDemo
                 FinalDemoStage.BellAcquisition => Mathf.Clamp01(StageElapsedSeconds / Mathf.Max(0.1f, tuningProfile.BellAcquisitionEffectSeconds + tuningProfile.BellAcquisitionTransitionSilenceSeconds)),
                 FinalDemoStage.GeneralTinnitusOne => GeneralTinnitusProgress01,
                 FinalDemoStage.GeneralTinnitusTwo => GeneralTinnitusProgress01,
-                FinalDemoStage.BossApproach => 1f - Mathf.Clamp01(_currentBossApproachDistance / Mathf.Max(tuningProfile.BossApproachRadius * 4f, 0.1f)),
+                FinalDemoStage.BossApproach => 1f - Mathf.Clamp01(_currentBossApproachDistance / Mathf.Max(BossApproachLockHalfExtentMeters * 2f, 0.1f)),
                 FinalDemoStage.BossPatternOne => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
                 FinalDemoStage.BossPatternTwo => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
                 FinalDemoStage.BossPatternThree => Mathf.Clamp01((_currentBossPatternIndex + _currentBossPatternProgress01) / 3f),
@@ -1302,7 +1377,8 @@ namespace BellRinger.FinalDemo
                 hapticRouter?.TriggerBellAssistPulse();
                 if (rainStage)
                 {
-                    BeginRainArrivalOutro();
+                    _pendingRainOutroOnBellGaze = true;
+                    ForceNextStage();
                     return;
                 }
 
@@ -1363,7 +1439,7 @@ namespace BellRinger.FinalDemo
             audioRouter?.StartLoop(FinalDemoCueId.RainStrongBed, playerRig.position, 0f);
         }
 
-        private void BeginRainArrivalOutro()
+        private void BeginRainArrivalOutro(bool lockMovement = true)
         {
             if (_rainOutroActive)
             {
@@ -1374,14 +1450,21 @@ namespace BellRinger.FinalDemo
             _rainOutroStartedAtRealtime = Time.realtimeSinceStartup;
             _rainOutroStartIntensity = _currentRainIntensity;
             _rainOutroStartWindIntensity = _currentRainWindTextureIntensity;
-            SetPlayerMovementLocked(true);
+            if (lockMovement)
+            {
+                SetPlayerMovementLocked(true);
+            }
         }
 
-        private void TickRainArrivalOutro()
+        private void TickRainArrivalOutro(bool advanceStageOnComplete = true)
         {
             if (tuningProfile == null)
             {
-                ForceNextStage();
+                if (advanceStageOnComplete)
+                {
+                    ForceNextStage();
+                }
+
                 return;
             }
 
@@ -1404,12 +1487,17 @@ namespace BellRinger.FinalDemo
             _rainOutroActive = false;
             _currentRainIntensity = 0f;
             _currentRainWindTextureIntensity = 0f;
-            ForceNextStage();
+            if (advanceStageOnComplete)
+            {
+                ForceNextStage();
+            }
         }
 
         private void TickAmbientRainLightLayer()
         {
-            if (_currentStage != FinalDemoStage.BellFollowRain ||
+            bool rainVisibleStage = _currentStage == FinalDemoStage.BellFollowRain ||
+                                    (_currentStage == FinalDemoStage.BellGaze && _rainOutroActive);
+            if (!rainVisibleStage ||
                 lightRouter == null ||
                 !_rainLoopStarted ||
                 _currentRainIntensity <= 0.001f ||
@@ -1420,6 +1508,16 @@ namespace BellRinger.FinalDemo
 
             lightRouter.ShowRainFloorBand(_currentRainIntensity);
             _nextRainLightAtRealtime = Time.realtimeSinceStartup + 0.12f;
+        }
+
+        private void TickDetachedRainOutro()
+        {
+            if (!_rainOutroActive || _currentStage == FinalDemoStage.BellFollowRain)
+            {
+                return;
+            }
+
+            TickRainArrivalOutro(false);
         }
 
         private void PlayBellFollowCall(Vector3 targetPosition, bool assisted)
@@ -2065,18 +2163,24 @@ namespace BellRinger.FinalDemo
             }
 
             Vector3 bossPosition = ResolveBossPosition();
+            Vector3 approachCenter = ResolveBossLockCenterPosition();
             MoveBossPlaceholder(bossPosition);
-            _currentBossApproachDistance = ResolvePlanarDistanceToPlayer(bossPosition);
+            _currentBossApproachDistance = ResolvePlanarDistanceOutsideBox(approachCenter, BossApproachLockHalfExtentMeters);
             float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossPosition);
             audioRouter?.SetLoopVolumeScale(FinalDemoCueId.BossBasePulse, tuningProfile.BossBaseVolume * range01);
 
             if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
-                lightRouter?.ShowTinnitusPattern(bossPosition, tuningProfile.BossMassLedIntensity * range01, 0f, true);
+                lightRouter?.ShowTinnitusPattern(
+                    bossPosition,
+                    ResolveBossTinnitusLightIntensity(tuningProfile.BossMassLedIntensity, range01),
+                    0f,
+                    true,
+                    BossTinnitusLightRangeMultiplier);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
-            if (_currentBossApproachDistance <= tuningProfile.BossApproachRadius || StageElapsedSeconds >= tuningProfile.BossApproachAutoStartSeconds)
+            if (_currentBossApproachDistance <= 0f || StageElapsedSeconds >= tuningProfile.BossApproachAutoStartSeconds)
             {
                 ForceNextStage();
             }
@@ -2095,7 +2199,10 @@ namespace BellRinger.FinalDemo
             _bossSecondTargetActive = false;
             _bossSecondTargetStartedAtRealtime = 0f;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
+            _bossCleanseHumAllowedAtRealtime = 0f;
+            _nextBossCleanseHumAtRealtime = 0f;
 
+            audioRouter?.StopLoop(FinalDemoCueId.BossBasePulse);
             LockPlayerAtBossRootPosition();
             EnsurePoseMatchEvaluator();
             if (_poseMatchEvaluator != null)
@@ -2109,12 +2216,6 @@ namespace BellRinger.FinalDemo
 
             Vector3 bossPosition = ResolveBossPosition();
             MoveBossPlaceholder(bossPosition);
-            Vector3 bossSoundPosition = _currentBossWeakpointWorldPosition != Vector3.zero ? _currentBossWeakpointWorldPosition : bossPosition;
-            AudioSource bossLoop = audioRouter?.StartLoop(
-                FinalDemoCueId.BossBasePulse,
-                bossSoundPosition,
-                tuningProfile.BossBaseVolume * ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, bossSoundPosition));
-            ApplyAudioSourceRange(bossLoop, SoundLightRangeSource.BossTinnitus);
             _bossReactiveLight = null;
             if (stage == FinalDemoStage.BossPatternOne)
             {
@@ -2124,15 +2225,12 @@ namespace BellRinger.FinalDemo
 
         private void LockPlayerAtBossRootPosition()
         {
-            Transform bossRoot = sceneReferences != null && sceneReferences.BossRoot != null
-                ? sceneReferences.BossRoot
-                : FindNamedTransformAnywhere("BossTinnitus");
-            if (bossRoot == null || playerRig == null)
+            if (playerRig == null)
             {
                 return;
             }
 
-            MovePlayerRigPlanarTo(bossRoot.position);
+            MovePlayerRigPlanarTo(ResolveBossLockCenterPosition());
             SetPlayerMovementLocked(true);
             EnforceLockedPlayerPosition();
         }
@@ -2155,12 +2253,16 @@ namespace BellRinger.FinalDemo
             UpdateBossPatternTarget();
             Vector3 targetWorldPosition = _currentBossWeakpointWorldPosition != Vector3.zero ? _currentBossWeakpointWorldPosition : bossPosition;
             float range01 = ResolveSoundLightRange01(SoundLightRangeSource.BossTinnitus, targetWorldPosition);
-            AudioSource bossLoop = audioRouter?.StartLoop(FinalDemoCueId.BossBasePulse, targetWorldPosition, tuningProfile.BossBaseVolume * range01);
-            ApplyAudioSourceRange(bossLoop, SoundLightRangeSource.BossTinnitus);
+            audioRouter?.StopLoop(FinalDemoCueId.BossBasePulse);
             if (Time.realtimeSinceStartup >= _nextBossLightAtRealtime)
             {
                 float lightPulse = tuningProfile.BossMassLedIntensity * (0.8f + Mathf.Sin(Time.realtimeSinceStartup * Mathf.PI * 1.25f) * 0.12f);
-                lightRouter?.ShowTinnitusPattern(targetWorldPosition, Mathf.Clamp01(lightPulse * range01), 0f, true);
+                lightRouter?.ShowTinnitusPattern(
+                    targetWorldPosition,
+                    ResolveBossTinnitusLightIntensity(lightPulse, range01),
+                    0f,
+                    true,
+                    BossTinnitusLightRangeMultiplier);
                 _nextBossLightAtRealtime = Time.realtimeSinceStartup + tuningProfile.BossLightIntervalSeconds;
             }
 
@@ -2170,6 +2272,22 @@ namespace BellRinger.FinalDemo
             if (enteredTolerance)
             {
                 hapticRouter?.TriggerBossHitPulse();
+                _bossCleanseHumAllowedAtRealtime = Time.realtimeSinceStartup + 1f;
+                _nextBossCleanseHumAtRealtime = _bossCleanseHumAllowedAtRealtime;
+            }
+            else if (!insideTolerance)
+            {
+                _bossCleanseHumAllowedAtRealtime = 0f;
+                _nextBossCleanseHumAtRealtime = 0f;
+            }
+
+            if (insideTolerance &&
+                _bossCleanseHumAllowedAtRealtime > 0f &&
+                Time.realtimeSinceStartup >= _bossCleanseHumAllowedAtRealtime &&
+                Time.realtimeSinceStartup >= _nextBossCleanseHumAtRealtime)
+            {
+                hapticRouter?.StartLowestTinnitusCleanseHum(tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds * 1.4f);
+                _nextBossCleanseHumAtRealtime = Time.realtimeSinceStartup + tuningProfile.GeneralTinnitusCleanseHapticIntervalSeconds;
             }
 
             UpdateMatchToneFeedback(
@@ -2199,13 +2317,14 @@ namespace BellRinger.FinalDemo
 
             Vector3 targetPosition = ResolveVectorAt(tuningProfile.BossWeakPointCentersCameraSpace, _currentBossPatternIndex, new Vector3(0f, 0f, 0.72f));
             Vector3 weakpointWorldPosition = PlayerCameraSpaceToWorld(targetPosition);
-            FinalDemoPoseAuthoringMarker marker = ResolveBossPoseMarker(_currentBossPatternIndex);
-            if (marker != null)
+            bool targetResolvedFromSceneWeakpoint = TryResolveBossWeakpointVisualTarget(out targetPosition, out weakpointWorldPosition);
+            FinalDemoPoseAuthoringMarker marker = targetResolvedFromSceneWeakpoint ? null : ResolveBossPoseMarker(_currentBossPatternIndex);
+            if (!targetResolvedFromSceneWeakpoint && marker != null)
             {
                 targetPosition = marker.StoredTargetCameraSpacePosition;
                 weakpointWorldPosition = PlayerCameraSpaceToWorld(targetPosition);
             }
-            else if (TryResolveBossAuthoringPathTarget(_currentBossPatternIndex, 0f, out Vector3 authoredCameraSpace, out Vector3 authoredWorldPosition))
+            else if (!targetResolvedFromSceneWeakpoint && TryResolveBossAuthoringPathTarget(_currentBossPatternIndex, 0f, out Vector3 authoredCameraSpace, out Vector3 authoredWorldPosition))
             {
                 targetPosition = authoredCameraSpace;
                 weakpointWorldPosition = authoredWorldPosition;
@@ -2266,8 +2385,17 @@ namespace BellRinger.FinalDemo
 
         private void CompleteBossPattern(Vector3 bossPosition)
         {
+            FinalDemoStage completedStage = _currentStage;
             PlayReactiveTinnitusCue(FinalDemoCueId.BossHit, bossPosition, 1f, 1f, true);
             ForceNextStage();
+            if (completedStage == FinalDemoStage.BossPatternOne)
+            {
+                QueueNarration(FinalDemoCueId.NarrBossSecondCleanse, FinalDemoStage.BossPatternTwo);
+            }
+            else if (completedStage == FinalDemoStage.BossPatternTwo)
+            {
+                QueueNarration(FinalDemoCueId.NarrBossFinalCleanse, FinalDemoStage.BossPatternThree);
+            }
         }
 
         private void BeginBossDefeat()
@@ -2470,8 +2598,19 @@ namespace BellRinger.FinalDemo
             float range01 = ResolveSoundLightRange01(rangeSource, worldPosition);
             AudioSource source = audioRouter?.PlayOneShot(cueId, worldPosition, volumeScale * range01);
             ApplyAudioSourceRange(source, rangeSource);
-            lightRouter?.ShowTinnitusPattern(worldPosition, intensityScale * range01, boss ? 0f : GeneralTinnitusProgress01, boss, boss ? 1f : tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f);
+            float intensity = boss
+                ? ResolveBossTinnitusLightIntensity(intensityScale, range01)
+                : intensityScale * range01;
+            float rangeScale = boss
+                ? BossTinnitusLightRangeMultiplier
+                : tuningProfile != null ? tuningProfile.GeneralTinnitusRadiusScale : 1f;
+            lightRouter?.ShowTinnitusPattern(worldPosition, intensity, boss ? 0f : GeneralTinnitusProgress01, boss, rangeScale);
             return source;
+        }
+
+        private static float ResolveBossTinnitusLightIntensity(float baseIntensity, float range01)
+        {
+            return Mathf.Clamp01(baseIntensity * range01 * BossTinnitusLightIntensityMultiplier);
         }
 
         private void ApplyAudioSourceRange(AudioSource source, SoundLightRangeSource rangeSource)
@@ -2673,6 +2812,10 @@ namespace BellRinger.FinalDemo
             PreloadCueAudioData(FinalDemoCueId.RainStrongBed);
             PreloadCueAudioData(FinalDemoCueId.RainCloseDrops);
             PreloadCueAudioData(FinalDemoCueId.BellStrongAssist);
+            PreloadCueAudioData(FinalDemoCueId.FootstepOne);
+            PreloadCueAudioData(FinalDemoCueId.FootstepTwo);
+            PreloadCueAudioData(FinalDemoCueId.NarrBossSecondCleanse);
+            PreloadCueAudioData(FinalDemoCueId.NarrBossFinalCleanse);
             PreloadCueAudioData(FinalDemoCueId.NarrBellEscaped);
             PreloadCueAudioData(FinalDemoCueId.NarrRainFocusBell);
         }
@@ -2774,6 +2917,19 @@ namespace BellRinger.FinalDemo
             lightRouter.Initialize(ResolveAudioListenerTransform(), HardwareBridge.Instance ?? FindFirstObjectByType<HardwareBridge>());
         }
 
+        private void EnsureFootstepAudio()
+        {
+            if (playerRig == null || audioRouter == null)
+            {
+                return;
+            }
+
+            _footstepAudio ??= GetComponent<FinalDemoFootstepAudio>() ?? gameObject.AddComponent<FinalDemoFootstepAudio>();
+            movementController ??= playerRig.GetComponent<BellRingerSimpleMoveLookController>();
+            float fixedHeight = tuningProfile != null ? tuningProfile.PlayerFixedHeight : 1.6f;
+            _footstepAudio.Initialize(audioRouter, playerRig, movementController, fixedHeight);
+        }
+
         private void EnsurePadInputRoot()
         {
             PadPoseProvider existingProvider = FindFirstObjectByType<PadPoseProvider>();
@@ -2830,7 +2986,6 @@ namespace BellRinger.FinalDemo
             EnsureAuthoringBarrierSetup();
             EnsureEnvironmentPresenters();
             EnsureGlitchVisuals();
-            EnsureVisualHalos();
             EnsureGlobalGlitchOverlay();
         }
 
@@ -3553,6 +3708,19 @@ namespace BellRinger.FinalDemo
             return Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
         }
 
+        private float ResolvePlanarDistanceOutsideBox(Vector3 center, float halfExtentMeters)
+        {
+            if (playerRig == null)
+            {
+                return float.PositiveInfinity;
+            }
+
+            float halfExtent = Mathf.Max(0.01f, halfExtentMeters);
+            float outsideX = Mathf.Max(0f, Mathf.Abs(playerRig.position.x - center.x) - halfExtent);
+            float outsideZ = Mathf.Max(0f, Mathf.Abs(playerRig.position.z - center.z) - halfExtent);
+            return Mathf.Sqrt(outsideX * outsideX + outsideZ * outsideZ);
+        }
+
         private Vector3 GetBellPlaceholderPosition()
         {
             Transform bell = ResolveBellPlaceholderTransform();
@@ -3852,6 +4020,19 @@ namespace BellRinger.FinalDemo
             return tuningProfile != null ? tuningProfile.BossWorldPosition : new Vector3(0f, 1.6f, 4.2f);
         }
 
+        private Transform ResolveBossRootTransform()
+        {
+            return sceneReferences != null && sceneReferences.BossRoot != null
+                ? sceneReferences.BossRoot
+                : FindNamedTransformAnywhere("BossTinnitus");
+        }
+
+        private Vector3 ResolveBossLockCenterPosition()
+        {
+            Transform bossRoot = ResolveBossRootTransform();
+            return bossRoot != null ? bossRoot.position : ResolveBossPosition();
+        }
+
         private void MoveBossPlaceholder(Vector3 worldPosition)
         {
             Transform boss = sceneReferences != null && sceneReferences.BossVisual != null
@@ -3870,6 +4051,21 @@ namespace BellRinger.FinalDemo
             {
                 weakpoint.position = worldPosition;
             }
+        }
+
+        private bool TryResolveBossWeakpointVisualTarget(out Vector3 cameraSpacePosition, out Vector3 worldPosition)
+        {
+            Transform weakpoint = FindNamedTransform("BossWeakpoint_Current");
+            if (weakpoint == null)
+            {
+                cameraSpacePosition = default;
+                worldPosition = default;
+                return false;
+            }
+
+            worldPosition = weakpoint.position;
+            cameraSpacePosition = WorldToPlayerCameraSpace(worldPosition);
+            return true;
         }
 
         private FinalDemoPoseAuthoringMarker ResolveGeneralTinnitusPoseMarker(FinalDemoStage stage)

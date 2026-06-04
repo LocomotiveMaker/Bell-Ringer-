@@ -22,18 +22,216 @@ MonoBehaviour:
   padTrackingUdpPort: 39051
   playerFixedHeight: 1.6
   playerStartPosition: {x: 0, y: 1.6, z: -1.5}
+  preflightAmbienceVolume: 0.14
+  openingAmbienceSeconds: 5
+  openingAmbienceFadeSeconds: 1.6
+  openingAmbienceVolume: 0.32
+  openingSilenceSeconds: 1.6
+  openingCloseBellSeconds: 2.2
+  openingCloseBellOffset: {x: -0.55, y: 0.02, z: 0.35}
+  openingCloseBellVolume: 0.72
+  openingCloseBellLedIntensity: 0.75
+  soundReactiveLedEnabled: 1
+  soundReactiveLedUpdateIntervalSeconds: 0.09
+  bellSoundReactiveSensitivity: 1.45
+  tinnitusSoundReactiveSensitivity: 1.25
+  bellCallPostClipGapSeconds: 0.32
+  soundLightRangeResponseCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.22
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  defaultBellFollowSoundLightRadius: 4.2
+  defaultTinnitusSoundLightRadius: 2.2
+  defaultBossSoundLightRadius: 2.4
+  bellRangeMinimumLedScale: 0.08
+  bellOrbitSeconds: 19.1
+  bellOrbitCallIntervalSeconds: 0.39
+  bellOrbitPreferProfilePath: 1
+  bellOrbitToFirstTargetMoveSeconds: 2.2
+  bellMovementTextureFadeSeconds: 0.15
+  bellMovementTextureVolume: 0.48
+  bellOrbitUseSmoothSplinePath: 1
+  bellOrbitProgressCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  bellOrbitContinuousAnchorEnabled: 1
+  bellOrbitContinuousAnchorUpdateIntervalSeconds: 0.08
+  bellOrbitContinuousAnchorIntensity: 0.38
+  bellOrbitLocalPoints:
+  - {x: -1.35, y: 0.02, z: 0.85}
+  - {x: 0, y: 0, z: 1.7}
+  - {x: 1.35, y: -0.02, z: 0.85}
+  - {x: 0, y: 0, z: -0.85}
+  - {x: -1.35, y: 0.02, z: 0.85}
+  - {x: 0, y: 0, z: 1.7}
+  - {x: 0, y: 0.72, z: 1.45}
+  - {x: 0, y: 0, z: -0.85}
+  - {x: 0, y: -0.65, z: 0.9}
+  - {x: 0, y: 0, z: 1.7}
+  bellOrbitNearIntensity: 0.78
+  bellOrbitFarIntensity: 0.42
+  bellOrbitVolume: 0.68
+  bellOrbitSilentLightMultiplier: 0.5
+  bellOrbitWaveLightMultiplier: 1.2
   bellFollowTargetCount: 2
+  bellFollowTargetOnePosition: {x: -1.4, y: 1.5, z: 3.2}
+  bellFollowTargetTwoPosition: {x: 1.4, y: 1.5, z: 3.6}
+  bellFollowRelocationSeconds: 2.6
+  bellArrivalRadius: 0.8
+  bellFollowCallIntervalSeconds: 2.3
+  bellFollowInitialCallIntervalSeconds: 11
+  bellFollowMinimumCallIntervalSeconds: 8
+  bellFollowMissIntervalReductionSeconds: 0.5
+  bellFollowNearIntervalReduction: 0.6
+  bellFollowVolume: 0.62
+  bellFollowLedIntensity: 0.62
+  bellAssistTimeoutSeconds: 7.5
+  bellAssistRepeatSeconds: 4
+  bellFollowAutomaticStrongAssistSound: 0
+  bellAssistGainMultiplier: 1.35
+  bellFollowProgressBlockerEnabled: 1
+  bellFollowBlockerMarginMeters: 0.35
+  padShakeAssistMotionThreshold: 0.25
+  padShakeAssistCooldownSeconds: 2
+  padShakeAssistNarrationCooldownSeconds: 19.8
+  rainZoneCenter: {x: 0, y: 1.6, z: 2.9}
+  rainZoneRadius: 2.4
+  rainIntensityRampSeconds: 8
+  rainMaxIntensity: 0.58
+  rainAudioGainMultiplier: 0.975
+  rainArrivalAudioFadeSeconds: 3
+  rainArrivalLightFadeSeconds: 1.5
+  rainWindTextureDelaySeconds: 1.8
+  rainFocusBellNarrationDelaySeconds: 3
+  rainWindTextureMaxIntensity: 0.34
+  rainAssistVolumeFloor: 0.24
+  rainCloseDropIntervalSeconds: 2.2
   bellGazeRequiredSuccesses: 3
   bellGazeHoldSeconds: 1.4
   bellGazeConeDegrees: 14
+  bellGazeAssistStartSeconds: 6
+  bellGazeAssistMaxConeDegrees: 28
+  bellGazeMoveSeconds: 1.1
+  bellGazeCallIntervalSeconds: 1.5
+  bellGazeLedIntensity: 0.78
+  bellGazeLocalOffsets:
+  - {x: 0.15, y: -0.02, z: 1.45}
+  - {x: -0.85, y: 0.06, z: 1.75}
+  - {x: 0.9, y: -0.04, z: 1.65}
+  bellAcquisitionLocalOffset: {x: 0, y: -0.08, z: 0.85}
+  bellAcquisitionEffectSeconds: 1.8
+  bellAcquisitionTransitionSilenceSeconds: 0.8
+  generalTinnitusOneWorldPosition: {x: -1.2, y: 1.45, z: 2.8}
+  generalTinnitusTwoWorldPosition: {x: 1.25, y: 1.35, z: 3.1}
+  generalTinnitusOnePadTargetCameraSpace: {x: -0.08, y: -0.02, z: 0.66}
+  generalTinnitusTwoPadTargetCameraSpace: {x: 0.1, y: -0.02, z: 0.72}
+  generalTinnitusOnePadTargetYawPitchRoll: {x: -12, y: 8, z: -14}
+  generalTinnitusTwoPadTargetYawPitchRoll: {x: 18, y: -10, z: 16}
   generalTinnitusTreatmentSeconds: 4
   generalTinnitusApproachRadius: 1.25
   generalTinnitusRadiusScale: 1.3
   generalTinnitusPositionToleranceMeters: 0.18
   generalTinnitusRotationToleranceDegrees: 22
+  generalTinnitusMatchFeedbackRadiusMultiplier: 2.5
+  generalTinnitusRevealConeDegrees: 38
+  generalTinnitusLedIntensity: 0.72
+  generalTinnitusToneVolume: 0.16
+  generalTinnitusLightIntervalSeconds: 0.16
+  generalTinnitusCleanseHapticIntervalSeconds: 0.55
+  finalDemoProceduralTinnitusEnabled: 1
+  tinnitusMatchToneEnabled: 1
+  tinnitusMatchToneVolume: 0.01053
+  tinnitusPositionToneFrequencyRange: {x: 40, y: 100}
+  tinnitusRotationToneFrequencyRange: {x: 45, y: 110}
+  tinnitusRotationToneVolumeMultiplier: 0.35
+  tinnitusPadBellFeedbackEnabled: 0
+  tinnitusPadBellBaseIntervalSeconds: 3
+  tinnitusPadBellVolume: 0.2
+  tinnitusPadBellFarSpeed: 0.8
+  tinnitusPadBellNearSpeed: 1.4
+  bossWorldPosition: {x: 0, y: 1.6, z: 4.2}
+  bossApproachRadius: 1.25
+  bossApproachAutoStartSeconds: 12
+  bossBaseVolume: 0.084
+  bossMassLedIntensity: 0.78
   bossPatternOneSeconds: 4
   bossPatternTwoSeconds: 5
   bossPatternThreeSeconds: 6
   bossOpeningHoldSeconds: 2
+  bossHoldPositionToleranceMeters: 0.18
+  bossHoldRotationToleranceDegrees: 24
   bossMovingToleranceMeters: 0.42
   bossMovingToleranceDegrees: 38
+  bossFailureToleranceGain: 0.14
+  bossLightIntervalSeconds: 0.18
+  bossWeakPointCentersCameraSpace:
+  - {x: -0.12, y: -0.04, z: 0.72}
+  - {x: 0.1, y: 0.03, z: 0.7}
+  - {x: 0, y: -0.02, z: 0.76}
+  bossWeakPointMoveOffsetsCameraSpace:
+  - {x: 0.34, y: 0.06, z: 0.04}
+  - {x: -0.32, y: 0.1, z: 0.08}
+  - {x: 0.22, y: -0.12, z: 0.06}
+  bossWeakPointEndYawPitchRoll:
+  - {x: 14, y: -8, z: 10}
+  - {x: -18, y: 10, z: -12}
+  - {x: 22, y: -12, z: 18}
+  bossDefeatEffectSeconds: 3.2
+  bossDefeatSilenceSeconds: 1.2
+  forestBellWorldPosition: {x: 0, y: 1.45, z: 3.2}
+  forestBedFadeSeconds: 3
+  forestBedVolume: 0.55
+  forestBellCallIntervalSeconds: 2.4
+  forestBellArrivalRadius: 1
+  forestAutoEndSeconds: 10
+  forestBellLedIntensity: 0.55

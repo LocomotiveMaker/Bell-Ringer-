@@ -154,8 +154,8 @@ namespace BellRinger.FinalDemo
         [SerializeField] private float generalTinnitusCleanseHapticIntervalSeconds = 0.55f;
         [SerializeField] private bool finalDemoProceduralTinnitusEnabled = true;
         [SerializeField] private bool tinnitusMatchToneEnabled = true;
-        [SerializeField, Range(0f, 0.2f)] private float tinnitusMatchToneVolume = 0.0027f;
-        [SerializeField] private Vector2 tinnitusPositionToneFrequencyRange = new Vector2(40f, 120f);
+        [SerializeField, Range(0f, 0.2f)] private float tinnitusMatchToneVolume = 0.01053f;
+        [SerializeField] private Vector2 tinnitusPositionToneFrequencyRange = new Vector2(40f, 100f);
         [SerializeField] private Vector2 tinnitusRotationToneFrequencyRange = new Vector2(45f, 110f);
         [SerializeField, Range(0f, 1f)] private float tinnitusRotationToneVolumeMultiplier = 0.35f;
         [SerializeField] private bool tinnitusPadBellFeedbackEnabled;
@@ -321,7 +321,7 @@ namespace BellRinger.FinalDemo
         public bool FinalDemoProceduralTinnitusEnabled => finalDemoProceduralTinnitusEnabled;
         public bool TinnitusMatchToneEnabled => tinnitusMatchToneEnabled;
         public float TinnitusMatchToneVolume => Mathf.Clamp(tinnitusMatchToneVolume, 0f, 0.2f);
-        public Vector2 TinnitusPositionToneFrequencyRange => ClampFrequencyRange(tinnitusPositionToneFrequencyRange, new Vector2(40f, 120f));
+        public Vector2 TinnitusPositionToneFrequencyRange => ClampFrequencyRange(tinnitusPositionToneFrequencyRange, new Vector2(40f, 100f));
         public Vector2 TinnitusRotationToneFrequencyRange => ClampFrequencyRange(tinnitusRotationToneFrequencyRange, new Vector2(45f, 110f));
         public float TinnitusRotationToneVolumeMultiplier => Mathf.Clamp01(tinnitusRotationToneVolumeMultiplier);
         public bool TinnitusPadBellFeedbackEnabled => tinnitusPadBellFeedbackEnabled;

@@ -191,7 +191,7 @@ namespace BellRinger.Debug.Editor
                 DrawTuningProperty(tuningObject, "generalTinnitusLightIntervalSeconds", "General tinnitus LED interval");
                 DrawTuningProperty(tuningObject, "finalDemoProceduralTinnitusEnabled", "Enable generated tinnitus tone in FinalDemo");
                 DrawTuningProperty(tuningObject, "tinnitusMatchToneEnabled", "Enable match feedback tone");
-                DrawTuningProperty(tuningObject, "tinnitusMatchToneVolume", "Match feedback tone volume");
+                DrawTuningProperty(tuningObject, "tinnitusMatchToneVolume", "Answer sine tone volume");
                 DrawTuningProperty(tuningObject, "tinnitusPositionToneFrequencyRange", "Position sine frequency range");
                 DrawTuningProperty(tuningObject, "tinnitusRotationToneFrequencyRange", "Rotation square frequency range");
                 DrawTuningProperty(tuningObject, "tinnitusRotationToneVolumeMultiplier", "Rotation square volume multiplier");

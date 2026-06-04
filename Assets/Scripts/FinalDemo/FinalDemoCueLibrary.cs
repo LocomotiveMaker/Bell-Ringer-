@@ -48,6 +48,10 @@ namespace BellRinger.FinalDemo
             new FinalDemoCueEntry(FinalDemoCueId.NarrBellEscaped, "Narration bell escaped", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrNoiseStillExists, "Narration noise still exists", FinalDemoAudioBus.Narration, false, false),
             new FinalDemoCueEntry(FinalDemoCueId.NarrBossAhead, "Narration boss ahead", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.FootstepOne, "Footstep one", FinalDemoAudioBus.Interaction, false, true),
+            new FinalDemoCueEntry(FinalDemoCueId.FootstepTwo, "Footstep two", FinalDemoAudioBus.Interaction, false, true),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrBossSecondCleanse, "Narration boss second cleanse", FinalDemoAudioBus.Narration, false, false),
+            new FinalDemoCueEntry(FinalDemoCueId.NarrBossFinalCleanse, "Narration boss final cleanse", FinalDemoAudioBus.Narration, false, false),
         };
 
         public FinalDemoCueEntry[] Cues => cues;

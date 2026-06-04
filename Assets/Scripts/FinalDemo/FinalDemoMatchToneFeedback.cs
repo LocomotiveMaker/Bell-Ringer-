@@ -8,7 +8,7 @@ namespace BellRinger.FinalDemo
     public sealed class FinalDemoMatchToneFeedback : MonoBehaviour
     {
         [SerializeField, Range(0f, 0.2f)] private float volume = 0.0135f;
-        [SerializeField] private Vector2 positionFrequencyRange = new Vector2(40f, 120f);
+        [SerializeField] private Vector2 positionFrequencyRange = new Vector2(40f, 100f);
         [SerializeField] private Vector2 rotationFrequencyRange = new Vector2(45f, 110f);
         [SerializeField, Range(0f, 1f)] private float rotationVolumeMultiplier = 0.35f;
         [SerializeField] private float smoothingSpeed = 10f;
@@ -44,7 +44,7 @@ namespace BellRinger.FinalDemo
             float rotationMultiplier)
         {
             volume = Mathf.Clamp(outputVolume, 0f, 0.2f);
-            positionFrequencyRange = ClampFrequencyRange(positionRange, new Vector2(40f, 120f));
+            positionFrequencyRange = ClampFrequencyRange(positionRange, new Vector2(40f, 100f));
             rotationFrequencyRange = ClampFrequencyRange(rotationRange, new Vector2(45f, 110f));
             rotationVolumeMultiplier = Mathf.Clamp01(rotationMultiplier);
         }
@@ -106,7 +106,7 @@ namespace BellRinger.FinalDemo
         private void OnValidate()
         {
             volume = Mathf.Clamp(volume, 0f, 0.2f);
-            positionFrequencyRange = ClampFrequencyRange(positionFrequencyRange, new Vector2(40f, 120f));
+            positionFrequencyRange = ClampFrequencyRange(positionFrequencyRange, new Vector2(40f, 100f));
             rotationFrequencyRange = ClampFrequencyRange(rotationFrequencyRange, new Vector2(45f, 110f));
             rotationVolumeMultiplier = Mathf.Clamp01(rotationVolumeMultiplier);
             smoothingSpeed = Mathf.Max(1f, smoothingSpeed);

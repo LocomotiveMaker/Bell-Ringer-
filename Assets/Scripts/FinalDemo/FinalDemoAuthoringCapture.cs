@@ -175,7 +175,8 @@ namespace BellRinger.FinalDemo
 
             marker.CaptureFrom(padPoseProvider);
             Vector3 position = marker.StoredTargetCameraSpacePosition;
-            _lastCaptureStatus = $"Captured Boss {patternIndex + 1}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  (rotation captured but ignored in boss match)";
+            bool appliedNow = director != null && director.TryApplyCapturedBossTarget(marker, patternIndex);
+            _lastCaptureStatus = $"Captured Boss {patternIndex + 1}: pos {position.x:0.000}, {position.y:0.000}, {position.z:0.000}  (rotation captured but ignored in boss match){(appliedNow ? "  applied now" : string.Empty)}";
             MarkDirty(marker);
         }
 
