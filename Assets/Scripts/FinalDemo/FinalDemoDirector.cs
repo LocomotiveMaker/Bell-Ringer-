@@ -2153,6 +2153,7 @@ namespace BellRinger.FinalDemo
             ApplyAudioSourceRange(bossLoop, SoundLightRangeSource.BossTinnitus);
             _bossReactiveLight = null;
             _nextBossLightAtRealtime = Time.realtimeSinceStartup;
+            QueueNarration(FinalDemoCueId.NarrBossTrack, FinalDemoStage.BossApproach);
         }
 
         private void TickBossApproach()

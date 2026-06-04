@@ -509,7 +509,7 @@ MonoBehaviour:
     stopOnStageExit: 1
   - id: 31
     operatorLabel: Narration boss track
-    audioClip: {fileID: 8300000, guid: 845b03a8317bedd4b8ed3cbf2f477270, type: 3}
+    audioClip: {fileID: 8300000, guid: e4e310763f9c91949894aa37a109dedd, type: 3}
     alternateClips: []
     bus: 7
     defaultVolume: 0.7

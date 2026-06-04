@@ -20,6 +20,7 @@ Date: 2026-06-04
 - Made boss tinnitus light use the boss sound/light range with 1.2x intensity and 1.5x board range compared with the normal boss pattern call.
 - Made boss capture buttons apply immediately to the active boss pattern, matching the general tinnitus capture behavior.
 - Changed active boss weakpoint targeting to read `BossWeakpoint_Current` scene position first, so moving that object in the scene controls the in-game weakpoint location.
+- Added the boss-approach entry narration by queuing `NarrBossTrack` in `BeginBossApproach()` and mapping it to `Assets/Audio/Curated/Narration/Take10-1_진동이 느껴지는 지점을 찾으세요._2026-05-26.wav`.
 
 ## Files Changed
 
